@@ -1,4 +1,4 @@
-# report-factory setup (Windows) — 의존성 설치 + 한글 환경 + 스모크 테스트
+﻿# report-factory setup (Windows) — 의존성 설치 + 한글 환경 + 스모크 테스트
 # 사용:  powershell -File setup.ps1
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
