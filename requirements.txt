@@ -1,0 +1,11 @@
+# report-factory 파이썬 의존성 — setup / /업그레이드 가 설치한다
+openpyxl>=3.1
+python-pptx>=0.6.23
+python-docx>=1.1
+lxml>=5.0
+Pillow>=10.0
+PyYAML>=6.0
+xlrd>=2.0
+
+# 선택 — CLOVA Studio / Anthropic 어댑터(llm_write.py)를 쓸 때만 필요
+openai>=1.40

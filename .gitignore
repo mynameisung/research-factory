@@ -1,0 +1,33 @@
+# ── 고객 데이터 — 어떤 경우에도 리포에 올리지 않는다 ──────────────
+report-factory/projects/
+projects/
+
+# 코퍼스 원자료 (157MB — 규칙의 근거. 사내 공유 드라이브로 별도 전달)
+report-factory/engine/refs/
+
+# ── 개인·로컬 설정 ──────────────────────────────────────────────
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/launch.json
+
+# ── 세션 인수인계 상태 (현 진행 조사에 묶인 개인 기록 — 클론마다 다르다) ──
+report-factory/HANDOVER*.md
+report-factory/INSTRUCTIONS.md
+report-factory/handover/
+NUL
+
+# ── 이 리포와 무관한 같은 작업 폴더의 다른 프로젝트 ──────────────
+assets/
+docs/
+react-agent-starter/
+survey-studio/
+
+# ── 파이썬 ──────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.venv/
+
+# ── 키 파일 방어선 (키는 환경변수로만 쓴다 — 파일로 두지 않는다) ──
+*.key
+*apikey*
+.env

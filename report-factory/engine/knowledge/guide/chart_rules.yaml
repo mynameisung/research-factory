@@ -1,0 +1,981 @@
+# 차트 타입 결정 규칙 — 기계 판독용
+#
+# 소비자: engine/tools/rules.py (결정), engine/tools/verify.py (검증)
+# 사람용 해설: guide/12_차트타입-결정표.md
+#
+# 근거 표기
+#   transcript:MM:SS        인수인계 녹취 20260821
+#   guide:<파일>#<블록키>    예시 제작가이드 실측 (engine/refs/guide_blocks_*.json)
+#   deck:<파일>#s<슬라이드>  예시 제작본 실측 (engine/refs/ground_truth_*.json)
+#
+# 신뢰도: 확정 / 검증중 / 가설
+
+schema_version: "1.1"
+generated_at: "2026-08-22"
+sources:
+  transcript: handover/20260821_서연_인수인계_녹취록.md
+  guides:
+    - engine/refs/guide_blocks_LG홈로봇.json   # 93 blocks, 90 with chart_type
+    - engine/refs/guide_blocks_SKEE.json       # 109 blocks, 104 with chart_type
+  decks:
+    - engine/refs/ground_truth_LG홈로봇.json    # 99 slides, 79 본문
+    - engine/refs/ground_truth_SKEE.json        # 126 slides, 84 본문
+
+# ---------------------------------------------------------------------------
+# 0. 입력 계약 — 룰 엔진에 들어오는 것
+#    tables.json 의 table.hints + questionnaire.json 의 question.response_type
+#    + 목차 설계에서 정해지는 slide_role
+# ---------------------------------------------------------------------------
+input_contract:
+  slide_role:
+    source: 목차 설계 (guide/10)
+    domain: [표지, 목차, 간지, 응답자특성, 본문, 요약, 결론, 부록]
+  question:
+    response_type:
+      source: questionnaire.json#questions[].response_type
+      domain: [단일, 복수, 순위, 척도, 행렬, 예-아니오, 숫자입력, 개방형]
+      observed_비상주: {단일: 20, 순위: 9, 척도: 9, 복수: 8, 숫자입력: 5, 개방형: 3, 행렬: 3, 예-아니오: 1}
+      note: >
+        n_scale=11 은 척도 9 + 행렬 중 척도형 2(A8, D6). 행렬 여부는
+        table.hints.is_matrix_item 으로 다시 갈린다. 문항 유형만으로 판단하지 말고
+        표(hints)를 우선한다 — 표가 실측이고 설문지는 의도이기 때문이다.
+  table:
+    # tables.json#tables[].hints 를 그대로 받는다
+    has_scale_rows:   {type: bool,  note: "【BOT】【SoSo】【TOP】 요약행 존재"}
+    scale_points:     {type: int|null, domain: [null, 5, 7, 10]}
+    is_ranking:       {type: bool}
+    rank_scope:       {type: str|null, domain: [null, "1", "1~2", "1~3"]}
+    rank_is_first_only: {type: bool, note: "제목이 _1순위 인 표"}
+    is_multi:         {type: bool,  note: "(중복응답)"}
+    is_summary:       {type: bool}
+    summary_kind:     {type: str|null, domain: [null, top2, mean]}
+    is_matrix_item:   {type: bool}
+    has_total_row:    {type: bool,  note: "'      계' 행"}
+    has_mean_row:     {type: bool,  note: "[N점 평균] 행"}
+    n_option_rows:    {type: int}
+    n_banners:        {type: int,   note: "표마다 다르다. 비상주 실측 15~45"}
+    n_banners_in_report: {type: int, note: "비상주 실측 6~17"}
+
+# ---------------------------------------------------------------------------
+# 0-b. 본문 게이트 — ★ "표가 있으면 본문" 이 아니다
+#      라운드1 실측: 조사개요·요약 블록 4개가 본문으로 산출됐다 (MAP 정밀도 94.9%).
+# ---------------------------------------------------------------------------
+body_slide_gate:
+  id: MAP-020
+  rule: >
+    본문 구간은 `조사 결과` Part 간지 **이후**의 블록이다. 그 앞(표지·목차·조사 개요·
+    요약 및 결론)은 통계표를 품고 있어도 본문 예측 대상이 아니다.
+  detect_part_marker:
+    pattern: '^\s*Part\s'          # slide_title 이 Part 로 시작하는 블록 = 파트 간지
+    prefer_title_contains: ["조사 결과", "조사결과", "조사 결과 "]
+    fallback: 마지막 Part 간지
+    on_no_marker: 게이트를 적용하지 않는다   # 못 찾으면 현행 동작 유지 (회귀 방지)
+  confidence: 확정
+  evidence:
+    - "guide:LG#block14 'Part Ⅲ. 조사 결과' — 이후 블록 78개가 제작본 본문 79장에 대응"
+    - "guide:LG#block5(3. 응답자 특성)·block9·block10·block11 — Part Ⅱ 이하, 제작본에서는 조사개요/요약 레이아웃"
+    - "deck:LG#s6 layout=2_master-1(조사개요), s10-s12 layout=master-1(요약)"
+    - "guide:SKEE#block30 'Part Ⅲ. 조사 결과' — 같은 구조. 앞선 요약 블록 19개가 같은 오탐 후보였다"
+  note: >
+    제작본 레이아웃(3_master-1)으로 판정할 수 있으면 그게 더 정확하지만, 예측 단계에서는
+    제작본을 볼 수 없다. 가이드에서 쓸 수 있는 구조 신호가 Part 간지다.
+    문항코드 유무로 가르면 안 된다 — SKEE 가이드는 문항코드가 0건이다(DP-002).
+
+# ---------------------------------------------------------------------------
+# 0-c. 장분리 — ★ 한 문항이 슬라이드 두 장으로 전개되는 케이스
+#      라운드2 실측: 정답 79장 중 4장을 통째로 못 냈다 (MAP 재현율 94.9%).
+#      쪼개지는 것은 문항이 아니라 **배너**다. 차트(전체)는 두 장에 똑같이 들어간다.
+# ---------------------------------------------------------------------------
+chapter_split:
+  id: MAP-050
+  enabled: true
+  rule: >
+    배너 열이 한 장에 안 들어가면 **배너군 경계**에서 장(章)을 나눈다.
+    마지막 배너군을 떼어 2장째로 보내고, 선두의 1열짜리 군(`전체` · `1순위` · `1+N순위`)은
+    양쪽 장에 모두 싣는다. 차트는 전체 값만 그리므로 두 장이 동일하다 —
+    두 장의 차트가 같은 것은 복제 흔적이 아니라 정상이다.
+  max_banner_columns: 22          # 초과하면 분리
+  min_tail_group_columns: 3       # 떼어 낼 마지막 배너군의 최소 열 수
+  carry_leading_single_columns: true
+  guards:                         # 셋 다 만족할 때만 나눈다. 없는 신호로 장을 복제하지 않는다
+    - 2단 배너 헤더(그룹행 + 라벨행)가 실재한다
+    - 다열 배너군이 2개 이상이다
+    - 마지막 배너군이 min_tail_group_columns 이상이다
+  confidence: 검증중
+  evidence:
+    - "guide:LG#block80 C2-1/C2-2/C2-3 배너 27열 → deck:LG s81(전체+나이4+가구2+선호유형4=11열) + s82(전체+시나리오15=16열)"
+    - "guide:LG#block81 C3 27열 → deck:LG s83 + s84 · block82 C3-1/… 27열 → s85 + s86 · block83 C4 27열 → s87 + s88"
+    - "s82/s84/s86/s88 의 표 `(Base)` 행 값이 가이드 P~AD 열(시나리오별 15배너)과 **전량 일치**한다 — 복제본이 아니라 실재하는 2장째다"
+    - "guide:LG#block92 C2-1-1/… 배너 22열 → deck:LG s97 **1장** (표 9x24, 열폭 1.0cm 로 압축). 22열은 분리하지 않는다"
+    - "guide:LG 본문 82블록 전수: 27열 4건 = 전부 2장 / 22열 이하 78건 = 전부 1장. 분리 완전"
+  note: >
+    ★ 라운드1 은 이 4장을 `미제작 클론` 으로 오판해 채점 모수에서 뺐다(GOLDEN_SET §5-g-1 정정).
+      근거로 든 "두 장이 완전 동일" 은 **차트만** 본 것이다. 표를 보면 배너군이 서로 다르고
+      s82 는 시나리오별 배너로 실제 값까지 채워져 있다.
+    임계 22 는 관측 구간이 [23, 27] 로만 좁혀진 값이다. 분리/비분리 **판정 자체는** LG 82블록에서
+    반례가 없지만, 임계의 정확한 위치는 미결이다 → OPEN_QUESTIONS Q-MAP-01.
+  not_implemented:
+    - "3장 이상으로 나뉘는 경우. 관측이 2장뿐이라 `마지막 배너군 1개만 분리` 로 좁혀 두었다"
+    - "장별로 base_unit 정의가 달라지는 경우 — deck:LG s84 가 유일한 후보인데 정답지 결함으로 판정했다
+       (GOLDEN_SET §5-g-1). 규칙으로 승격하지 않는다 → OPEN_QUESTIONS Q-BASE-01"
+
+# ---------------------------------------------------------------------------
+# 1. 정규화 — 문자열 비교 전에 항상 적용한다
+#    Chart type 은 통제 어휘가 아니라 자유 서술이다 (transcript:34:16)
+# ---------------------------------------------------------------------------
+normalization:
+  confidence: 확정
+  evidence: ["guide:LG#'전체 : 가로 막대' vs '전체 : 가로막대' vs '전체 : 가로막대 그래프' 동시 존재"]
+  steps:
+    - lower_fullwidth_colon: {"：": ":"}
+    - collapse_spaces_around_colon: true      # "배너 : 표" == "배너: 표"
+    - equivalence_groups:
+        - ["가로막대", "가로 막대", "가로막대 그래프", "가로 막대 그래프"]
+        - ["세로막대", "세로 막대", "세로막대 그래프", "세로 막대 그래프"]
+        - ["가로겹침막대", "가로 겹침막대", "가로 겹침 막대", "가로 겹침 막대 그래프"]
+        - ["원그래프", "원 그래프"]
+    - strip_all_whitespace: true
+
+# ---------------------------------------------------------------------------
+# 2. 관찰된 어휘 — 예시 2건에서 연구원이 실제로 타이핑한 문자열 전량
+# ---------------------------------------------------------------------------
+vocabulary:
+  - string: "전체 : 가로막대, 배너 : 표"
+    freq: {LG: 28, SKEE: 24}
+    role: 기본형
+    variants: ["전체 : 가로 막대", "전체 : 가로 막대 그래프", "전체 : 가로막대 그래프", "전체 : 가로막대"]
+    variant_freq: {LG: 5, SKEE: 0}
+  - string: "전체 : +-세로막대 그래프"
+    freq: {LG: 36, SKEE: 42}
+    role: 척도
+  - string: "전체 : 가로겹침막대, 배너 : 표"
+    freq: {LG: 11, SKEE: 1}
+    role: 순위
+    variants: ["전체 : 가로 겹침막대, 배너 : 표", "전체 : 가로 겹침 막대 그래프"]
+    variant_freq: {LG: 2, SKEE: 1}
+  - string: "전체 : 원그래프, 배너: 표"
+    freq: {LG: 2, SKEE: 0}
+    role: 예/아니오
+    variants: ["전체 : 원그래프"]
+    variant_freq: {LG: 1, SKEE: 0}
+  - string: "전체 : 표"
+    freq: {LG: 1, SKEE: 0}
+    role: 응답자특성
+  - string: "전체 : 가로 누적 100% 막대 그래프"
+    freq: {LG: 1, SKEE: 0}
+    role: 누적구성비
+    note: "가이드에서는 요약 패널(LG B153)에만 등장. 본문 5장은 연구원이 기본형으로 적었으나 제작팀이 이 형태로 만들었다 → disagreements/D-001"
+  - string: "전체 : 100% 3점막대 + 가로막대"
+    freq: {LG: 0, SKEE: 15}
+    role: 척도3점리코드
+    note: "SKEE 하우스 스타일. 좌=불만족/보통/만족 100% 세로막대, 우=사유 가로막대(서브베이스)"
+  - string: "top2 : 세로막대 그래프, 5점평균 : 상단 표"
+    freq: {LG: 0, SKEE: 4}
+    role: 척도요약KPI
+  - string: "전체 : 세로 막대"
+    freq: {LG: 0, SKEE: 1}
+    role: 항목별TOP2비교
+  - string: "세로 100% 막대"
+    freq: {LG: 0, SKEE: 1}
+    role: 누적구성비세로
+  - string: "좌 : IPA, 우: 가로 겹침 막대"
+    freq: {LG: 0, SKEE: 1}
+    role: IPA
+  - string: "전체 : 텍스트 박스"
+    freq: {LG: 0, SKEE: 2}
+    role: 텍스트
+    variants: ["TEXT 박스"]
+    variant_freq: {LG: 0, SKEE: 2}
+  - string: "+/- 5점 척도 (9,10점을 0보다 위로 넣어주세요)"
+    freq: {LG: 0, SKEE: 1}
+    role: 자유서술
+    note: "10점 척도 기준선 이동 지시. 제작본은 표준 +-세로막대로 실현됨 → disagreements/D-004"
+  - string: "제목 - 내용 형태의 박스 3개 -> 총결론 박스 하나 구성 부탁드립니다."
+    freq: {LG: 1, SKEE: 0}
+    role: 자유서술
+  - string: "표지"
+    freq: {LG: 1, SKEE: 1}
+    role: 구조
+  - string: "목차"
+    freq: {LG: 1, SKEE: 1}
+    role: 구조
+  - string: "간지"
+    freq: {LG: 6, SKEE: 10}
+    role: 구조
+
+# ---------------------------------------------------------------------------
+# 3. 결정표 — 위에서부터 첫 매치로 확정한다 (ordered, first-match-wins)
+# ---------------------------------------------------------------------------
+decision_table:
+
+  - id: CT-000
+    name: 구조 슬라이드
+    when: {slide_role: [표지, 목차, 간지]}
+    then:
+      chart_type: "{slide_role}"        # 그대로 '표지' / '목차' / '간지'
+      chart_count: 0
+      table_count: 0
+    confidence: 확정
+    evidence: ["guide:LG#표지/목차/간지", "guide:SKEE#표지/목차/간지", "deck:LG#by_layout(cover/contents/section)"]
+
+  - id: CT-010
+    name: 응답자 특성
+    when: {slide_role: 응답자특성}
+    then:
+      chart_type: "전체 : 표"
+      chart_count: 0
+      table_count: 1
+      banner_scope: 전체값만
+    confidence: 확정
+    evidence: ["transcript:30:46", "transcript:20:30", "guide:LG#표1"]
+    note: >
+      통계표 표1은 항상 응답자 특성이고 행 라벨이 2열이다.
+      `전체 : 표` 는 이 슬라이드 전용이다 — 일반 단일선택 문항에 쓰면 제작팀이
+      기본형으로 바꿔 만든다 (disagreements/D-003).
+
+  - id: CT-020
+    name: 척도 (BOT/SoSo/TOP 요약행 존재)
+    when:
+      table.has_scale_rows: true
+      table.has_mean_row: true
+      table.is_summary: false
+    then:
+      chart_type: "전체 : +-세로막대 그래프"
+      graph_top_text_rows: ["【TOP{k}】", "[{scale_points}점 평균]"]   # 통계표 표기 (대상 행 선택용)
+      graph_top_text_medium: 표 상단 행     # 제작본 표기는 `TOP3(%)` / `7점 평균(점)` (TT-010)
+      row_order: [option_asc, total, bot, soso, top, mean]   # 가이드 그리드(통계표)의 행 순서
+      option_axis: scale_diverging                            # 차트에서 보기는 **계열**이다 (SORT-010)
+    confidence: 확정
+    evidence: ["transcript:30:54", "transcript:32:12", "transcript:32:20", "guide:LG(36)", "guide:SKEE(42)", "deck:LG#COLUMN_STACKED(36)", "deck:SKEE#COLUMN_STACKED_100(42)"]
+    note: >
+      k = 2 (5점 척도) 또는 3 (7점 척도). scale_points 로 결정한다.
+      "척도 문항은 무조건 플러스 마이너스 세로 막대 그래프" (transcript:32:12)
+
+  - id: CT-030
+    name: 순위
+    when:
+      table.is_ranking: true
+    then:
+      chart_type: "전체 : 가로겹침막대, 배너 : 표"
+      pair_with: "동일 question_code 의 rank_is_first_only 표"
+      merge_to_one_slide: true
+      sort_by: 넓은_순위_스코프          # 1~N순위 값 내림차순
+      option_axis: rank_sum_desc        # 카테고리축 정렬키 = 1+N순위 합 (SORT-030)
+      first_rank_columns: [전체]        # 1순위 표에서는 전체 값만 가져온다
+    confidence: 확정
+    evidence: ["transcript:27:24", "transcript:28:46", "transcript:29:04", "guide:LG(11)", "deck:LG#BAR_CLUSTERED 카테고리 공유 2계열 (15)"]
+
+  - id: CT-040
+    name: 예/아니오
+    when:
+      question.response_type: 예-아니오
+      table.n_option_rows: 2
+      table.has_scale_rows: false
+    then:
+      chart_type: "전체 : 원그래프, 배너: 표"
+    confidence: 확정
+    evidence: ["transcript:36:34", "transcript:37:19", "deck:LG#DOUGHNUT(3)"]
+    note: >
+      보기가 3개 이상이면 원그래프를 쓰지 않는다. LG s17(A1, 보기 4개)은
+      연구원이 원그래프로 적었으나 제작팀이 가로막대로 바꿨다 (disagreements/D-002).
+      선택 기준은 설득력이 아니라 미관이다 — "그냥 보기 예쁘면 그렇게 쓰는 거예요" (transcript:37:34)
+
+  - id: CT-050
+    name: 등급형 매트릭스 (정도·빈도 사다리) → 누적 100% 가로막대
+    # when 은 실행기가 평가할 수 있는 구조 신호만 쓴다.
+    # (키워드로 "등급형"을 추측하는 방식은 오탐이 많아 폐기했다 — 아래 note)
+    when:
+      table.has_scale_rows: true
+      table.has_mean_row: false
+      table.is_matrix_item: true
+      table.n_option_rows: {max: 4}
+    then:
+      chart_type: "전체 : 가로 누적 100% 막대 그래프"
+      option_axis: grade_stack_reverse                       # 보기는 계열이고 통계표 역순으로 쌓는다 (SORT-020)
+      graph_top_text_rows: ["【TOP{k}】", "【BOT{k}】"]        # 사다리형은 TOP·BOT 이 쌍이다 (RC-1)
+      graph_top_text_medium: 독립 TextBox   # 막대 좌우 끝에 겹쳐 붙인다 — 브래킷 표기 유지 (TT-010)
+    confidence: 검증중          # 2026-08-22 라운드2: 가설 → 검증중 (아래 promotion 참조)
+    requires_human_confirmation: true
+    promotion:
+      from: 가설
+      to: 검증중
+      on: 2026-08-22 (라운드2)
+      why: >
+        독립 증거가 둘이다 — ① 연구원이 요약 블록(row128 · 인라인 row153)에서 A10-1 을
+        스스로 `가로 누적 100%` 로 적었다 ② 제작본이 5/5 그렇게 만들었다.
+        라운드1·2 두 라운드 모두 반례 0, TYPE 계열 5/5.
+      why_not_확정: >
+        관찰이 여전히 **A10 한 문항군**이다. 확정 기준은 "예시 파일 실측으로 2회 이상 재현" 인데
+        같은 5장을 두 번 채점한 것은 재현 2회가 아니다. 다른 조사에서 등급 사다리 문항이
+        한 번 더 나와야 확정이다 → OPEN_QUESTIONS Q-SORT-02.
+        검수관 제안 R-C(확정 승격)는 여기까지만 채택한다.
+    evidence:
+      - "deck:LG#s25-s29 BAR_STACKED_100 (A10-1~A10-5)"
+      - "guide:LG#본문블록 A10-1..A10-5 = '전체 : 가로막대, 배너 : 표'  (틀린 쪽)"
+      - "guide:LG#요약블록 row128, 인라인 Chart type row153 = '전체 : 가로 누적 100% 막대 그래프'  (맞는 쪽)"
+    note: >
+      ★ 같은 가이드 파일이 스스로 모순된다. 연구원은 요약 블록(row 128 / 인라인 row 153)에서
+      A10-1 을 `전체 : 가로 누적 100% 막대 그래프` 로 올바르게 적어 놓고,
+      본문 5개 블록에는 기본값 `전체 : 가로막대, 배너 : 표` 를 복붙했다.
+      즉 연구원은 맞는 타입을 알고 있었고 본문에서 실수한 것이다 — 제작팀이 바로잡았다.
+      의미상의 판별 기준은 "보기가 등급/빈도 사다리를 이루고 각 항목의 보기 합이 100인가" 이지만,
+      그걸 라벨 키워드로 추측하면 오탐이 많다. 실행 가능한 대리 신호로
+      **척도 행 있음 + 평균 행 없음 + 매트릭스 + 보기 ≤ 4** 를 쓴다.
+      (평균이 없다 = 등간 점수가 아니라 순서 범주라는 뜻이고, 매트릭스 = 항목 간 비교가 목적이라는 뜻이다)
+    candidates_비상주:
+      matched: []        # 룰엔진 전수 적용 결과 비상주 90표 중 해당 없음
+      reviewed:
+        - {code: A4, title: "공실 수준", verdict: 해당없음,
+           options: ["거의 만실(0~10% 미만)", "일부 공실(10~30% 미만)", "다소 있음(30~50% 미만)", "많은 편(50% 이상)"],
+           note: "라벨은 정도 사다리로 보이지만 척도 행(【TOP】/【BOT】)이 없고 매트릭스도 아니다 →
+                  구조 신호 미충족. 다만 사람이 한 번 볼 가치는 있어 OPEN_QUESTIONS 에 올렸다"}
+        - {code: C2, title: "외부 전문업체 지원 방식", verdict: 해당없음,
+           note: "매트릭스이고 계 100 이지만 보기가 등급이 아니라 범주형(전체 위탁/부분 위탁/단건/컨설팅/미정)이고
+                  DP가 값 내림차순으로 정렬해 왔다 → 기본형 유지"}
+        - {code: A2, title: "건물 준공연도", verdict: 해당없음, note: "순서형이지만 시간 구간이다. 사다리가 아니라 분포"}
+        - {code: A5, title: "입주사 수",     verdict: 해당없음, note: "수치 구간 + 평균 행 존재"}
+
+  - id: CT-060
+    name: 척도 요약표 · TOP2 Summary (Mean Summary 를 흡수한다)
+    when:
+      table.is_summary: true
+      table.summary_kind: [top2, top3]
+    then:
+      chart_type: "top2 : 세로막대 그래프, 5점평균 : 상단 표"
+      pair_with: "동일 question_code 의 summary_kind=mean 표"
+      merge_to_one_slide: true
+      columns: [top2, "5점 평균"]          # 한 블록에 두 열로 나란히 놓는다
+      row_modifiers:
+        "5점 평균": "그래프 상단에 평균 표 표기"
+        panel: "각 그래프마다 base 표기"    # 행마다 base 가 다를 때
+      base_unit: "[Base: {행별 서브샘플 정의}/ Unit: %, 점]"   # n 을 생략하고 행마다 [Base: NN]
+      use_in: [요약, 결론]
+      use_in_본문: false
+    confidence: 확정
+    evidence:
+      - "transcript:49:07"
+      - "transcript:50:24"
+      - "transcript:51:26"
+      - "guide:SKEE#block21 rows449-467 — D열 'top2' / E열 '5점 평균' 두 열이 한 블록에 나란히"
+      - "guide:SKEE#4개 Summary 블록 전부 동일 문자열"
+    note: >
+      ★ TOP2 Summary 와 Mean Summary 는 **한 슬라이드로 합쳐진다.**
+      문자열 자체가 그렇게 말한다 — "top2 : 세로막대 그래프, 5점평균 : 상단 표"
+      (Top2 는 세로막대로, 평균은 그 위 표로).
+      SKEE 실측 블록 구조:
+        C열 = 항목명(현장소장/설계담당자/…)
+        D열 = top2 값 (76.19 …)
+        E열 = 5점 평균 값 (4.19 …)   + 행수식어 '그래프 상단에 평균 표 표기'
+        F열 = '[Base: 21]' 행별 base + 행수식어 '각 그래프마다 base 표기'
+      "이 탑투랑 민은 본문에 넣는 게 아니고 보고서 요약 결론을 쓰려고 넣은 거라" (transcript:50:24)
+      "척도 문항이 한 5개 이상 있으면 위에 탑2 민을 넣어요" (transcript:51:34)
+
+  - id: CT-061
+    name: 척도 요약표 · Mean Summary (독립 슬라이드를 만들지 않는다)
+    when:
+      table.is_summary: true
+      table.summary_kind: mean
+    then:
+      chart_type: null
+      emit_slide: false
+      merge_into: "동일 question_code 의 summary_kind=top2 표 (CT-060)"
+      contributes_column: "5점 평균"
+    confidence: 확정
+    evidence: ["guide:SKEE#block21 — Mean 이 top2 블록의 E열로 들어가 있고 별도 블록이 없다"]
+    note: >
+      ★ Mean Summary 표에 `top2 : …` 문자열을 붙이면 안 된다.
+      Mean Summary 는 슬라이드를 따로 만들지 않고 짝이 되는 TOP2 Summary 슬라이드의 한 열이 된다.
+      비상주 실측 짝: 표19(A8_TOP2)↔표20(A8_Mean), 표65(D6_TOP2)↔표66(D6_Mean).
+      ⚠ 실행기 지원 필요 — `then.emit_slide` / `then.merge_into` 는 현재 실행기 문법 밖이다.
+         실행기가 무시하면 chart_type: null 로 떨어지므로 최소한 잘못된 문자열은 붙지 않는다.
+
+  - id: CT-070
+    name: 3점 리코드 척도 + 사유 서브베이스 (SKEE 하우스 스타일)
+    when:
+      table.has_scale_rows: true
+      table.n_option_rows: 3
+      sibling_subbase_reason_tables: {min: 1}
+    then:
+      chart_type: "전체 : 100% 3점막대 + 가로막대"
+      panels: 2
+      panel_layout: ["좌: 100%세로막대 3점 + [N점 평균]", "우: 사유 가로막대(서브베이스)"]
+      layout_directive: "1/3 공간만 만들어주세요"
+    confidence: 가설
+    evidence: ["guide:SKEE(15)", "deck:SKEE#COLUMN_STACKED_100 + BAR_CLUSTERED 동일 슬라이드"]
+    note: 조사 성격(만족도 + 사유 추적)에 붙는 형태다. 범용 규칙이 아니다.
+
+  - id: CT-890
+    name: 기본형 + 평균 행 (수량형 문항)
+    when:
+      table.has_scale_rows: false         # 척도는 CT-020 이 먼저 잡는다
+      table.has_mean_row: true
+      table.is_summary: false
+    then:
+      chart_type: "전체 : 가로막대, 배너 : 표"
+      graph_top_text_rows: ["평균"]        # 통계표 표기 — `평균` · `평균 (개월)`
+      graph_top_text_medium: 표 상단 행
+    confidence: 확정
+    evidence: ["RULES#R-047 자동 삽입 규칙 — 행 라벨이 `TOP` 또는 `평균` 을 포함하면 붙인다"]
+    note: >
+      차트는 기본형이지만 평균 행이 있으면 `그래프 상단 Text` 를 붙여야 한다. **안 적으면 그래프에 안 나온다.**
+      척도 조사가 아니어도 수량형 문항(계약기간·층수·입주사 수)에는 평균 행이 실린다 —
+      에스원 TA Pool 실측 34표 중 20표. CT-900 폴백에 흡수되면 그 20장이 전부 수식어를 잃는다.
+  - id: CT-900
+    name: 기본형 (그 외 전부)
+    when: {}                              # fallback
+    then:
+      chart_type: "전체 : 가로막대, 배너 : 표"
+    confidence: 확정
+    evidence: ["transcript:23:04", "transcript:23:13", "guide:LG(28)", "guide:SKEE(24)", "deck:LG+SKEE#BAR_CLUSTERED series=1 (87)"]
+    note: '"대부분은 전체는 가로 막대 배너는 표 이렇게 들어가요" (transcript:23:07)'
+
+# ---------------------------------------------------------------------------
+# 4. 역산표 — chart type 문자열 → 제작본 PPT 원시 속성
+#    verify.py / 골든셋 채점이 이걸로 정답을 역산한다. 전부 실측이다.
+# ---------------------------------------------------------------------------
+reverse_map:
+  "전체 : 가로막대, 배너 : 표":
+    chart_type_id: 57            # BAR_CLUSTERED
+    real_series_count: 1
+    overlap: 100
+    val_ax: [0.0, 100.0]
+    has_table: true
+    observed: 87
+    confidence: 확정
+  "전체 : 가로겹침막대, 배너 : 표":
+    chart_type_id: 57            # BAR_CLUSTERED
+    real_series_count: 2
+    overlap: 100
+    val_ax: [0.0, 100.0]
+    has_table: true
+    series_order: [넓은_순위_스코프_먼저, 1순위_나중]
+    discriminator: series_share_categories   # ★ 아래 ranking_detection 참조
+    observed: 15
+    confidence: 확정
+  "전체 : +-세로막대 그래프 (7점)":
+    chart_type_id: 52            # COLUMN_STACKED
+    real_series_count: 7
+    overlap: 100
+    val_ax: [-100.0, 100.0]
+    any_negative_series: true
+    num_fmt: '0.0;0.0;\ '
+    observed: 36
+    confidence: 확정
+  "전체 : +-세로막대 그래프 (5점)":
+    chart_type_id: 53            # COLUMN_STACKED_100
+    real_series_count: 5
+    overlap: 100
+    val_ax: [-1.0, 1.0]
+    any_negative_series: true
+    observed: 42
+    confidence: 확정
+  "전체 : 원그래프, 배너: 표":
+    chart_type_id: -4120         # DOUGHNUT
+    real_series_count: 1
+    has_table: true
+    observed: 3
+    confidence: 확정
+  "전체 : 가로 누적 100% 막대 그래프":
+    chart_type_id: 59            # BAR_STACKED_100
+    real_series_count: 4
+    overlap: 100
+    val_ax: [0.0, 1.0]
+    observed: 5
+    confidence: 확정
+  "세로 100% 막대":
+    chart_type_id: 53            # COLUMN_STACKED_100
+    real_series_count: 4
+    overlap: 100
+    val_ax: [0.0, 1.0]
+    observed: 15
+    confidence: 확정
+  "전체 : 세로 막대":
+    chart_type_id: 51            # COLUMN_CLUSTERED
+    real_series_count: [2, 3]
+    overlap: 100
+    observed: 4
+    confidence: 확정
+  "좌 : IPA, 우: 가로 겹침 막대":
+    chart_type_id: -4169         # XY_SCATTER (+ BAR_CLUSTERED 2계열)
+    real_series_count: 1
+    observed: 2
+    confidence: 확정
+  "전체 : 표":
+    chart_type_id: null
+    has_table: true
+    observed: 2
+    confidence: 확정
+  "표지":   {chart_type_id: null, layout: cover,    confidence: 확정}
+  "목차":   {chart_type_id: null, layout: contents, confidence: 확정}
+  "간지":   {chart_type_id: null, layout: section,  confidence: 확정}
+  "전체 : 텍스트 박스": {chart_type_id: null, has_table: false, confidence: 확정}
+
+# ---------------------------------------------------------------------------
+# 4-b. 순위 겹침막대 판별 — ★ 계열 수로 판별하면 틀린다
+# ---------------------------------------------------------------------------
+ranking_detection:
+  id: CT-045                      # 근거 ID 를 남긴다 (검수관 제안 R-D). 규칙 카드는 R-044 / R-087
+  rule_ref: [R-044, R-087]
+  wrong_rule: "BAR_CLUSTERED AND real_series_count == 2 AND overlap == 100"
+  wrong_rule_false_positives: 8
+  wrong_rule_note: >
+    여분 계열이 순위 오버레이가 아니라 **특정 보기만 다른 색으로 칠하려고 쪼갠 더미**인 경우가 있다.
+    실측된 더미 계열명: 'do not know', '열2', 배너 그룹 헤더 문자열 등.
+  correct_rule: series_share_categories
+  correct_rule_definition: >
+    두 계열이 카테고리(보기 라벨)를 공유하는가로 판별한다.
+    순위 오버레이 = 두 계열이 **전 카테고리를 공유**한다 (1순위 값과 1~N순위 값이 같은 보기에 붙는다).
+    색분리용 더미 = 카테고리를 **하나도 공유하지 않는다** (한 계열이 값을 가지면 다른 계열은 빈칸).
+  pseudo: |
+    def is_rank_overlay(chart):
+        if chart.chart_type_id != 57 or chart.real_series_count < 2:
+            return False
+        a, b = chart.series[0], chart.series[1]
+        shared = sum(1 for x, y in zip(a.values, b.values)
+                     if x is not None and y is not None)
+        return shared == len([v for v in a.values if v is not None])
+  confidence: 확정
+  evidence: ["deck:LG 실측 — 계열수 기준 오탐 8건, 카테고리 공유 기준 오탐 0건"]
+
+# ---------------------------------------------------------------------------
+# 4-c. 옵션축 — ★ 통계표 행 순서 ≠ 차트 옵션축 순서
+#      가이드 그리드는 통계표 순서를 그대로 유지한다(그건 바꾸지 않는다).
+#      바뀌는 것은 **차트가 보여주는 축**이다. 두 개는 다른 산출물이다.
+#      라운드1 실측: 예측이 이 둘을 같은 것으로 취급해 SORT 0/53 이 났다.
+# ---------------------------------------------------------------------------
+option_axis:
+  contract: >
+    decision_table 의 `then.option_axis` 가 이 표의 모드를 고른다. 지정이 없으면 table_order.
+    산출물 두 개를 모두 낸다 — `table_row_order`(가이드 그리드) / `option_order`(차트 옵션축).
+
+  label_sanitize:
+    id: LABEL-010
+    rule: '차트 라벨에서 보기번호 접두 `N) ` 만 제거한다. 라벨에 내재된 번호(`8. 공간형 침실/욕실 청소`,
+           `A. 소유방식`)는 그대로 둔다.'
+    regex: '^\s*\d+\)\s*'
+    applies_to: [option_order]          # 가이드 그리드(label_raw)는 원문 간격·번호를 보존한다
+    confidence: 확정
+    evidence:
+      - "deck:LG 본문 79장 전 차트 라벨에 `N)` 접두 0건"
+      - "deck:LG#s80 C2 `8. 공간형 침실/욕실 청소` — 마침표형 번호는 유지된다"
+      - "deck:LG#s96 A17 `A. 소유방식` — NET 행 머리글자도 유지된다"
+
+  modes:
+    table_order:
+      rule: 통계표(가이드 블록)가 준 보기 행 순서를 그대로 쓴다. DP가 이미 정렬해 준다.
+      confidence: 확정
+      evidence: ["deck:LG#s17 A1", "deck:LG#s30 A16", "deck:LG#s44 BA3", "deck:LG#s72 BE3", "deck:LG#s96 A17"]
+
+    scale_diverging:
+      id: SORT-010 / SORT-011
+      rule: >
+        척도(+-세로막대)에서 보기는 카테고리가 아니라 **계열**이다. 카테고리축은 배너다.
+        계열 순서는 중앙에서 바깥으로 두 덩어리 — 양의 반쪽(중앙점+1 → 최고점),
+        음의 반쪽(중앙점 → 1점). 중립점(4점/3점)은 음의 반쪽에 들어간다.
+      neutral_point: "(N+1)//2"          # 7점 → 4점, 5점 → 3점
+      group_order: positive_first         # LG 하우스 컨벤션
+      labels: '"{점수}점" (보기 라벨이 점수 숫자로 시작하는 수치형 척도일 때). 어의형 척도는 라벨 유지'
+      completeness: 값이 0%라 통계표에서 빠진 척도점도 계열로 복원한다 (SORT-011)
+      confidence: 확정
+      evidence:
+        - "deck:LG 척도 36/36 — series ['5점','6점','7점','4점','3점','2점','1점']"
+        - "guide:LG#BA1-2/BA2/BE1-2/BE1-4/BE2/BF1-2 — 0% 척도점 행이 통계표에서 빠졌으나 제작본 계열은 7개"
+      caveat_group_order:
+        observed_SKEE_5점: "['보통','불만족','매우 불만족','만족','매우 만족'] = [3,2,1,4,5] → negative_first"
+        note: >
+          반쪽의 구성(중앙→바깥)은 두 덱이 같고 **덩어리 순서만** 다르다. 누적 세로막대에서
+          두 배치는 시각적으로 동일하다(양수는 위로, 음수는 아래로 쌓이므로).
+          G1 은 positive_first 로 확정, 5점 척도의 덩어리 순서는 OPEN_QUESTIONS Q-SORT-01.
+
+    grade_stack_reverse:
+      id: SORT-020
+      rule: >
+        등급 사다리 누적 100% 가로막대에서 보기는 **계열**이고, 통계표 행 순서의 역순으로 쌓는다
+        (통계표는 최상위 등급부터, 차트는 최하위 등급부터).
+      confidence: 검증중
+      evidence:
+        - "deck:LG#s25-29 A10-1~5 — 계열 ['절대 비허용','드물게 허용','간헐적 허용','일상적 허용']"
+        - "guide:LG#A10-1..5 통계표 행 ['1) 일상적 허용','2) 간헐적 허용','3) 드물게 허용','4) 절대 비허용']"
+      caveat: 관찰이 A10 한 문항군(5장)뿐이다. 독립 표본 1건 → OPEN_QUESTIONS Q-SORT-02.
+
+    rank_sum_desc:
+      id: SORT-030
+      rule: >
+        순위 문항의 카테고리축 정렬키는 **1+N순위 합** 내림차순이다 (1순위 값이 아니다).
+        동점은 통계표 원순서를 유지한다(안정 정렬).
+        대표값 열(멘트·정렬에 쓰는 '전체')도 1순위가 아니라 1+N순위 열이다.
+      confidence: 확정
+      evidence:
+        - "deck:LG#s80 C2 — 카테고리 15개가 1+2+3순위 값(47,36,34,31,19,18,17,17,16,15,14,11,10,10,5) 내림차순, 동점 2/4·14/15 는 원순서 유지"
+        - "guide:LG#C2 통계표는 시나리오 원순서(1..15)로 들어온다 — DP가 정렬해 주지 않는 케이스가 실재한다"
+        - "transcript:28:46, transcript:29:04 — 정렬은 1~N순위 기준, 1순위 표에서는 전체 열만 가져온다"
+      note: >
+        A8 처럼 DP가 이미 1+2+3순위 내림차순으로 정렬해 주는 표도 많다. 이 규칙은 그 경우
+        결과를 바꾸지 않는다(안정 정렬이므로 항등). 정렬을 하지 않는 쪽이 위험하다.
+
+  etc_last:
+    id: SORT-040
+    rule: '`기타` · `잘 모르겠다` · `해당 없음` 류 보기는 값 정렬에서 제외하고 최하단에 고정한다.'
+    match: ['^기타', '모르겠다', '해당\s*없음', '없음$', '상황에 따라']
+    applies_to: [table_order, rank_sum_desc]
+    confidence: 검증중
+    evidence:
+      - "deck:LG#s20 A5 — 통계표는 값 내림차순으로 `4) 잘 모르겠다 / 상황에 따라 다르다`(13%)를 2번째에 두었으나 제작본 차트는 최하단"
+      - "deck:LG#s20 A5 — 이 보기만 별도 계열('do not know')로 분리해 색을 달리한다"
+      - "deck:LG#s30 A16 · s23 A8 — 해당 보기가 이미 최하단이라 규칙과 충돌하지 않음"
+    caveat: 위치를 바꾼 실측 관찰은 A5 1건이다 → OPEN_QUESTIONS Q-SORT-03.
+    not_implemented:
+      - "`기타·모름` 보기를 별도 계열로 분리하고 색을 달리하는 부분(deck:LG#s20 `do not know` 계열)은
+         아직 산출하지 않는다. 순서만 맞춘다."
+
+# ---------------------------------------------------------------------------
+# 4-d. 표 행 순서 — ★ 정렬 결과는 그래프에만 걸리는 게 아니다
+#      라운드2 실측: 정렬 규칙이 option_order 에만 걸리고 table_row_order 에는
+#      안 걸려 A5·C2 가 틀렸다 (표 행 순서 13/15).
+# ---------------------------------------------------------------------------
+table_row_axis:
+  id: SORT-045
+  contract: >
+    제작본 **배너표**의 데이터 행 순서다. 가이드 그리드(.xlsm)의 행 순서와도,
+    차트 옵션축과도 구분되는 세 번째 산출물이다 — `guide_grid_row_order` / `option_order` /
+    `table_row_order` 세 개를 모두 낸다.
+  rule: >
+    갈림길은 하나다 — **보기가 카테고리축인가, 계열인가.**
+      - 보기 = 카테고리축 (가로막대 · 가로겹침막대 · 순위) → 표 행 순서 = 차트 옵션축 순서.
+        값 내림차순(SORT-030)도 기타·모름 최하단(SORT-040)도 표에 똑같이 걸린다.
+      - 보기 = 계열 (척도 발산 · 등급 사다리 누적 100%) → 표는 통계표 순서를 유지한다.
+        그래프는 계열을 쌓는 순서이므로 표와 같을 이유가 없다.
+  series_axis_modes: [scale_diverging, grade_stack_reverse]
+  label_sanitize: 적용            # 제작본 표에도 `N) ` 접두가 없다 (LABEL-010)
+  confidence: 확정
+  evidence:
+    - "deck:LG 실데이터 슬라이드 전수 — 카테고리형 10장(s17·s20·s23·s30·s44·s72·s80·s81·s82·s90)에서 표 행 == 차트 카테고리"
+    - "deck:LG#s20 A5 — 통계표는 `1) 상주형 / 4) 잘 모르겠다 / 2) / 3)` 인데 표도 차트도 `상주형·정기적 방문자·업무형 방문자·잘 모르겠다`"
+    - "deck:LG#s80 C2 — 표 15행이 차트와 같은 1+2+3순위 내림차순"
+    - "deck:LG#s25-29 A10 — 표는 통계표 정순(일상적→절대 비허용), 차트 계열은 역순. 두 순서가 **달라야** 맞다"
+    - "deck:LG 척도 36장 — 표에 보기 행 자체가 없다(범례 한 덩어리 + TOP3/평균 행). 충돌하지 않는다"
+  note: >
+    라운드2 에서 75개 예측 중 44개가 option_order ≠ table_row_order 였는데,
+    그중 41개(척도 36 · 누적100% 5)는 **달라야 맞는** 것이었고 실제 오류는 A5·C2 계열이었다.
+    "전부 같게" 도 "전부 다르게" 도 오답이다. 유형별 분기가 답이다.
+
+# ---------------------------------------------------------------------------
+# 4-e. 그래프 상단 Text 의 **매체** — ★ 같은 지표라도 매체가 다르면 표기가 다르다
+#      라운드2 실측: 라벨 표기 5/41. 척도 36장에 A10 전용 표기(【】)를 밀어 넣었다.
+# ---------------------------------------------------------------------------
+graph_top_text:
+  id: TT-010
+  contract: >
+    `decision_table.then.graph_top_text_medium` 이 매체를 고른다. 지정이 없으면 `표 상단 행`.
+    산출물은 라벨 배열이 아니라 **매체·배치·단위·수치**를 실은 레코드다.
+  media:
+    표 상단 행:
+      where: 배너표의 맨 위 두 행 (표가 그래프 위에 온다)
+      label_format: {top: "TOP{k}(%)", bot: "BOT{k}(%)", soso: "SoSo(%)", mean: "{scale_points}점 평균(점)"}
+      order: [top, mean]
+      carries_banner_values: true       # 배너별 값을 함께 싣는다
+      confidence: 확정
+      evidence:
+        - "deck:LG 척도 36/36 — 표 top=6.17cm · 차트 top=7.12cm, 표 1행 `TOP3(%)`, 2행 `7점 평균(점)`"
+        - "deck:LG#s38 BA1-1 — TOP3(%) 행이 배너 11개 값(58.0/75.0/44.1/…)을 함께 싣는다"
+    독립 TextBox:
+      where: 막대 좌우 끝에 겹쳐 붙이는 텍스트 상자
+      label_format: {top: "【TOP{k}】", bot: "【BOT{k}】"}
+      order: [bot, top]                 # 좌 → 우
+      value_on_next_line: true          # `【TOP2】⏎60.0 %`
+      confidence: 확정
+      evidence:
+        - "deck:LG#s25 A10-1 — TextBox 2개: 【BOT2】 L=6.67 / 【TOP2】 L=22.61, 둘 다 T=9.17 (차트 6.17~10.57 구간에 겹침)"
+        - "deck:LG 누적100% 5/5 동일 구조. 척도 36장에는 이 TextBox 가 0개다"
+  note: >
+    통계표(가이드) 센티널 라벨 `【TOP3】` · `[7점 평균]` 은 **통계표 표기**다. 그대로 제작본에
+    옮기면 안 된다. 한 예측 안에서 브래킷이 `【】` 와 `[]` 로 섞이던 것도 여기서 통일된다.
+    누적100% 슬라이드는 표 **하단**에도 `TOP2(%)` `BOT2(%)` 행을 따로 갖는다(deck:LG#s25).
+    그건 통계표 요약행이지 `그래프 상단 Text` 가 아니다 — 두 매체를 한 배열로 접지 않는다.
+  not_implemented:
+    - "NPS 표기(`NPS(점)`)는 LG·SKEE 본문에 노출 0회 → 가설. 관측되면 확정으로 올린다"
+
+# ---------------------------------------------------------------------------
+# 5. 행 단위 수식어 — 데이터 행의 "블록 값 열"에 적는다
+# ---------------------------------------------------------------------------
+row_modifiers:
+  - string: "그래프 상단 Text"
+    applies_to_rows: [top, mean]
+    effect: 해당 값을 그래프 위에 숫자로 표시
+    required: true
+    freq: {LG: 77, SKEE: 86}
+    confidence: 확정
+    evidence: ["transcript:33:10", "transcript:33:52"]
+    note: 안 적으면 안 나온다. 【BOT】·【SoSo】에는 붙이지 않는다 (transcript:34:40)
+    conditional_format: 'cellIs equal "그래프 상단 Text" → 글자 빨강(FFFF0000)'
+  - string: "100%세로막대"
+    applies_to_rows: [option]
+    effect: 해당 행들을 100% 세로막대 계열로
+    freq: {LG: 0, SKEE: 45}
+    confidence: 확정
+  - string: "text"
+    applies_to_rows: [mean]
+    effect: 차트가 아니라 텍스트로 표기
+    freq: {LG: 0, SKEE: 14}
+    confidence: 확정
+  - string: "가로막대"
+    applies_to: 패널제목행
+    freq: {LG: 0, SKEE: 24}
+    confidence: 확정
+  - string: "세로막대"
+    applies_to: 패널제목행
+    freq: {LG: 0, SKEE: 1}
+    confidence: 확정
+  - string: "그래프 색"
+    applies_to_rows: [option]
+    effect: 계열 색 별도 지정
+    freq: {LG: 0, SKEE: 2}
+    confidence: 확정
+  - string: "각 그래프마다 base 표기"
+    applies_to: 패널
+    freq: {LG: 0, SKEE: 1}
+    confidence: 확정
+  - string: "그래프 상단에 평균 표 표기"
+    applies_to_rows: [mean]
+    freq: {LG: 0, SKEE: 3}
+    confidence: 확정
+
+# ---------------------------------------------------------------------------
+# 6. 레이아웃 지시 — 패널 옆 빈 셀
+# ---------------------------------------------------------------------------
+layout_directives:
+  - {string: "1/3 공간만 만들어주세요", freq: {SKEE: 13}, confidence: 확정}
+  - {string: "하단에 1/3 공간만 만들어주세요", freq: {SKEE: 5}, confidence: 확정}
+  - {string: "1/2 공간만 만들어주세요", freq: {SKEE: 1}, confidence: 확정}
+  - {string: "1/3 공간만 만들어주세요 (불만족 정성 사유)", freq: {SKEE: 1}, confidence: 확정,
+     note: 괄호로 용도를 부기해도 된다}
+  - {string: "참고 이미지", freq: {SKEE: 1}, confidence: 확정}
+  - {string: "TEXT 박스", freq: {SKEE: 2}, confidence: 확정}
+
+# ---------------------------------------------------------------------------
+# 7. Base/Unit 문자열
+# ---------------------------------------------------------------------------
+base_unit:
+  pattern: "[Base: {서브샘플정의}(n={N})/ Unit: {단위}]"
+  units: ["%", "%, 중복", "%, 점", "점,%", "%(TOP2)", "%, 3개 문항 응답"]
+  footnote_line2:
+    # ★ 각주 어휘는 프로젝트마다 다르다. 한 덱에 전부 있는 게 아니다.
+    - {string: "*Too small base(n<30)", rule: "n < 30 인 배너 셀이 하나라도 있는 표",
+       source: "deck:LG (LG 덱의 각주는 이것 하나뿐이다)", confidence: 확정}
+    - {string: "* 소수 응답 생략", source: "guide:SKEE", confidence: 확정}
+    - {string: "* 1+2+3순위 기준 10% 미만 제외", source: "guide:SKEE", confidence: 확정}
+  placement_note: >
+    단단 슬라이드에서는 Base 박스가 T=17.13 우측정렬에 놓이지만,
+    **다단 슬라이드에서는 고정 위치가 아니다.** 위치로 Base 박스를 찾지 말고
+    텍스트 패턴(`[Base:` 로 시작)으로 찾는다.
+  n_omitted_when: 행마다 base 가 다를 때   # "[Base: 각 관리자별 관련 업무 경험자/ Unit: %, 점]"
+  forbidden:
+    - {string: "[Base : 전체 응답자(n=1,000), Unit : %]",
+       reason: "콜론 앞 공백 / '/' 대신 ',' / n 오기",
+       evidence: ["deck:LG#s6"]}
+
+# ---------------------------------------------------------------------------
+# 8. 배너 절단 — ★ 위치가 아니라 그룹명으로 자른다
+# ---------------------------------------------------------------------------
+banner_cut:
+  method: group_name          # NOT column_index
+  confidence: 확정
+  evidence: ["transcript:07:44", "transcript:08:24", "tables.json#banner 열 수 15~45 로 표마다 다름"]
+  note: >
+    DP가 base 0 인 배너 범주를 표마다 통째로 빼기 때문에 열 수가 고정이 아니다.
+    비상주 실측: 전체 배너 열 15~45, 보고서 IN 열 6~17.
+    표42(B8)·표56(C4-1)에는 오히려 배너군이 하나 더 붙어 있다
+    (`가장 중요한 위탁 서비스`, `우선 도입 희망 업무` — 각 7표).
+    위치 기준으로 자르면 깨진다. 반드시 그룹명 화이트리스트로 판정한다.
+  project_example_비상주:
+    in_groups: [전체, 용도, 권역, 관리 운영 방식]
+    out_groups: [건물 연면적, 소유 형태, 지역지구, 건물 준공연도, 입주사 수,
+                 가장 중요한 위탁 서비스, 우선 도입 희망 업무]
+    in_columns_typical: 17
+    in_columns_range: [6, 17]
+
+# ---------------------------------------------------------------------------
+# 9. 물리 상한 — 열 수 초과 시 열폭 축소 또는 장분리
+# ---------------------------------------------------------------------------
+column_limits:
+  # ★ 고정 상한이 아니다. 표 전체 폭만 고정이고 열 너비는 슬라이드마다 다시 잡는다.
+  invariant:
+    table_total_width_cm: 32.0        # 16:9 (33.87cm) 덱. 이건 고정
+    confidence: 확정
+    evidence: ["deck:LG 본문 표 전량"]
+  observed_col_counts_LG: [8, 9, 11, 12, 15, 16, 17, 24]
+  observed_leading_col_width_profiles: 5
+  note: >
+    LG 본문 표의 열 수가 8~24 로 제각각이고, 제작팀은 전체 폭 32.0cm 를 유지한 채
+    선두 열 너비 프로파일(5종)과 배너 열 너비를 슬라이드마다 다시 잡는다.
+    "1.5cm × 14열" 은 상한이 아니라 흔한 한 경우일 뿐이다.
+    **지식 문서나 룰 엔진에 열 수 상한을 못박지 않는다.**
+    실무 판단은 "열이 많아 좁아 보이면 열폭 축소, 그래도 안 되면 장분리" 이고,
+    최종 결정은 제작팀·연구원과 첫 5장 리뷰에서 맞춘다.
+  overflow_action: [열폭 축소, 장분리]
+  evidence: ["transcript:07:59", "deck:LG#표 col_widths_cm 가변", "제작팀 메모 '장분리'"]
+
+# ---------------------------------------------------------------------------
+# 10. 소수점
+# ---------------------------------------------------------------------------
+decimals:
+  percent: 1
+  mean: 2
+  nps: 2
+  keep_trailing_zero: true       # 33.0 을 33 으로 줄이지 않는다
+  rounding: ROUND_HALF_UP        # banker's rounding 아님
+  source_value: display          # 저장된 무한소수가 아니라 서식 적용 후 값
+  confidence: 확정
+  evidence: ["transcript:12:23", "transcript:32:47", "tables.json#meta.value_note"]
+
+# ---------------------------------------------------------------------------
+# 11. 가이드 ↔ 제작본 불일치 — 규칙 후보로 승격 대상
+#     정답은 제작본이다 (제작팀이 판단으로 바꾼 자리이므로)
+# ---------------------------------------------------------------------------
+disagreements:
+  - id: D-001
+    slides: ["LG s25", "LG s26", "LG s27", "LG s28", "LG s29"]
+    question_codes: [A10-1, A10-2, A10-3, A10-4, A10-5]
+    guide_said: "전체 : 가로막대, 배너 : 표"          # 본문 블록
+    guide_also_said: "전체 : 가로 누적 100% 막대 그래프"  # 같은 파일 요약 블록 row128 / 인라인 row153
+    deck_did: "전체 : 가로 누적 100% 막대 그래프 (BAR_STACKED_100, 4계열, valAx 0~1)"
+    diagnosis: >
+      ★ 가이드가 스스로 모순된다. 보기가 등급 사다리(일상적 허용/간헐적/드물게/절대 비허용)이고
+      각 항목의 보기 합이 100 이다. 연구원은 요약 블록에서 누적 100%로 올바르게 적어 놓고
+      본문 5개 블록에는 기본값 `전체 : 가로막대, 배너 : 표` 를 복붙했다.
+      맞는 타입을 알고 있었으나 본문에서 실수한 것이고 제작팀이 바로잡았다.
+    promoted_to: CT-050
+    confidence: 가설
+    side_effect: >
+      s26~29 에 `【TOP2】 ???%` `【BOT2】 ??? %` 미기입이 남았다.
+      차트 타입 오지정 → 제작팀 변경 → Top2 자리 공백의 연쇄 사고.
+  - id: D-002
+    slides: ["LG s17"]
+    question_codes: [A1]
+    guide_said: "전체 : 원그래프"
+    deck_did: "전체 : 가로막대, 배너 : 표"
+    diagnosis: 보기가 4개(비서형/전문가형/도구형/친구형)다. 원그래프는 예/아니오 2개 전용.
+    promoted_to: CT-040
+    confidence: 확정
+  - id: D-003
+    slides: ["LG s93"]
+    question_codes: [C1]
+    guide_said: "전체 : 표"
+    deck_did: "전체 : 가로막대, 배너 : 표"
+    diagnosis: "`전체 : 표` 는 응답자 특성 전용. 일반 단일선택 문항에 쓰면 기본형으로 바뀐다."
+    promoted_to: CT-010
+    confidence: 확정
+  - id: D-004
+    slides: ["SKEE (10점 척도 블록)"]
+    guide_said: "+/- 5점 척도 (9,10점을 0보다 위로 넣어주세요)"
+    deck_did: "전체 : +-세로막대 그래프"
+    diagnosis: 자유 서술 지시가 표준형으로 실현됐다. 불일치가 아니라 자유서술→표준형 매핑.
+    promoted_to: null
+    confidence: 확정
+
+# ---------------------------------------------------------------------------
+# 11-b. 제작본 파싱 주의 — 골든셋/검수기가 정답을 읽을 때
+#       두 덱이 서로 다르다. 한쪽에서 통한 가정이 다른 쪽에서 깨진다.
+# ---------------------------------------------------------------------------
+deck_parsing_caveats:
+  - id: DP-001
+    issue: placeholder idx 가 덱마다 반대다
+    detail: >
+      SKEE 는 sub_title=idx13 / top_ment=idx12 인데, LG 는 79장 전부 뒤집혀 있다
+      (idx12 = sub_title at top_cm 2.62, idx13 = 빈 ment at top_cm 3.42).
+    rule: idx 가 아니라 위치(top_cm)로 판정한다
+    confidence: 확정
+  - id: DP-002
+    issue: SKEE 덱에는 문항코드가 아예 없다
+    detail: >
+      본문 슬라이드에 `소제목` shape 자체가 없고, 덱 전체에서 문항코드 패턴 매치 0건.
+      LG 는 본문 79장 전부에 문항코드가 있다.
+    rule: 조인 키는 문항코드 우선, 없으면 slide_title + sub_title 로 폴백한다
+    confidence: 확정
+  - id: DP-003
+    issue: 제작팀 메모가 없을 수 있다
+    detail: "LG 71건 / SKEE 0건. 제작가이드에 멘트까지 다 써 두면 메모 자체가 안 붙는다."
+    rule: "`Data 입력` 메모가 항상 있다고 가정하지 않는다. 없으면 클론 패밀리를 형태로 탐지한다"
+    confidence: 확정
+  - id: DP-004
+    issue: Base 박스 위치가 고정이 아니다
+    detail: 다단 슬라이드에서는 T=17.13 우측정렬이 아니다
+    rule: "텍스트 패턴(`[Base:`)으로 찾는다"
+    confidence: 확정
+  - id: DP-005
+    issue: 제작팀이 슬라이드 제목을 바꾸기도 한다
+    detail: "실측 — `2. 건설사 대비 당사 수준` → `2. 경쟁사 대비 당사 수준`"
+    rule: 제작본이 가이드와 100% 일치한다고 가정하지 않는다. 제목 불일치는 오류가 아니라 변경 이력으로 본다
+    confidence: 확정
+
+# ---------------------------------------------------------------------------
+# 12. 채점 목표 (골든셋 하네스용)
+# ---------------------------------------------------------------------------
+scoring_targets:
+  chart_type_exact_after_normalization: 0.95
+  chart_family:  1.00           # 막대/세로/원/표
+  base_unit_string: 1.00
+  qu_text: 1.00
+  row_sort_order: 0.98
+  graph_top_text_placement: 1.00
+  ment_number_hallucination: 0.00     # 치명
+failure_tags: [MAP, TYPE, BASE, QA, SORT, TOPTEXT, MENT-NUM, MENT-STYLE, MENT-PICK]
+
+# ---------------------------------------------------------------------------
+# 13. 예시 자체의 오류 — 채점에서 제외한다
+# ---------------------------------------------------------------------------
+known_example_defects:
+  - {ref: "deck:LG#s6",     issue: "Base 가 n=1,000 (실제 100) + 포맷 불일치"}
+  - {ref: "deck:LG#s63",    issue: "소제목 BB1-5) → BD1-5) 가 맞음"}
+  - {ref: "deck:LG#s26-29", issue: "【TOP2】 ???% / 【BOT2】 ??? % 미기입"}
+  - {ref: "deck:LG#s2",     issue: "목차에 '내용을 입력하세요' 잔존"}
+  - {ref: "deck:LG#s14",    issue: "결론에 '내용을 입력하세요' 잔존"}
+  - {ref: "guide:SKEE#C163", issue: "멘트 수치 오타 761.4% (71.4%)"}
+  - {ref: "guide:SKEE#C762", issue: "여는 따옴표 누락 — 소통 원활'"}
+  - {ref: "guide:SKEE#C744", issue: "멘트 보기명 '타건설사' vs 데이터 행 라벨 '타 건설사'"}
+  - {ref: "guide:LG#orphan", issue: "시나리오 7~15 표 63개가 헤더 블록 없이 붙어 있다 (1840~2876행). MAP 실패는 별도 집계"}
+  # ── 라운드1 역검증(2026-08-22) 추가. 상세는 engine/refs/GOLDEN_SET.md §5-g
+  - {ref: "deck:LG#s82,s84,s86,s88", issue: "미제작 클론 슬라이드 — 앞 장과 완전 동일하거나 더미값(1+2+3순위=50/1순위=25). 가이드에는 해당 문항코드 블록이 1개뿐이다",
+     scoring: "중복 문항코드는 첫 장만 채점 모수에 넣는다 (본문 79장 → 75장)", tag: MAP}
+  - {ref: "deck:LG#s83,s87", issue: "C3·C4 슬라이드가 s80(C2)의 카테고리를 복사했고 차트값이 더미다 — 옵션축 채점 불가",
+     scoring: "SORT 렌즈에서 제외", tag: SORT}
+  - {ref: "deck:LG#s93", issue: "C1 슬라이드가 s90(A4)을 복사한 미기입 템플릿. 계열값 [33,24,24,19]이 A4와 동일하고 표 라벨이 전부 빈칸. 가이드 C1 은 [35,27,27,11]로 다른 데이터",
+     scoring: "SORT 렌즈에서 제외 — 예측 쪽이 옳다", tag: SORT}
+  - {ref: "deck:LG#본문 79장", issue: "top_ment placeholder(idx13, top 3.42cm)가 전부 공백. 덱 99장 중 멘트성 문장은 s8(요약) 1장뿐",
+     scoring: "멘트 렌즈(MENT-NUM/MENT-STYLE/MENT-PICK)는 G1 에서 채점하지 않는다. 실표본은 G2 뿐", tag: MENT}
+  - {ref: "guide:LG#A10-1..A10-5", issue: "【TOP2】에만 `그래프 상단 Text` 를 붙이고 【BOT2】에는 안 붙였다. 제작본 s25 표에는 TOP2(%)·BOT2(%)가 쌍으로 있다",
+     scoring: "가이드 누락이고 제작본이 정답 → CT-050 이 TOP·BOT 쌍을 낸다 (R-086)", tag: TOPTEXT}
+
+# ---------------------------------------------------------------------------
+# 14. 채점 위생 — 빈칸 대 빈칸을 정답으로 세지 않는다
+# ---------------------------------------------------------------------------
+scoring_hygiene:
+  vacuous_match:
+    rule: 정답과 예측이 둘 다 비어 있는 항목은 분자·분모 어디에도 넣지 않는다
+    reason: >
+      라운드1 멘트 렌즈에서 빈칸-빈칸 74/74 가 발생했다. 100% 로 보고하면
+      '멘트 생성기 미구현' 이 만점으로 위장된다. 환각 0건도 방어 성공이 아니라 측정 미실시다.
+    requires: '예측기는 `미구현`(ment=null + ment_status)과 `해당 없음`(ment=[])을 구분해 낸다'
+    confidence: 확정
+  lens_scope:
+    MENT-NUM:   {G1: 채점하지_않음, G2: 채점}
+    MENT-STYLE: {G1: 채점하지_않음, G2: 채점}
+    MENT-PICK:  {G1: 채점하지_않음, G2: 채점}
+    reason: "deck:LG 본문 79/79 top_ment 공백 (§6-1). 대조할 정답 멘트가 없다"
+    deck_profile: >
+      '멘트 없는 덱' 은 결함이 아니라 **덱 프로파일**이다 (검수관 제안 R-MENT-040).
+      LG 는 멘트를 PPT 에 쓰지 않고, SKEE 는 84/84 채운다. 프로젝트 시작 시 어느 쪽인지
+      확인하고, 멘트 없는 덱이면 멘트 렌즈를 모수 0 으로 **자동 SKIP** 하고 그렇게 보고한다.
+      0/0 을 100% 로도 0% 로도 쓰지 않는다.
+
+  # ── 라운드2 — 모수를 문항코드 수로 잡지 않는다
+  denominator:
+    rule: >
+      채점 모수는 **정답 본문 슬라이드 수**다. `고유 문항코드 수` 로 잡으면 안 된다.
+      한 문항이 배너 때문에 두 장으로 갈리기 때문이다 (MAP-050 / R-089).
+    observed: "deck:LG 본문 79장 ↔ 고유 문항코드 75개 (C2-1/C2-2/C2-3 · C3 · C3-1/C3-2/C3-3 · C4 가 각 2장)"
+    join_key: "`question_code` + `chapter`. 코드만으로 조인하면 2장째가 조용히 사라진다"
+    confidence: 확정
+    rejects: >
+      검수관 제안 R-F("본문 슬라이드 수 = 고유 문항코드 수 가정을 유지하라")는 **반례로 기각**한다.
+      그 가정이 라운드1 에서 정답 4장을 결함으로 몰아낸 원인이다.

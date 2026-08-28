@@ -1,0 +1,694 @@
+# rules.yaml — RULES.md 의 기계 판독 부분집합
+#
+# 소비자: engine/tools/verify.py (검사 항목으로 사용)
+# 사람용 원본: RULES.md   /   차트 결정 규칙: ../knowledge/guide/chart_rules.yaml
+#
+# 여기에는 **기계가 검사할 수 있는 규칙만** 담는다.
+# "파트를 맹신하지 않는다" 같은 판단 규칙은 RULES.md 에만 있다.
+#
+# 규칙이 늘수록 verify.py 의 검사도 촘촘해진다.
+
+schema_version: "1.0"
+generated_at: "2026-08-22"
+source_of_truth: RULES.md
+card_count: 113
+confidence_breakdown: {확정: 102, 검증중: 8, 가설: 3}
+
+# ---------------------------------------------------------------------------
+# 검사 심각도
+# ---------------------------------------------------------------------------
+severity_levels:
+  fatal:  납품 금지
+  high:   반드시 수정
+  medium: 확인 후 판단
+  low:    참고
+
+# ---------------------------------------------------------------------------
+# 1. 수치 — verify.py 의 핵심
+# ---------------------------------------------------------------------------
+numeric:
+  - id: V-001
+    rule_ref: R-067
+    name: 멘트 수치 환각
+    check: 멘트에 등장하는 모든 숫자가 해당 표의 표시값 집합에 존재해야 한다
+    extract: '-?\d+\.?\d*'
+    expect: 0
+    tag: MENT-NUM
+    severity: fatal
+    confidence: 확정
+
+  - id: V-002
+    rule_ref: R-012
+    name: 표시값 사용
+    check: 저장된 무한소수가 아니라 number format 적용 후 값을 썼는가
+    formats: {"###0.0": 1, "###0.00": 2}
+    rounding: ROUND_HALF_UP
+    severity: fatal
+    confidence: 확정
+
+  - id: V-003
+    rule_ref: R-064
+    name: 소수점 자릿수
+    check:
+      percent: {decimals: 1, keep_trailing_zero: true}
+      mean:    {decimals: 2, keep_trailing_zero: true}
+      nps:     {decimals: 2, keep_trailing_zero: true}
+    severity: high
+    confidence: 확정
+
+  - id: V-004
+    rule_ref: R-015
+    name: 합계 정합
+    check:
+      - {when: "has_total_row", assert: "sum(option_rows) == total_row", tolerance: 0.1}
+      - {when: "has_scale_rows", assert: "bot + soso + top == 100.0", tolerance: 0.1}
+      - {when: "is_multi or (is_ranking and not rank_is_first_only)", assert: "has_total_row == false"}
+    severity: high
+    confidence: 확정
+
+  - id: V-005
+    rule_ref: R-013
+    name: Base 문자열 형식
+    check: "`Base for %` 행 값이 `(NNN)` 형태의 문자열인가"
+    pattern: '^\(\d[\d,]*\*?\)$'
+    severity: high
+    confidence: 확정
+
+# ---------------------------------------------------------------------------
+# 2. 센티널 라벨 — 정확 일치
+# ---------------------------------------------------------------------------
+sentinels:
+  - id: V-010
+    rule_ref: R-016
+    name: 센티널 라벨 정확 표기
+    severity: high
+    confidence: 확정
+    exact_strings:
+      base:  {literal: "Base for %",  leading_spaces: 0}
+      total: {literal: "      계",     leading_spaces: 6}
+      bot2:  {literal: "【BOT2】", bracket: 전각_렌티큘러}
+      soso:  {literal: "【SoSo】", bracket: 전각_렌티큘러}
+      top2:  {literal: "【TOP2】", bracket: 전각_렌티큘러}
+      bot3:  {literal: "【BOT3】", bracket: 전각_렌티큘러}
+      top3:  {literal: "【TOP3】", bracket: 전각_렌티큘러}
+      mean5: {literal: "[5점 평균]",  bracket: 반각_대괄호}
+      mean7: {literal: "[7점 평균]",  bracket: 반각_대괄호}
+      mean10: {literal: "[10점 평균]", bracket: 반각_대괄호}
+      rank_first: {literal: "1순위"}
+      rank_all:   {literal: "1+2+3순위"}
+    forbid_mixing: [전각_렌티큘러, 반각_대괄호]
+
+  - id: V-011
+    rule_ref: R-016
+    name: 보기 라벨 들여쓰기
+    severity: medium
+    confidence: 확정
+    check:
+      data_row_option:   {leading_spaces: 2, pattern: '^  \d+\) '}
+      summary_row_option: {leading_spaces: 0, pattern: '^\d+\) '}
+      sub_title:          {leading_spaces: 0}
+
+  - id: V-012
+    rule_ref: R-010
+    name: 요약행 순서
+    severity: medium
+    confidence: 확정
+    expected_order: [option, total, bot, soso, top, mean]
+
+# ---------------------------------------------------------------------------
+# 3. 블록 포맷
+# ---------------------------------------------------------------------------
+block_format:
+  - id: V-020
+    rule_ref: R-030
+    name: 6줄 라벨 고정
+    severity: fatal
+    confidence: 확정
+    labels: ["Slide title", "Sub title", "Chart type", "Base/Unit", "Question/Reference", "Data"]
+    origin: "Basic_Set!A40:A45"
+    exact_match: true
+
+  - id: V-021
+    rule_ref: R-031
+    name: 열 상대 위치
+    severity: high
+    confidence: 확정
+    invariants:
+      row_modifier_col: "V"      # V = 블록 값 열
+      row_label_col:    "V+1"
+      total_col:        "V+2"
+      banner_col_start: "V+3"
+
+  - id: V-022
+    rule_ref: R-033
+    name: Question/Reference 접두
+    severity: medium
+    confidence: 확정
+    check: "문항 블록이면 `Qu: ` 로 시작한다"
+    exceptions: ["* 로 시작하는 주석행", "구조 블록(표지/목차/간지)"]
+
+  - id: V-023
+    rule_ref: R-047
+    name: 그래프 상단 Text 배치
+    severity: high
+    confidence: 확정
+    tag: TOPTEXT
+    must_have_on_rows:    [top, mean]
+    must_not_have_on_rows: [bot, soso, option, total, base]
+    literal: "그래프 상단 Text"
+    auto_insert_when: "행 라벨이 'TOP' 또는 '평균' 을 포함"
+
+  - id: V-024
+    rule_ref: R-048
+    name: 조건부서식 보존
+    severity: medium
+    confidence: 확정
+    check: "`본문` 시트에 cellIs equal \"그래프 상단 Text\" 규칙이 존재하는가"
+
+  - id: V-025
+    rule_ref: R-037
+    name: 빈칸 - 치환
+    severity: medium
+    confidence: 확정
+    check: 송부본의 데이터 영역에 눈에 빈 칸이 없는가
+    replacement: "-"
+
+# ---------------------------------------------------------------------------
+# 4. Base/Unit
+# ---------------------------------------------------------------------------
+base_unit:
+  - id: V-030
+    name: Base/Unit 문자열 형식
+    severity: high
+    confidence: 확정
+    tag: BASE
+    pattern: '^\[Base: .+?(\(n=[\d,]+\))?/ Unit: .+?\]$'
+    units_allowed: ["%", "%, 중복", "%, 점", "점,%", "%(TOP2)", "%, 3개 문항 응답"]
+    forbid_patterns:
+      - {pattern: '\[Base :', reason: "콜론 앞 공백"}
+      - {pattern: 'Unit :',   reason: "콜론 앞 공백"}
+      - {pattern: '\), Unit', reason: "'/' 대신 ','"}
+    example_defect: "deck:LG#s6  [Base : 전체 응답자(n=1,000), Unit : %]"
+
+  - id: V-031
+    name: Base n 이 통계표와 일치
+    severity: fatal
+    confidence: 확정
+    tag: BASE
+    check: "Base/Unit 의 n 값 == 해당 표 전체 열의 Base for %"
+
+  - id: V-032
+    name: n<30 각주
+    severity: medium
+    confidence: 검증중
+    check: "n<30 인 배너 셀이 있으면 Base/Unit 둘째 줄에 각주가 붙는다"
+    note: >
+      각주 문자열은 프로젝트마다 다르다. deck:LG 는 `*Too small base(n<30)` 하나뿐이고
+      `* 소수 응답 생략` · `* 1+2+3순위 기준 10% 미만 제외` 는 guide:SKEE 쪽 문자열이다.
+      한 덱에 전부 있는 게 아니므로 존재 여부만 확인하고 문자열을 강제하지 않는다.
+
+# ---------------------------------------------------------------------------
+# 5. 정렬
+# ---------------------------------------------------------------------------
+sorting:
+  - id: V-040
+    rule_ref: R-017
+    name: 표 종류별 정렬
+    severity: medium
+    confidence: 확정
+    tag: SORT
+    expect:
+      단일선택: option_no_asc
+      척도:     option_no_asc
+      중복응답: total_value_desc
+      순위:     total_value_desc
+      Summary:  option_no_asc
+    exception: "시계열이거나 보기 순서가 고정된 문항이면 원순서 유지"
+    scope: >
+      가이드 그리드 행 순서 (`guide_grid_row_order`). 차트 옵션축은 V-042~V-044,
+      제작본 배너표 행 순서는 V-051~V-052 가 본다.
+      ⚠ 라운드2 에서 `table_row_order` 의 의미가 **제작본 배너표**로 확정됐다 — 여기서 가리키던 필드가 아니다
+
+  - id: V-041
+    rule_ref: R-018
+    name: 순위 병합 정렬 기준
+    severity: high
+    confidence: 확정
+    tag: SORT
+    check: "순위 슬라이드의 보기 순서가 1~N순위 값 내림차순인가 (1순위 값이 아니다)"
+
+  # ── 라운드1(G1) 교정. V-040 은 **그리드 행 순서** 규칙이고, 아래는 **차트 옵션축** 규칙이다.
+  #    둘을 한 검사로 접으면 척도·누적·순위가 전부 오검출된다 (R-054).
+  - id: V-042
+    rule_ref: R-054
+    name: 행 순서 산출물 3종을 분리 산출
+    severity: high
+    confidence: 확정
+    tag: SORT
+    check: >
+      예측 산출물에 `guide_grid_row_order`(가이드 .xlsm 그리드) ·
+      `option_order`(차트 옵션축) · `table_row_order`(제작본 배너표) 셋이 각각 있는가
+    note: 하나로 접으면 검수관이 무엇과 대조하는지에 따라 점수가 요동친다 (라운드1·2 실측)
+
+  - id: V-043
+    rule_ref: R-058
+    name: 차트 라벨 보기번호 접두 제거
+    severity: high
+    confidence: 확정
+    tag: SORT
+    check: '`option_order` 의 어떤 라벨도 `^\s*\d+\)` 에 매치되지 않아야 한다' 
+    keep: "라벨 내재 번호(`8. 공간형 …`, `A. 소유방식`)는 유지 — 마침표형은 검사 대상이 아니다"
+    expect: 0
+
+  - id: V-044
+    rule_ref: R-059
+    name: 척도 계열 완전성·순서
+    severity: high
+    confidence: 확정
+    tag: SORT
+    check: "척도 문항의 `option_order` 길이 == scale_points 이고 순서가 [중립+1..N] + [중립..1] 인가"
+    note: "값이 0%라 통계표에서 빠진 척도점도 계열로 복원한다. 중립점은 음의 반쪽이다"
+
+  - id: V-045
+    rule_ref: R-069
+    name: 순위 대표값 열
+    severity: high
+    confidence: 확정
+    tag: SORT
+    check: "순위 문항의 `representative_banner` 가 `1순위` 가 아니라 `1+N순위`(또는 `1~N순위`) 인가"
+
+  - id: V-046
+    rule_ref: R-069
+    name: sort_basis 는 실제 판단을 기록한다
+    severity: medium
+    confidence: 확정
+    tag: SORT
+    check: "`sort_basis` 문자열이 전 슬라이드 동일하면 정렬 판단이 없다는 뜻이다 — 서로 다른 값이 나와야 한다"
+    forbid_constant: true
+
+  - id: V-047
+    rule_ref: R-079
+    name: 기타·모름 보기 최하단
+    severity: medium
+    confidence: 검증중
+    tag: SORT
+    check: "`기타`·`잘 모르겠다`·`해당 없음` 류 보기가 `option_order` 최하단에 있는가"
+    match_narrowly: true
+    note: "`없음`으로 끝난다고 다 기타가 아니다. 오탐하면 실질 보기를 밀어낸다"
+
+  - id: V-048
+    rule_ref: R-053
+    name: 본문 게이트
+    severity: high
+    confidence: 확정
+    tag: MAP
+    check: "예측된 본문 블록이 전부 `조사 결과` Part 간지 이후인가"
+    note: 조사개요·요약 블록도 통계표를 품는다. 표 유무로 가르면 안 된다
+
+  - id: V-049
+    rule_ref: R-086
+    name: 사다리형 TOP·BOT 쌍
+    severity: high
+    confidence: 검증중
+    tag: TOPTEXT
+    check: "누적 100% 사다리형 슬라이드의 `graph_top_text_rows` 에 TOP·BOT 이 모두 있는가"
+
+  # ── 라운드2(G1) 교정. 정렬은 그래프 전용이 아니고, 상단 Text 는 라벨 하나가 아니다.
+  - id: V-051
+    rule_ref: R-113
+    name: 표 행 순서에도 정렬을 적용
+    severity: high
+    confidence: 확정
+    tag: SORT
+    check: >
+      보기가 카테고리축인 유형(가로막대·가로겹침막대·순위)에서 `table_row_order` == `option_order` 인가.
+      보기가 계열인 유형(척도 발산·누적 100%)에서는 반대로 **달라야** 한다
+    series_axis_modes: [scale_diverging, grade_stack_reverse]
+    note: "전부 같게 맞춰도 전부 다르게 둬도 오답이다. 유형별 분기가 답이다"
+
+  - id: V-052
+    rule_ref: R-113
+    name: 표 행 라벨 위생
+    severity: medium
+    confidence: 확정
+    tag: SORT
+    check: '`table_row_order` 의 어떤 라벨도 `^\s*\d+\)` 에 매치되지 않아야 한다 (제작본 표에도 접두가 없다)'
+    expect: 0
+    keep: "가이드 그리드(`guide_grid_row_order`)는 원문 라벨을 그대로 쓴다 — 여기는 검사 대상이 아니다"
+
+  - id: V-053
+    rule_ref: R-114
+    name: 상단 Text 매체별 표기
+    severity: high
+    confidence: 확정
+    tag: TOPTEXT
+    check: >
+      `graph_top_text[].medium` 이 `표 상단 행` 이면 라벨이 `TOP{k}(%)` / `BOT{k}(%)` / `{N}점 평균(점)` 형태이고,
+      `독립 TextBox` 면 `【TOP{k}】` / `【BOT{k}】` 형태인가
+    forbid: "한 예측 안에서 브래킷이 `【】` 와 `[]` 로 섞이는 것"
+
+  - id: V-054
+    rule_ref: R-115
+    name: 상단 Text 는 수치까지 싣는다
+    severity: medium
+    confidence: 확정
+    tag: TOPTEXT
+    check: "`graph_top_text[]` 에 `value` 와 `unit` 이 있는가 (없으면 MENT-NUM 채점이 성립하지 않는다)"
+
+  - id: V-055
+    rule_ref: R-089
+    name: 장분리 판정
+    severity: high
+    confidence: 검증중
+    tag: MAP
+    check: >
+      배너 열이 `chapter_split.max_banner_columns` 를 넘고 가드 3종(2단 배너 헤더 · 다열 배너군 2개 이상 ·
+      마지막 배너군 3열 이상)을 만족하면 예측이 2건으로 나뉘는가. 그렇지 않으면 1건인가
+    guard_note: "가드를 빼면 1단 헤더 표(SKEE 지표비교표 24열)가 잘못 쪼개진다"
+
+  - id: V-056
+    rule_ref: R-089
+    name: 장분리는 배너만 나눈다
+    severity: high
+    confidence: 검증중
+    tag: MAP
+    check: >
+      나뉜 두 장의 `predicted_chart_type` · `option_order` · `qu` 가 동일하고
+      `chapter_banner_groups` 만 다른가. 차트가 같은 것은 복제 흔적이 아니라 정상이다
+
+# ---------------------------------------------------------------------------
+# 6. 배너
+# ---------------------------------------------------------------------------
+banner:
+  - id: V-050
+    rule_ref: R-056
+    name: 배너 절단은 그룹명으로
+    severity: fatal
+    confidence: 확정
+    method: group_name_whitelist
+    forbid: column_index_cut
+    check: "보고서에 들어간 배너 열의 group 이 전부 IN 화이트리스트에 있는가"
+    note: >
+      DP가 표마다 base 0 인 배너 범주를 통째로 빼기 때문에 열 수가 표마다 다르다.
+      비상주 실측 — 전체 배너 열 15~45, 보고서 IN 열 6~17.
+      표42(B8)·표56(C4-1)에는 배너군이 하나 더 붙어 있다.
+
+  - id: V-051
+    rule_ref: R-057
+    name: 열 수 상한을 검사하지 않는다
+    severity: low
+    confidence: 확정
+    check: none
+    note: >
+      고정된 것은 표 전체 폭 32.0cm(16:9 덱)뿐이고 열 너비는 슬라이드마다 다시 잡힌다.
+      deck:LG 본문 표 열 수 실측 8/9/11/12/15/16/17/24.
+      "1.5cm × 14열" 은 상한이 아니라 흔한 한 경우다. **상한을 검사 항목으로 만들지 않는다.**
+
+# ---------------------------------------------------------------------------
+# 7. 멘트
+# ---------------------------------------------------------------------------
+ment:
+  - id: V-060
+    rule_ref: R-060
+    name: 개조식 · 마침표 없음
+    severity: low
+    confidence: 확정
+    tag: MENT-STYLE
+    forbid_trailing: ["."]
+    expect_ending: ["임", "함", "순임", "생각함", "편임"]
+    quote_style: "'"
+
+  - id: V-061
+    rule_ref: R-063
+    name: 수준어 사다리
+    severity: high
+    confidence: 확정
+    tag: MENT-STYLE
+    ladder:
+      - {max_exclusive: 50.0, adjective: 미흡,     phrase: "미흡한 수준임"}
+      - {min: 50.0, max_exclusive: 60.0, adjective: 보통,      phrase: "보통 수준임"}
+      - {min: 60.0, max_exclusive: 70.0, adjective: 약간 긍정, phrase: "약간 긍정적인 수준임"}
+      - {min: 70.0, max_exclusive: 80.0, adjective: 긍정,      phrase: "긍정적인 수준임"}
+      - {min: 80.0,                      adjective: 우수,      phrase: "우수한 수준임"}
+    check: "멘트의 수준어가 인용된 TOP2 값의 구간과 일치하는가"
+    verified: "guide:SKEE 멘트 코퍼스 40여 줄 전수, 예외 0건"
+
+  - id: V-062
+    rule_ref: R-062
+    name: 문장 패턴 준수
+    severity: low
+    confidence: 확정
+    tag: MENT-STYLE
+    patterns:
+      A:  '^.+[은는] -?\d+\.\d%\(TOP\d 기준\)로 .+ 수준임$'
+      A2: '^.+ -?\d+\.\d\d점\(NPS 점수\)으로 .+ 수준임$'
+      B:  '^.+별로 보면 .+ 상대적으로 (높음|낮음)$'
+      C:  "^.+ '.+'[이가] \\d+\\.\\d%로 가장 (높고|높으며),.+ 등의 순임$"
+      D:  "^.+ '.+'[이가] 있음$"
+
+  - id: V-063
+    rule_ref: R-062
+    name: 초소표본은 퍼센트를 쓰지 않는다
+    severity: high
+    confidence: 확정
+    tag: MENT-STYLE
+    when: "base_n <= 2"
+    forbid: '\d+\.\d%'
+    use_pattern: D
+
+  - id: V-064
+    rule_ref: R-065
+    name: 배너 선별 타당성
+    severity: low
+    confidence: 검증중
+    tag: MENT-PICK
+    method: two_proportion_z_test
+    threshold_z: 2.0
+    max_picks: 2
+    max_per_banner_group: 1
+    exclude_when: "banner_cell_n < 30"
+    reference_2sigma_n500_pp: 4.4
+    note: 임계는 실무 관행에서 온 것이다. 사람이 멘트를 고친 diff 로 조정한다
+
+# ---------------------------------------------------------------------------
+# 8. 미기입 마커 — 납품 전 전수 검색
+# ---------------------------------------------------------------------------
+unfilled_markers:
+  - id: V-070
+    name: 미기입 마커 잔존
+    severity: fatal
+    confidence: 확정
+    search_strings: ["???", "내용을 입력하세요", "텍스트를 입력", "Data 입력"]
+    scope: 덱 전체
+    example_defects:
+      - "deck:LG#s26-29  【TOP2】 ???%  /  【BOT2】 ??? %"
+      - "deck:LG#s2      내용을 입력하세요 (목차)"
+      - "deck:LG#s14     내용을 입력하세요 (결론)"
+
+# ---------------------------------------------------------------------------
+# 9. 제작가이드 제출 전 체크
+# ---------------------------------------------------------------------------
+pre_submit:
+  - id: V-080
+    name: Cover 필수 기입
+    severity: high
+    confidence: 확정
+    required_cells: {C4: 보고서 Title, C6: 제출일}
+
+  - id: V-081
+    rule_ref: R-100
+    name: _ 접두 시트 제거
+    severity: fatal
+    confidence: 확정
+    check: "송부본에 이름이 '_' 로 시작하는 시트가 없어야 한다"
+
+  - id: V-082
+    rule_ref: R-038
+    name: 숨은 시트 · VBA 보존
+    severity: fatal
+    confidence: 확정
+    required_sheets: [Cover, PPT_data, 목차, 한글_data, ItemCheck_PPT, ItemCheck_한글,
+                      Verification_PPT, Verification_한글, "Coding No", Basic_Set]
+    required_parts: ["xl/vbaProject.bin"]
+    required_hidden: [PPT_data, 목차, 한글_data, ItemCheck_PPT, ItemCheck_한글,
+                      Verification_PPT, Verification_한글, "Coding No"]
+
+  - id: V-083
+    name: 수식 평탄화
+    severity: medium
+    confidence: 확정
+    check: 송부본의 본문 시트에 수식이 남아 있지 않은가
+
+# ---------------------------------------------------------------------------
+# 10. 제작본 파싱 — 가정 금지 목록
+#     기계가 "이런 가정을 하지 않았는가" 를 검사하기 위한 항목
+# ---------------------------------------------------------------------------
+deck_parsing_assertions:
+  - id: V-090
+    rule_ref: R-090
+    name: placeholder idx 고정 가정 금지
+    severity: fatal
+    confidence: 확정
+    forbid: "sub_title/top_ment 를 idx 상수로 판정"
+    require: "top_cm 기준 판정"
+    evidence: "deck:SKEE sub=13/ment=12  vs  deck:LG 79장 전부 반대(idx12=sub T2.62, idx13=ment T3.42)"
+
+  - id: V-091
+    rule_ref: R-091
+    name: 문항코드 존재 가정 금지
+    severity: fatal
+    confidence: 확정
+    require: "문항코드 없으면 slide_title+sub_title 폴백"
+    evidence: "deck:LG 79/79 있음  vs  deck:SKEE 0/84 (소제목 shape 자체가 없다)"
+
+  - id: V-092
+    rule_ref: R-083
+    name: 제작팀 메모 존재 가정 금지
+    severity: high
+    confidence: 확정
+    require: "메모 0건이면 형태 기반 클론 탐지로 폴백"
+    evidence: "deck:LG 71장  vs  deck:SKEE 0장"
+
+  - id: V-093
+    rule_ref: R-092
+    name: Base 박스 위치 고정 가정 금지
+    severity: high
+    confidence: 확정
+    require: "텍스트 패턴 '[Base:' 로 탐색"
+    evidence: "다단 슬라이드에서는 T=17.13 우측정렬이 아니다"
+
+  - id: V-094
+    rule_ref: R-095
+    name: 표 열 수 상수 가정 금지
+    severity: medium
+    confidence: 확정
+    evidence: "deck:LG 본문 표 열 수 8/9/11/12/15/16/17/24"
+
+  - id: V-095
+    rule_ref: R-044
+    name: 순위 판별을 계열 수로 하지 않는다
+    severity: high
+    confidence: 확정
+    forbid: "BAR_CLUSTERED AND real_series_count==2 AND overlap==100"
+    require: series_share_categories
+    evidence: "deck:LG 계열수 기준 오탐 8건 / 카테고리 공유 기준 오탐 0건"
+
+  - id: V-096
+    rule_ref: R-093
+    name: 제작본 == 가이드 가정 금지
+    severity: low
+    confidence: 확정
+    evidence: "제목 변경 실측 — '2. 건설사 대비 당사 수준' → '2. 경쟁사 대비 당사 수준'"
+
+# ---------------------------------------------------------------------------
+# 11. 채점 태그 (골든셋 하네스와 공유)
+# ---------------------------------------------------------------------------
+failure_tags:
+  MENT-NUM:   {desc: 멘트 수치 오류,              severity: fatal}
+  BASE:       {desc: Base 문자열·n 오류,          severity: high}
+  TOPTEXT:    {desc: 그래프 상단 Text 누락/과다,  severity: high}
+  TYPE:       {desc: 차트 타입 불일치,            severity: medium, note: 규칙 후보로 승격}
+  SORT:       {desc: 정렬 오류,                   severity: medium}
+  QA:         {desc: 문항 텍스트 불일치,          severity: medium}
+  MENT-STYLE: {desc: 문체 위반,                   severity: low}
+  MENT-PICK:  {desc: 배너 선별 타당성,            severity: low}
+  MAP:        {desc: 매핑 실패,                   severity: low, note: 별도 집계}
+  LABEL:      {desc: 차트 라벨 위생(보기번호 접두), severity: high}
+
+# ---------------------------------------------------------------------------
+# 11-b. 채점 위생 — 빈칸 대 빈칸을 정답으로 세지 않는다 (R-088)
+# ---------------------------------------------------------------------------
+scoring_hygiene:
+  - id: V-090
+    rule_ref: R-088
+    name: 공허 일치 금지
+    severity: high
+    confidence: 확정
+    check: "정답과 예측이 **둘 다 비어 있는** 항목은 점수 분자·분모 어디에도 넣지 않는다"
+    requires: "예측기는 `미구현`(null + status)과 `해당 없음`([])을 구분해 낸다"
+    note: >
+      라운드1 MENT 렌즈에서 빈칸-빈칸 74/74 가 발생했다. 100%로 보고하면
+      '멘트 생성기 미구현'이 만점으로 위장된다.
+
+# ---------------------------------------------------------------------------
+# 12. 채점에서 제외 — 예시 파일 자체의 오류
+# ---------------------------------------------------------------------------
+known_example_defects_ref: ../knowledge/guide/chart_rules.yaml#known_example_defects
+
+# ---------------------------------------------------------------------------
+# 11. 목차 (RULES R-027~R-029, R-078) — 사용자 지시 I-021
+# ---------------------------------------------------------------------------
+toc:
+  - id: V-100
+    rule_ref: R-027
+    name: 목차 전수성
+    severity: medium
+    confidence: 확정
+    tag: TOC
+    check: "설문지 전 문항이 `part 3 목차` 에 배정되거나 제외 사유가 명시돼야 한다"
+    formula: "설문지 문항 수 == 배정된 문항 수 + 명시적 제외 수"
+    exempt_prefixes: [SQ, DQ, ED]
+    exempt_response_types: ["개방형"]
+    note: |
+      `part 3 목차(연구부 확인용)` 는 연구부 확인용이 아니라 **누락 검출용**이다.
+      사람이 눈으로 훑어 빈 곳을 찾는 자리다.
+
+  - id: V-101
+    rule_ref: R-028
+    name: 목차 항목명은 한 어절
+    severity: medium
+    confidence: 확정
+    tag: TOC
+    applies_to: ["Slide title", "Sub title"]
+    forbid_tokens: [" 및 ", "및 ", " 및", "/", "·"]
+    #: R-132 — 항목명은 명사(구) 종결. 서술어미·의문형으로 끝나면 문항 원문을 그대로 옮긴 것이다
+    forbid_endings: ["다", "까", "요", "?", "니"]
+    #: 끝 글자가 위 목록과 겹치지만 **명사**인 어절 — 마지막 어절이 여기 있으면 통과시킨다.
+    #  「추가 위탁 수요」의 `수요` 를 서술어미 `~요` 로 오인해 12건을 경고하던 자리다
+    #  (사용자 지시 2026-08-27). 새 낱말은 실제로 걸린 뒤에 추가한다 — 미리 채우지 않는다.
+    exempt_ending_words: ["수요", "개요", "중요", "필요", "주요", "소요", "요요", "동요", "수요층"]
+    exempt_prefixes: ["Part ", "PART ", "파트 "]
+    #: 고정 섹션명 — 작명이 아니라 예시 파일이 못 박은 이름이라 쪼갤 대상이 아니다.
+    #  번호 접두(`8. `)를 떼고 비교한다.
+    exempt_names: ["결론 및 제언", "요약 및 결론"]
+    #: 구조 블록(표지·목차·간지·조사개요·**요약·결론**)은 대상이 아니다.
+    #  한 어절 규칙은 Part Ⅲ 조사 결과 목차의 작명 규칙이다 (R-028 · R-121).
+    exempt_struct: true
+    exempt_reason: |
+      `Part Ⅱ. 요약 및 결론` 은 guide/10 §1 이 못 박은 **고정 Part 명**이다.
+      §2-3② 의 적용 대상은 꼭지 이름(Slide/Sub title)이지 Part 명이 아니다.
+      같은 이유로 Part Ⅱ 의 마지막 꼭지 `결론 및 제언` 도 면제다 — LG 홈로봇 예시가
+      쓰는 고정 섹션명이고, 사용자가 "홈로봇처럼"이라고 이름째 지정했다(I-021 후속).
+      **면제는 이 두 이름뿐이다.** 다른 곳에서 `및` 이 나오면 그것은 여전히 분할 신호다.
+    check: "두 개념을 잇는 표시가 있으면 항목을 쪼갠다"
+    fix_direction: "문구를 다듬지 말고 **항목을 분할**한다"
+    note: |
+      예시 파일(LG·SKEE)은 이 규칙을 지키지 않는다 (`1) 상호작용 및 역할 분담 체계` 등).
+      사용자 규칙이 예시보다 우선한다 — 예시는 포맷의 근거이지 작명의 근거가 아니다.
+
+  - id: V-102
+    rule_ref: R-029
+    name: 목차 MECE (상호배타)
+    severity: medium
+    confidence: 확정
+    tag: TOC
+    check: "같은 통계표가 두 블록에 배정되지 않았는가"
+    key: source_tables
+    not_key: question_code
+    note: |
+      **문항코드로 세면 안 된다.** 매트릭스 척도(A8 7항목·D6 5항목·C2 7항목)나
+      다항목 숫자입력(A1 지상/지하/엘리베이터/총층수)은 한 문항이 여러 표를 갖는 게 정상이다.
+      중복의 단위는 문항이 아니라 **표**다.
+
+  - id: V-103
+    rule_ref: R-078
+    name: Part Ⅱ 결론의 출처
+    severity: high
+    confidence: 확정
+    tag: TOC
+    check: "결론·제언의 각 항목이 같은 Part 의 요약 꼭지로 되짚어지는가"
+    machine_checkable: false
+    human_check: |
+      결론 항목마다 근거 요약 꼭지 번호를 적어 두고 매칭되지 않는 항목이 없는지 본다.
+      되짚을 수 없으면 그 근거를 요약에 올리거나 그 결론을 버린다.
+    note: "보고서 구조상 **요약이 결론의 유일한 백데이터**다."

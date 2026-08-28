@@ -1,0 +1,61 @@
+{
+ "started_at": "2026-08-23T02:06:56",
+ "tick": 4,
+ "finished": true,
+ "lenses": {
+  "L01": {
+   "done": 1
+  },
+  "L02": {
+   "done": 1
+  },
+  "L03": {
+   "done": 1
+  },
+  "L04": {
+   "done": 0
+  },
+  "L05": {
+   "done": 0
+  },
+  "L06": {
+   "done": 0
+  },
+  "L07": {
+   "done": 0
+  },
+  "L08": {
+   "done": 0
+  },
+  "L09": {
+   "done": 0
+  },
+  "L10": {
+   "done": 0
+  },
+  "L11": {
+   "done": 0
+  },
+  "L12": {
+   "done": 0
+  },
+  "L13": {
+   "done": 0
+  },
+  "L14": {
+   "done": 0
+  },
+  "L15": {
+   "done": 1
+  }
+ },
+ "counts": {
+  "candidates": 13,
+  "transplanted": 2,
+  "corrections": 1,
+  "structural": 2,
+  "pending": 9
+ },
+ "last_tick_at": "2026-08-23T10:08:27",
+ "report": "engine/learning/retro/loops/암묵지채굴_보고_260823.md"
+}

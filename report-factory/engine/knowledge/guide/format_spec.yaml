@@ -1,0 +1,165 @@
+_설명: 예시 제작가이드에서 실측한 서식 기준. 빌더와 검수기가 이 파일을 계약으로 공유한다. 템플릿이나 클라이언트가 바뀌면 다시 뽑아라 — 스타일 인덱스는 파일마다 다르다.
+source: 예시_제작가이드_LG홈로봇_0317.xlsm
+body_sheet: 본문_제작용
+sheet_skeleton:
+- name: Cover
+  state: visible
+  tab_color: null
+- name: PPT_data
+  state: hidden
+  tab_color: FF7030A0
+- name: 목차
+  state: hidden
+  tab_color: FF7030A0
+- name: 한글_data
+  state: hidden
+  tab_color: FF7030A0
+- name: ItemCheck_PPT
+  state: hidden
+  tab_color: null
+- name: ItemCheck_한글
+  state: hidden
+  tab_color: null
+- name: Verification_PPT
+  state: hidden
+  tab_color: null
+- name: Verification_한글
+  state: hidden
+  tab_color: null
+- name: Coding No
+  state: hidden
+  tab_color: null
+- name: 목차(보고서용)
+  state: visible
+  tab_color: null
+- name: 본문_제작용
+  state: visible
+  tab_color: FF7030A0
+- name: part 3 목차(연구부 확인용)
+  state: visible
+  tab_color: null
+block:
+  labels:
+  - Slide title
+  - Sub title
+  - Chart type
+  - Base/Unit
+  - Question/Reference
+  - Data
+  label_col: 1
+  value_col: 2
+  count: 93
+  first_row: 1
+  common_gap:
+  - - 26
+    - 30
+  - - 21
+    - 12
+  - - 25
+    - 9
+  row_format:
+    slide_title:
+      s: '178'
+      customFormat: '1'
+      ht: '16.5'
+      cell:
+        fill: FFFFFF00
+        bold: true
+        size: 11.0
+        border: null
+        align: null
+    other_label:
+      s: '179'
+      customFormat: '1'
+      ht: '16.5'
+      cell:
+        fill: null
+        bold: false
+        size: 11.0
+        border: b
+        align: null
+block_kinds:
+  counts:
+    표지: 1
+    목차: 1
+    간지: 5
+    미지정: 5
+    본문: 81
+  structure_kinds:
+  - 표지
+  - 목차
+  - 간지
+  required:
+  - 표지
+  - 목차
+  - 간지
+table_format:
+  panel_title:
+    row_offset_from_block: 11
+    label_cell:
+      fill: null
+      bold: true
+      size: 10.0
+      border: null
+      align: null
+    first_data_cell:
+      fill: null
+      bold: true
+      size: 10.0
+      border: null
+      align: null
+  summary_row:
+    row_offset_from_block: 26
+    label_cell:
+      fill: null
+      bold: false
+      size: 10.0
+      border: null
+      align: null
+    first_data_cell:
+      fill: null
+      bold: false
+      size: 10.0
+      border: null
+      align: null
+  base_row:
+    row_offset_from_block: 32
+    label_cell:
+      fill: null
+      bold: false
+      size: 10.0
+      border: lrtb
+      align: center
+    first_data_cell:
+      fill: null
+      bold: false
+      size: 10.0
+      border: lrtb
+      align: center
+  data_row:
+    row_offset_from_block: 33
+    label_cell:
+      fill: null
+      bold: false
+      size: 10.0
+      border: lrt
+      align: center
+    first_data_cell:
+      fill: null
+      bold: false
+      size: 10.0
+      border: lrt
+      align: center
+  banner_header:
+    rows_above_base: 2
+    cell:
+      fill: null
+      bold: false
+      size: 10.0
+      border: null
+      align: null
+    merged_ranges_sample: []
+toc_sheet:
+  name: 목차(보고서용)
+  note_cell: C1
+  note: 첫 페이지 목차에는 Part만, 간지에는 세부목차 넣어주세요
