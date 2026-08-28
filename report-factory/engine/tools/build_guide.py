@@ -1912,7 +1912,7 @@ def appendix_specs(toc: dict, by_page: dict, by_index: dict, warn) -> list[dict]
                 missing = [g for g in groups if g and g not in bg]
                 if not missing:
                     continue                   # 본문에 이미 같은 배너군으로 실려 있다
-                why = "본문 절단선 밖 배너군"
+                why = "본문에 싣지 않은 배너 기준"   # 독자 대면 표기 — 내부 은어(절단선·배너군) 금지 (초독자 감사 2026-08-28)
             key = (ref, tuple(sorted(missing)))
             if key in seen:
                 continue
