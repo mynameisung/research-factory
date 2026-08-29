@@ -1230,6 +1230,18 @@ def validate(deck: Deck) -> list[Problem]:
                         f"— PowerPoint 는 뒤따르는 형제를 무시한다",
                         effect="silent-loss"))
                     break
+        # (라) 문단이 하나도 없는 txBody — 불법 OOXML. lxml 정형성·패키지 검사는 다
+        #      통과하는데 PowerPoint 는 **파일 전체를 거부**한다
+        #      (실측 2026-08-28: 빈 항목 목록을 write_lines 로 주입해 간지가 이 꼴이 됐고,
+        #       COM 이분 탐색으로야 찾았다. 여기서 잡으면 저장 단계에서 바로 죽는다).
+        for tb in root.iter():
+            if not (isinstance(tb.tag, str) and etree.QName(tb).localname == "txBody"):
+                continue
+            if not any(isinstance(k.tag, str) and etree.QName(k).localname == "p" for k in tb):
+                problems.append(Problem(
+                    "fatal", "TXBODY_EMPTY", name,
+                    "txBody 에 <a:p> 가 하나도 없다 — PowerPoint 가 파일을 거부한다",
+                    effect="reject"))
         for grid in root.iter(q(A, "tblGrid")):
             seen_ids: dict[str, int] = {}
             for e in grid.iter():
