@@ -877,8 +877,17 @@ def main() -> int:
         opts = [r for r in (ex.get("rows") or []) if r.get("kind") == "option"]
         vals = "; ".join(f"'{r.get('label', '').strip()}' {R.cell_value((r.get('values') or [None])[0])}%"
                          for r in opts[:3]) if opts else ""
-        note = f"* {ex.get('title_full')} — 본문 제외 (n={ex.get('base_n')}{', ' + vals if vals else ''})"
-        parent["qu"] = ((parent.get("qu") or "") + "\n" + note).strip()
+        # ★ 이 메모는 **독자 대면 자리(Qu)에 쓰지 않는다.** 종전에는 Qu 에 붙여 요약 장표에
+        #   그대로 실렸는데 ① 「본문 제외」는 제작 내부 용어이고 ② % 를 인용할 수 없어서 뺀
+        #   표(n<30)의 % 를 각주가 그대로 노출해 자기모순이었다 (적대 감사 F16 · 사용자 지적
+        #   2026-08-29). 정본에는 남겨 두되(조용히 빠뜨리지 않는다) 렌더 대상에서는 뺀다 —
+        #   제외 사실은 연구원 확인 목록으로 전달한다.
+        parent.setdefault("exclusion_notes", []).append({
+            "question_code": code,
+            "title_full": ex.get("title_full"),
+            "base_n": ex.get("base_n"),
+            "top_options": vals,
+        })
 
     # ── 라벨 정정 표기 — 통계표 후처리가 보기 라벨 내용을 바꿨으면 그 장 Qu 에 한 줄 (ADV-11:
     #    제작팀·연구부가 설문지 원문과 대조할 때 보기명 불일치로 반송하지 않도록)

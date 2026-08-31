@@ -1189,7 +1189,11 @@ def write_summary_block(ws, row: int, skin: Skin, *, slide_title: str, qu: str,
         """
         return col
 
-    # ── 라벨 6줄. Chart type · Base/Unit 은 패널마다 제 열에 반복한다 (LG I130/N130)
+    # ── 라벨 6줄. Chart type · Base/Unit 의 값 칸은 **비운다** — 요약 장은 패널마다
+    #    메타가 따로 있고, 그것을 각 패널 표 바로 위에 적는다(아래 세 단 모두 같은 규칙).
+    #    종전에는 가로 단 패널의 메타만 이 라벨 행에 적었는데, r13 에서 전폭 상단(상)
+    #    패널이 생기면서 그 메타와 표가 20행 넘게 벌어졌다 — 어느 표의 차트타입·Base 인지
+    #    읽을 수 없다(사용자 지적 2026-08-29, 요약 2 실측).
     values = [slide_title, sub_title, "", "", qu, ""]
     for i, (label, value) in enumerate(zip(LABELS, values)):
         ws.cell(row + i, COL_LABEL, label)
@@ -1198,10 +1202,6 @@ def write_summary_block(ws, row: int, skin: Skin, *, slide_title: str, qu: str,
         skin.label_cell(ws, row + i, i)
         skin.value_cell(ws, row + i, i)
         skin.row_label(ws, row + i, title=(i == 0))
-    for p, col, _span in across:
-        c = head_col(col)
-        ws.cell(row + 2, c, p["chart_type"]).font = skin.font
-        ws.cell(row + 3, c, p["base_unit"]).font = skin.font
     row += len(LABELS)
 
     # ── 멘트: Data 라벨 아래부터 라벨 없이 값 열에 이어 쓴다 (본문 블록과 같다)
@@ -1225,14 +1225,23 @@ def write_summary_block(ws, row: int, skin: Skin, *, slide_title: str, qu: str,
         row = p_end + 2                               # 패널 사이 빈 줄
         skin.row_label(ws, row - 1)
 
-    # ── 가로 단
+    # ── 가로 단 — 메타(Chart type · Base/Unit)를 제 표 바로 위에 둔다. 상·하 단과 같다.
     end = row
     right_end = row
-    for p, col, span in across:
-        p_end, _ = write_panel(ws, skin, top=row, label_col=col, label_span=span,
-                               panel=p)
-        end = max(end, p_end)
-        right_end = p_end                             # 마지막(=우) 패널의 끝
+    if across:
+        for p, col, _span in across:
+            c = head_col(col)
+            ws.cell(row + 1, c, p["chart_type"]).font = skin.font
+            ws.cell(row + 2, c, p["base_unit"]).font = skin.font
+        top = row + 4                                 # 빈 줄 · chart · base · 빈 줄
+        for rr in range(row, top):
+            skin.row_label(ws, rr)
+        end = right_end = top
+        for p, col, span in across:
+            p_end, _ = write_panel(ws, skin, top=top, label_col=col, label_span=span,
+                                   panel=p)
+            end = max(end, p_end)
+            right_end = p_end                         # 마지막(=우) 패널의 끝
 
     # ── 세로로 쌓는 단. 라벨 열 없이 Chart type · Base/Unit 부터 다시 시작한다
     #    (LG r153~157). `우하` 는 `우` 바로 아래, 세로쌓기면 앞 단 아래에 붙는다.
