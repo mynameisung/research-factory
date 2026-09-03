@@ -13,7 +13,7 @@
                   onAction="cbExportXlsx"
                   screentip="전처리한 결과를 xlsx 로 저장한다"
                   supertip="데이터막대·배너 음영·형광을 그대로 담아 저장합니다. 가져오기로 연 사본이면 원본 파일 이름 뒤에 _전처리후 를 붙여 제안합니다."/>
-          <button id="btnRunAll" label="한 번에 실행" size="large" imageMso="PlayInFullScreen"
+          <button id="btnRunAll" label="한 번에 실행" size="large" imageMso="MacroPlay"
                   onAction="cbRunAll"
                   screentip="1 → 2 → 3 을 잇달아 실행한다"
                   supertip="배너 선정, 데이터막대, 인사이트을 순서대로 실행합니다. 되돌릴 수 없는 삭제는 하지 않으므로, 결과를 보고 직접 누르시면 됩니다."/>
@@ -45,7 +45,7 @@
         </group>
 
         <group id="grpInsight" label="3. 인사이트">
-          <button id="btnPaint" label="인사이트 표시" size="large" imageMso="FillColorPicker"
+          <button id="btnPaint" label="인사이트 표시" size="large" imageMso="ConditionalFormattingColorScalesGallery"
                   onAction="cbPaintInsight"
                   screentip="전체와 크게 다른 배너 값을 칠한다"
                   supertip="전체 값보다 크게 높은 칸은 분홍, 크게 낮은 칸은 하늘색으로 칠합니다. 셀 배경색이므로 데이터막대 위에도 겹쳐 보입니다. TOPn 이 있는 표는 TOPn 줄에만 칠합니다. 기준은 [설정] 에서 표준편차 배수와 절대값(%p) 가운데 고를 수 있습니다."/>
@@ -82,12 +82,17 @@
         </group>
 
         <group id="grpHelp" label="도움말">
-          <button id="btnHelp" label="사용법" size="large" imageMso="Help"
-                  onAction="cbHelp"/>
-          <button id="btnWelcome" label="처음 안내" imageMso="Info"
-                  onAction="cbWelcome"
-                  screentip="처음 열었을 때 뜨는 안내를 다시 본다"
-                  supertip="[다시 보지 않기] 를 켜 두었더라도 여기서 다시 열 수 있습니다."/>
+          <splitButton id="splitHelp" size="large">
+            <button id="btnHelp" label="사용법" imageMso="Help"
+                    onAction="cbHelp"
+                    screentip="쓰는 순서와 판정 기준을 본다"/>
+            <menu id="menuHelp" itemSize="normal">
+              <button id="btnWelcome" label="처음 안내" imageMso="Info"
+                      onAction="cbWelcome"
+                      screentip="처음 열었을 때 뜨는 안내를 다시 본다"
+                      supertip="[다시 보지 않기] 를 켜 두었더라도 여기서 다시 열 수 있습니다."/>
+            </menu>
+          </splitButton>
         </group>
 
       </tab>
