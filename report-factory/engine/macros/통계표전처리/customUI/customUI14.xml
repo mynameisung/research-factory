@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="OnRibbonLoad">
+  <ribbon>
+    <tabs>
+      <tab id="tabPrep" label="통계표 전처리" insertAfterMso="TabView">
+
+        <group id="grpFile" label="파일">
+          <button id="btnOpen" label="가져오기" size="large" imageMso="FileOpen"
+                  onAction="cbOpenTable"
+                  screentip="통계표 파일을 골라 온다"
+                  supertip="고른 파일의 표 시트를 작업 사본으로 떠서 엽니다. 원본 파일은 바뀌지 않으므로 삭제까지 마음 놓고 실행할 수 있습니다."/>
+          <button id="btnExport" label="내보내기" size="large" imageMso="FileSaveAs"
+                  onAction="cbExportXlsx"
+                  screentip="전처리한 결과를 xlsx 로 저장한다"
+                  supertip="데이터막대·배너 음영·형광을 그대로 담아 저장합니다. 가져오기로 연 사본이면 원본 파일 이름 뒤에 _전처리후 를 붙여 제안합니다."/>
+          <button id="btnRunAll" label="한 번에 실행" size="large" imageMso="PlayInFullScreen"
+                  onAction="cbRunAll"
+                  screentip="1 → 2 → 3 을 잇달아 실행한다"
+                  supertip="배너 선정, 데이터막대, 인사이트을 순서대로 실행합니다. 되돌릴 수 없는 삭제는 하지 않으므로, 결과를 보고 직접 누르시면 됩니다."/>
+        </group>
+
+        <group id="grpBanner" label="1. 배너 선정">
+          <button id="btnSelect" label="배너 선정" size="large" imageMso="Filter"
+                  onAction="cbSelectBanners"
+                  screentip="보고서에 쓸 배너군을 가른다"
+                  supertip="보존 목록과 Base 하한을 함께 적용해, 쓰지 않을 배너군을 회색으로 칠합니다. 판정은 표 한 장이 아니라 통계표 전체를 놓고 배너군 이름마다 한 번만 내립니다. 이 단계에서는 아무것도 지우지 않습니다."/>
+          <button id="btnDelete" label="제외 배너 삭제" size="large" imageMso="Delete"
+                  onAction="cbDeleteShaded"
+                  screentip="회색으로 칠한 배너를 지운다"
+                  supertip="표마다 회색 배너 범위를 지우고 왼쪽으로 당깁니다. 매크로가 한 일은 Ctrl+Z 로 되돌아가지 않으므로, 설정의 [삭제 전 백업] 을 켜 두는 편이 안전합니다."/>
+          <button id="btnSettings" label="설정" size="large" imageMso="ControlProperties"
+                  onAction="cbSettings"
+                  screentip="보존 배너군·Base 하한·인사이트 기준을 정한다"
+                  supertip="세 기능이 함께 쓰는 기준을 한 자리에서 고칩니다. 저장하면 다음에 엑셀을 다시 열어도 그대로 남습니다."/>
+        </group>
+
+        <group id="grpBars" label="2. 데이터막대">
+          <button id="btnBarsBoth" label="데이터 막대 표시" size="large" imageMso="ConditionalFormattingDataBarsGallery"
+                  onAction="cbBarsBoth"
+                  screentip="전체 열과 배너 열에 막대를 넣는다"
+                  supertip="전체 열은 파랑, 배너 열은 회색입니다. 길이 기준을 0~100 으로 고정해 전체의 분포와 배너의 분포를 견줄 수 있게 했습니다. 값이 작은 표(5점 척도 평균 등)는 그 열의 범위에 맞춥니다."/>
+          <button id="btnClearBars" label="표시 지우기" size="large" imageMso="ClearFormats"
+                  onAction="cbClearBars"
+                  screentip="이 시트의 데이터막대를 모두 지운다"/>
+        </group>
+
+        <group id="grpInsight" label="3. 인사이트">
+          <button id="btnPaint" label="인사이트 표시" size="large" imageMso="FillColorPicker"
+                  onAction="cbPaintInsight"
+                  screentip="전체와 크게 다른 배너 값을 칠한다"
+                  supertip="전체 값보다 크게 높은 칸은 분홍, 크게 낮은 칸은 하늘색으로 칠합니다. 셀 배경색이므로 데이터막대 위에도 겹쳐 보입니다. TOPn 이 있는 표는 TOPn 줄에만 칠합니다. 기준은 [설정] 에서 표준편차 배수와 절대값(%p) 가운데 고를 수 있습니다."/>
+          <button id="btnClearHL" label="표시 지우기" size="large" imageMso="ClearFormats"
+                  onAction="cbClearInsight"
+                  screentip="형광을 모두 지운다"
+                  supertip="기준을 바꿔 다시 보고 싶을 때 지우고 새로 칠하면 됩니다."/>
+        </group>
+
+        <group id="grpDash" label="4. 빈 칸">
+          <button id="btnDash" label="- 로 채우기" size="large" imageMso="SymbolInsert"
+                  onAction="cbFillDashes"
+                  screentip="표 안의 빈 칸을 - 로 채운다"
+                  supertip="통계표는 값이 0 인 칸을 비워서 보냅니다. 그대로 두면 0 인지 묻지 않은 칸인지 알 수 없으므로 - 로 채웁니다. - 는 글자라서 그 칸에는 데이터막대가 그려지지 않고 인사이트에서도 빠지므로, 1~3 을 모두 마친 뒤 맨 마지막에 누르십시오."/>
+          <button id="btnDashClear" label="빈 칸 되돌리기" size="large" imageMso="ClearFormats"
+                  onAction="cbClearDashes"
+                  screentip="채워 넣은 - 를 다시 빈 칸으로"
+                  supertip="데이터막대나 인사이트을 다시 하려면 먼저 이것을 눌러 - 를 걷어내야 합니다."/>
+        </group>
+
+        <group id="grpReview" label="검토">
+          <button id="btnCatalog" label="배너군 목록" imageMso="ListMacros"
+                  onAction="cbBannerCatalog"
+                  screentip="이 통계표에 어떤 배너군이 있는지 모아 본다"
+                  supertip="배너군마다 나온 표 수와 평균 모수를 한 장에 모읍니다. 맨 아래 한 줄을 복사해 설정의 [보존 배너군] 칸에 붙여 넣을 수 있습니다."/>
+          <button id="btnSelReport" label="선정 보고서" imageMso="TableInsertExcel"
+                  onAction="cbSelectionReport"
+                  screentip="어느 배너를 왜 뺐는지 남긴다"
+                  supertip="표마다 배너군의 판정과 사유를 한 장에 적습니다. 나중에 왜 뺐느냐는 물음에 답할 근거가 됩니다."/>
+          <button id="btnInsList" label="인사이트 목록" imageMso="TableInsertExcel"
+                  onAction="cbInsightList"
+                  screentip="형광 칸을 표로 뽑는다"
+                  supertip="표 제목·보기·배너군·전체값·집단값·차이를 차이가 큰 순서로 늘어놓습니다. 요약을 쓸 때 여기서 골라 쓰면 됩니다."/>
+        </group>
+
+        <group id="grpHelp" label="도움말">
+          <button id="btnHelp" label="사용법" size="large" imageMso="Help"
+                  onAction="cbHelp"/>
+          <button id="btnWelcome" label="처음 안내" imageMso="Info"
+                  onAction="cbWelcome"
+                  screentip="처음 열었을 때 뜨는 안내를 다시 본다"
+                  supertip="[다시 보지 않기] 를 켜 두었더라도 여기서 다시 열 수 있습니다."/>
+        </group>
+
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>

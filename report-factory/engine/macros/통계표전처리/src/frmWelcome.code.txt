@@ -1,0 +1,57 @@
+'==========================================================================
+' frmWelcome — 추가 기능을 처음 열었을 때 한 번 뜨는 안내
+'
+' 리본에 단추가 여럿이라 처음 받은 사람은 어디부터 눌러야 할지 모른다.
+' 순서만 짧게 알려 주고, [다시 보지 않기] 를 켜면 그 뒤로는 뜨지 않는다.
+'
+' 줄마다 라벨을 따로 두었다. 라벨 하나에 다 담으면 무엇이 할 일이고 무엇이
+' 곁들인 설명인지 굵기로 가를 수 없기 때문이다. 자리는 build.ps1 이 잡고,
+' 글꼴과 크기는 여기서 입힌다.
+'==========================================================================
+Option Explicit
+
+Private Const FACE As String = "맑은 고딕"
+
+Private Sub UserForm_Initialize()
+    Dim c As Control
+
+    chkHide.Value = False
+
+    On Error Resume Next
+    ' 모든 글자를 같은 글꼴로 맞춘다.
+    For Each c In Me.Controls
+        c.Font.Name = FACE
+    Next c
+
+    ' 제목 — 이 도구가 무엇을 하는지 한 줄
+    lblTitle.Font.Size = 12
+    lblTitle.Font.Bold = True
+
+    ' 할 일 다섯 줄은 굵게, 곁들인 설명은 흐리고 작게
+    For Each c In Me.Controls
+        If Left$(c.Name, 4) = "lblH" Then
+            c.Font.Size = 10
+            c.Font.Bold = True
+        ElseIf Left$(c.Name, 4) = "lblD" Then
+            c.Font.Size = 9
+            c.ForeColor = RGB(110, 110, 110)
+        End If
+    Next c
+
+    chkHide.Font.Size = 9
+    btnStart.Font.Size = 10
+    btnStart.Font.Bold = True
+    lblBy.Font.Size = 8
+    lblBy.ForeColor = RGB(150, 150, 150)
+    On Error GoTo 0
+End Sub
+
+Private Sub btnStart_Click()
+    If chkHide.Value Then modConfig.SetWelcomeSeen True
+    Unload Me
+End Sub
+
+' 창을 그냥 닫아도 [다시 보지 않기] 를 켰다면 그 뜻을 지킨다.
+Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
+    If chkHide.Value Then modConfig.SetWelcomeSeen True
+End Sub
