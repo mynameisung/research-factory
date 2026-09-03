@@ -57,7 +57,6 @@ Done:
                   String$(46, "-") & vbCrLf & vbCrLf & _
                   "다음으로 할 일" & vbCrLf & _
                   "  · 회색 배너를 확인한 뒤 [제외 배너 삭제]" & vbCrLf & _
-                  "  · 근거를 남기려면 [선정 보고서] · [인사이트 목록]" & vbCrLf & _
                   "  · 빈 칸을 메우려면 [- 로 채우기]" & vbCrLf & _
                   "  · 끝나면 [내보내기]", vbInformation
 End Sub

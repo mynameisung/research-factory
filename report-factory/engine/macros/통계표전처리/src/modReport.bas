@@ -1,22 +1,27 @@
 Attribute VB_Name = "modReport"
 '==========================================================================
-' modReport — 검토 산출물 세 가지
+' modReport — 배너군 목록
 '
 ' 매크로가 무엇을 했는지 사람이 확인하고 남에게 설명할 수 있어야 실무에서 쓴다.
-' 색칠만 해 놓으면 「왜 이 배너를 뺐느냐」는 물음에 답할 자리가 없다.
 '
 '   배너군 목록   이 통계표에 어떤 배너군이 몇 번 나오고 모수는 어떤지 한 장에
 '                 모은다. 보존 목록에 적을 이름을 여기서 그대로 복사한다.
-'   선정 보고서   표마다 배너군을 남겼는지 뺐는지, 그 사유가 무엇인지 적는다.
-'   인사이트 목록 형광으로 칠한 칸을 차이가 큰 순서로 늘어놓는다. 요약을 쓸 때
-'                 이 표를 보고 고른다.
+'                 문항이 여럿이면 팝업에서 볼 문항을 고른다(기본은 전체 선택).
+'                 보통은 전체 문항 기준으로 뽑지만, 특정 문항 하나의 배너군
+'                 구성만 보고 싶을 때는 그 문항만 골라 좁혀 볼 수 있다.
 '
-' 세 산출물은 모두 기능 1·3 과 같은 판정 함수를 부르므로 결과가 어긋날 수 없다.
+' [배너 선정] 과 같은 판정 함수(modBanner.BaseTally)를 쓰므로 결과가 어긋날 수 없다.
 '==========================================================================
 Option Explicit
 
+' [배너군 목록] 팝업이 뜬 동안 쓰는 임시 자리. 스캔은 [배너군 목록] 을 누른
+' 그 순간 한 번만 하고, 팝업에서 [확인] 을 누르면 그 결과를 그대로 이어 쓴다.
+Private gCatWs As Worksheet
+Private gCatTabs() As TTable
+Private gCatN As Long
+
 '==========================================================================
-' 1) 배너군 목록
+' 배너군 목록 — 문항을 고르는 팝업을 먼저 띄운다.
 '==========================================================================
 Public Sub BannerCatalog()
     Dim ws As Worksheet
@@ -28,6 +33,32 @@ Public Sub BannerCatalog()
         Exit Sub
     End If
 
+    Set gCatWs = ws
+    gCatTabs = tabs
+    gCatN = n
+
+    Dim titles() As String, i As Long
+    ReDim titles(1 To n)
+    For i = 1 To n
+        titles(i) = tabs(i).Title
+    Next i
+
+    frmCatalogPick.Populate titles
+    frmCatalogPick.Show
+End Sub
+
+'==========================================================================
+' [배너군 목록] 팝업에서 [확인] 을 누르면 여기로 온다. picked(i) 가 True 인
+' 표만 모아 배너군을 뽑는다. BannerCatalog 가 스캔해 둔 gCatWs/gCatTabs 를
+' 그대로 쓰므로 다시 스캔하지 않는다.
+'==========================================================================
+Public Sub RunCatalogFiltered(picked() As Boolean)
+    If gCatN = 0 Or gCatWs Is Nothing Then Exit Sub
+    Dim ws As Worksheet, tabs() As TTable, n As Long
+    Set ws = gCatWs
+    tabs = gCatTabs
+    n = gCatN
+
     Dim minBase As Long
     minBase = modConfig.MinBase()
 
@@ -38,35 +69,45 @@ Public Sub BannerCatalog()
     Set order = CreateObject("Scripting.Dictionary")
 
     modUtil.BeginWork "배너군을 모으는 중입니다"
-    Dim i As Long, g As Long, key As String, okC As Long, allC As Long
+    Dim i As Long, g As Long, key As String, okC As Long, allC As Long, pickedN As Long
     For i = 1 To n
-        For g = 1 To tabs(i).GroupCount
-            key = modConfig.Squash(tabs(i).GroupName(g))
-            If Not names.Exists(key) Then
-                names(key) = tabs(i).GroupName(g)
-                order(key) = order.Count
-                stat(key) = Array(0#, 0#, 0#, 0#, "")   ' 표 수, 항목 수, 통과 수, base 합, 보기
-            End If
-            modBanner.BaseTally ws, tabs(i), g, minBase, okC, allC
+        If picked(i) Then
+            pickedN = pickedN + 1
+            For g = 1 To tabs(i).GroupCount
+                key = modConfig.Squash(tabs(i).GroupName(g))
+                If Not names.Exists(key) Then
+                    names(key) = tabs(i).GroupName(g)
+                    order(key) = order.Count
+                    stat(key) = Array(0#, 0#, 0#, 0#, "")   ' 표 수, 항목 수, 통과 수, base 합, 보기
+                End If
+                modBanner.BaseTally ws, tabs(i), g, minBase, okC, allC
 
-            Dim a As Variant
-            a = stat(key)
-            a(0) = a(0) + 1
-            a(1) = a(1) + allC
-            a(2) = a(2) + okC
-            Dim c As Long
-            For c = tabs(i).GroupFirst(g) To tabs(i).GroupLast(g)
-                a(3) = a(3) + modTable.BaseOf(ws, tabs(i), c)
-            Next c
-            If Len(a(4)) = 0 Then a(4) = SampleItems(ws, tabs(i), g)
-            stat(key) = a
-        Next g
+                Dim a As Variant
+                a = stat(key)
+                a(0) = a(0) + 1
+                a(1) = a(1) + allC
+                a(2) = a(2) + okC
+                Dim c As Long
+                For c = tabs(i).GroupFirst(g) To tabs(i).GroupLast(g)
+                    a(3) = a(3) + modTable.BaseOf(ws, tabs(i), c)
+                Next c
+                If Len(a(4)) = 0 Then a(4) = SampleItems(ws, tabs(i), g)
+                stat(key) = a
+            Next g
+        End If
         modUtil.Progress "배너군을 모으는 중입니다", i, n
     Next i
 
+    If pickedN = 0 Then
+        modUtil.EndWork
+        modConfig.Say "고른 문항이 없어 배너군 목록을 만들지 못했습니다.", vbExclamation
+        Exit Sub
+    End If
+
     Dim rpt As Worksheet
     Set rpt = modUtil.FreshSheet(ws.Parent, "배너군 목록")
-    rpt.Cells(1, 1).Value = "배너군 목록  (원본 시트 : " & ws.name & " · 표 " & n & "장 · Base 하한 " & minBase & ")"
+    rpt.Cells(1, 1).Value = "배너군 목록  (원본 시트 : " & ws.name & " · 문항 " & pickedN & "/" & n & _
+                            "개 선택 · Base 하한 " & minBase & ")"
     rpt.Cells(1, 1).Font.Bold = True
     modUtil.HeaderRow rpt, 3, Array("배너군 이름", "나온 표 수", "항목 수(평균)", _
                                     "Base " & minBase & " 통과율", "평균 Base", "판정", "항목 보기")
@@ -108,144 +149,10 @@ Public Sub BannerCatalog()
     Finish rpt, 7, 3
     modUtil.EndWork
     rpt.Activate
-    modConfig.Say "배너군 " & names.Count & "종을 '배너군 목록' 시트에 모았습니다." & vbCrLf & vbCrLf & _
+    modConfig.Say "문항 " & pickedN & "개(전체 " & n & "개 가운데)에서 배너군 " & names.Count & "종을 " & _
+                  "'배너군 목록' 시트에 모았습니다." & vbCrLf & vbCrLf & _
                   "맨 아래 한 줄을 복사해 리본의 [보존 배너군] 칸에 붙여 넣은 뒤," & vbCrLf & _
                   "보고서에 쓰지 않을 이름만 지우시면 됩니다.", vbInformation
-End Sub
-
-'==========================================================================
-' 2) 선정 보고서
-'==========================================================================
-Public Sub SelectionReport()
-    Dim ws As Worksheet
-    If Not modUtil.RequireSheet(ws) Then Exit Sub
-    Dim tabs() As TTable, n As Long
-    tabs = modTable.ScanTables(ws, n)
-    If n = 0 Then
-        modConfig.Say "이 시트에서 통계표를 찾지 못했습니다.", vbExclamation
-        Exit Sub
-    End If
-
-    Dim keep As String, minBase As Long
-    keep = modConfig.KeepGroups()
-    minBase = modConfig.MinBase()
-
-    Dim rpt As Worksheet
-    modUtil.BeginWork "선정 보고서를 만드는 중입니다"
-    Set rpt = modUtil.FreshSheet(ws.Parent, "선정 보고서")
-    rpt.Cells(1, 1).Value = "배너 선정 보고서  (원본 시트 : " & ws.name & ")"
-    rpt.Cells(1, 1).Font.Bold = True
-    rpt.Cells(2, 1).Value = "기준 - 보존 목록 : " & IIf(Len(Trim$(keep)) = 0, "(지정 안 함)", keep) & _
-                            "   /   Base 하한 : " & minBase & " 이상이 항목의 절반 이상" & _
-                            "   /   판정 단위 : 통계표 전체 (배너군 이름별로 한 번)"
-    modUtil.HeaderRow rpt, 4, Array("표 번호", "표 제목", "배너군", "이 표의 항목 수", _
-                                    "이 표의 Base 통과", "전체 Base 통과", "보존 목록", "판정", "사유")
-
-    ' 판정은 표마다 따로 내리지 않는다. 시트 전체를 모은 결과를 그대로 쓴다.
-    Dim dec As Object
-    Set dec = modBanner.BuildDecisions(ws, tabs, n, keep, minBase)
-
-    Dim r As Long, i As Long, g As Long, okC As Long, allC As Long
-    Dim kept As Long, dropped As Long
-    r = 5
-    For i = 1 To n
-        For g = 1 To tabs(i).GroupCount
-            modBanner.BaseTally ws, tabs(i), g, minBase, okC, allC
-
-            Dim a As Variant, inKeep As Boolean, pass As Boolean, allOk As Long, allAll As Long
-            a = dec(modConfig.Squash(tabs(i).GroupName(g)))
-            allOk = CLng(a(1)): allAll = CLng(a(2))
-            inKeep = CBool(a(3)): pass = CBool(a(4))
-
-            rpt.Cells(r, 1).Value = i
-            rpt.Cells(r, 2).Value = tabs(i).Title
-            rpt.Cells(r, 3).Value = tabs(i).GroupName(g)
-            rpt.Cells(r, 4).Value = allC
-            rpt.Cells(r, 5).Value = okC & " / " & allC
-            rpt.Cells(r, 6).Value = allOk & " / " & allAll
-            rpt.Cells(r, 7).Value = IIf(Len(Trim$(keep)) = 0, "(미지정)", IIf(inKeep, "포함", "제외"))
-            rpt.Cells(r, 8).Value = IIf(pass, "선정", "미사용")
-            If pass Then
-                rpt.Cells(r, 9).Value = "두 관문 통과"
-                kept = kept + 1
-            Else
-                dropped = dropped + 1
-                rpt.Cells(r, 8).Font.Color = RGB(160, 0, 0)
-                If Not inKeep Then
-                    rpt.Cells(r, 9).Value = "보존 목록에 없음 (보고서에 쓰지 않기로 한 배너)"
-                Else
-                    rpt.Cells(r, 9).Value = "통계표 전체에서 Base " & minBase & " 이상인 항목이 " & _
-                                            allOk & "/" & allAll & " 로 절반에 못 미침"
-                    If okC * 2 >= allC And allC > 0 Then
-                        rpt.Cells(r, 9).Value = rpt.Cells(r, 9).Value & _
-                            "  (이 표에는 모수를 갖춘 항목만 실려 있으나, 배너군 전체로는 못 미침)"
-                    End If
-                End If
-            End If
-            r = r + 1
-        Next g
-        modUtil.Progress "선정 보고서를 만드는 중입니다", i, n
-    Next i
-
-    rpt.Cells(2, 8).Value = "선정 " & kept & "건 · 미사용 " & dropped & "건"
-    rpt.Cells(2, 8).Font.Bold = True
-    Finish rpt, 9, 4
-    modUtil.EndWork
-    rpt.Activate
-    modConfig.Say "'선정 보고서' 시트를 만들었습니다. (선정 " & kept & "건 · 미사용 " & dropped & "건)" & vbCrLf & vbCrLf & _
-                  "이 시트는 판정 근거를 남기려는 것이므로, 제작팀에 보낼 때는" & vbCrLf & _
-                  "지우고 보내셔도 됩니다.", vbInformation
-End Sub
-
-'==========================================================================
-' 3) 인사이트 목록
-'==========================================================================
-Public Sub InsightList()
-    Dim ws As Worksheet
-    If Not modUtil.RequireSheet(ws) Then Exit Sub
-    Dim rpt As Worksheet
-    modUtil.BeginWork "인사이트 목록을 만드는 중입니다"
-    Set rpt = modUtil.FreshSheet(ws.Parent, "인사이트 목록")
-    rpt.Cells(1, 1).Value = "인사이트 목록  (원본 시트 : " & ws.name & " · 기준 : " & modInsight.RuleText() & _
-                            " · Base 하한 " & modConfig.MinBase() & ")"
-    rpt.Cells(1, 1).Font.Bold = True
-    modUtil.HeaderRow rpt, 3, Array("표 제목", "보기(행)", "배너군", "배너 항목", _
-                                    "Base", "전체", "이 집단", "차이(%p)", "방향", "셀 위치")
-
-    ' 두 번 훑는다. 처음에는 몇 줄인지만 세고, 그 크기로 자리를 잡은 뒤 두 번째에
-    ' 채운다. 시트에 한 줄씩 쓰는 것보다 이 편이 훨씬 빠르다.
-    Dim nTab As Long, nHit As Long
-    modInsight.ScanInsights ws, False, False, nTab, nHit
-    If nHit > 0 Then
-        modInsight.PrepareBuffer nHit
-        Dim nTab2 As Long, nHit2 As Long
-        modInsight.ScanInsights ws, False, True, nTab2, nHit2
-        rpt.Range(rpt.Cells(4, 1), rpt.Cells(3 + nHit, 10)).Value = modInsight.Buffer()
-    End If
-    modUtil.EndWork
-
-    If nTab = 0 Then
-        modConfig.Say "이 시트에서 통계표를 찾지 못했습니다.", vbExclamation
-        Exit Sub
-    End If
-
-    If nHit > 0 Then
-        ' 차이가 큰 순서로 세운다. 요약에 쓸 것을 위에서부터 고르면 된다.
-        With rpt.Sort
-            .SortFields.Clear
-            .SortFields.Add key:=rpt.Range(rpt.Cells(4, 8), rpt.Cells(3 + nHit, 8)), Order:=xlDescending
-            .SetRange rpt.Range(rpt.Cells(3, 1), rpt.Cells(3 + nHit, 10))
-            .Header = xlYes
-            .Apply
-        End With
-        rpt.Range(rpt.Cells(4, 6), rpt.Cells(3 + nHit, 8)).NumberFormat = "0.0"
-    End If
-
-    Finish rpt, 10, 3
-    rpt.Activate
-    modConfig.Say "인사이트 " & nHit & "건을 '인사이트 목록' 시트에 모았습니다." & vbCrLf & vbCrLf & _
-                  "차이가 큰 순서로 세워 두었습니다. 다만 순서는 크기일 뿐이고," & vbCrLf & _
-                  "요약에 올릴 값어치는 의뢰인의 물음이 정합니다.", vbInformation
 End Sub
 
 '==========================================================================

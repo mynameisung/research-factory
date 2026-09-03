@@ -76,6 +76,9 @@ Public Function FormCheck() As String
     ' 제목 줄이 실제로 채워졌는지도 함께 본다.
     s = s & " 제목=" & Len(frmWelcome.lblTitle.Caption) & "자"
     Unload frmWelcome
+    Load frmCatalogPick
+    s = s & " frmCatalogPick=" & frmCatalogPick.Controls.Count
+    Unload frmCatalogPick
     On Error GoTo 0
     FormCheck = s
 End Function

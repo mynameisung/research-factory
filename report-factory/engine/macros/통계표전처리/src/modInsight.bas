@@ -21,8 +21,6 @@ Attribute VB_Name = "modInsight"
 '      경계에서 사람이 보는 것과 어긋난다.
 '
 ' 배경색은 조건부서식이 아니라 셀 서식이므로 데이터막대 위에 겹쳐서 칠해진다.
-' 칠하기와 [인사이트 목록] 은 아래 ScanInsights 한 곳을 함께 쓰므로 결과가
-' 어긋날 수 없다.
 '==========================================================================
 Option Explicit
 
@@ -34,10 +32,6 @@ Public Const HL_OLD  As Long = 65535           ' 예전판이 칠하던 노랑 (
 
 ' 모듈 수준 선언은 반드시 여기(첫 프로시저 앞)에 둔다. 프로시저 사이에 끼우면
 ' VBA 가 모듈 수준으로 보지 않는다.
-' 찾은 것을 담아 둘 자리 - 목록을 만들 때 시트에 한 줄씩 쓰지 않고 모았다가 한 번에 옮긴다.
-Private gBuf() As Variant
-Private gBufRow As Long
-Private gBufMax As Long
 ' 어디까지 갔는지 남겨 두는 자리. 오류가 났을 때만 쓴다.
 Private gAtTable As Long
 Private gAtTitle As String
@@ -59,7 +53,7 @@ Public Sub PaintInsight()
 
     Dim nTab As Long, nHit As Long
     modUtil.BeginWork "인사이트를 찾는 중입니다"
-    ScanInsights ws, True, False, nTab, nHit
+    ScanInsights ws, True, nTab, nHit
     modUtil.EndWork
 
     If nTab = 0 Then
@@ -135,22 +129,9 @@ Fail:
 End Sub
 
 '==========================================================================
-' 칠하기와 목록 뽑기가 함께 쓰는 한 곳.
-'   doPaint = True  이면 셀에 형광을 칠한다.
-'   rpt 가 주어지면 찾은 것을 그 시트에 한 줄씩 적는다.
+' 칠하기가 판정에 쓰는 한 곳. doPaint = True 이면 셀에 형광을 칠한다.
 '==========================================================================
-
-Public Sub PrepareBuffer(ByVal rows As Long)
-    gBufMax = rows
-    gBufRow = 0
-    If rows > 0 Then ReDim gBuf(1 To rows, 1 To 10)
-End Sub
-
-Public Function Buffer() As Variant
-    Buffer = gBuf
-End Function
-
-Public Sub ScanInsights(ws As Worksheet, ByVal doPaint As Boolean, ByVal collect As Boolean, _
+Public Sub ScanInsights(ws As Worksheet, ByVal doPaint As Boolean, _
                         ByRef outTables As Long, ByRef outHits As Long)
     Dim tabs() As TTable, n As Long
     tabs = modTable.ScanTables(ws, n)
@@ -238,12 +219,6 @@ Public Sub ScanInsights(ws As Worksheet, ByVal doPaint As Boolean, ByVal collect
                                                 Set loRng = Nothing
                                                 loN = 0
                                             End If
-                                        End If
-                                    End If
-                                    If collect Then
-                                        If gBufRow < gBufMax Then
-                                            gBufRow = gBufRow + 1
-                                            FillRow gBufRow, ws, tabs(i), r, c, total, v, diff
                                         End If
                                     End If
                                 End If
@@ -371,31 +346,6 @@ Private Function RowStdev(t As TTable, r As Long, colOK() As Boolean, _
     var_ = (ss - (s * s) / n) / (n - 1)
     If var_ > 0 Then RowStdev = Sqr(var_)
 End Function
-
-'--------------------------------------------------------------------------
-' 인사이트 목록 한 줄
-'--------------------------------------------------------------------------
-Private Sub FillRow(ByVal rr As Long, ws As Worksheet, t As TTable, _
-                    ByVal r As Long, ByVal c As Long, ByVal total As Double, _
-                    ByVal v As Double, ByVal diff As Double)
-    Dim gName As String, gItem As String, g As Long
-    For g = 1 To t.GroupCount
-        If c >= t.GroupFirst(g) And c <= t.GroupLast(g) Then gName = t.GroupName(g)
-    Next g
-    If t.HeadRow > 0 Then gItem = modTable.Txt(t.HeadRow, c)
-    If Len(gItem) = 0 Then gItem = modTable.Txt(t.GroupRow, c)
-
-    gBuf(rr, 1) = t.Title
-    gBuf(rr, 2) = RowLabel(ws, t, r)
-    gBuf(rr, 3) = gName
-    gBuf(rr, 4) = gItem
-    gBuf(rr, 5) = modTable.BaseOf(ws, t, c)
-    gBuf(rr, 6) = total
-    gBuf(rr, 7) = v
-    gBuf(rr, 8) = diff
-    gBuf(rr, 9) = IIf(diff > 0, "높음", "낮음")
-    gBuf(rr, 10) = ws.name & "!" & ws.Cells(r, c).Address(False, False)
-End Sub
 
 Public Function RowLabel(ws As Worksheet, t As TTable, ByVal r As Long) As String
     Dim k As Long, s As String

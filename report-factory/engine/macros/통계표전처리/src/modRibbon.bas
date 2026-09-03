@@ -151,22 +151,6 @@ E: Oops "빈 칸 되돌리기"
 End Sub
 
 '-- 검토 ------------------------------------------------------------------
-Public Sub cbSelectionReport(control As IRibbonControl)
-    On Error GoTo E
-    modWelcome.ShowWelcome
-    modReport.SelectionReport
-    Exit Sub
-E: Oops "선정 보고서"
-End Sub
-
-Public Sub cbInsightList(control As IRibbonControl)
-    On Error GoTo E
-    modWelcome.ShowWelcome
-    modReport.InsightList
-    Exit Sub
-E: Oops "인사이트 목록"
-End Sub
-
 Public Sub cbSettings(control As IRibbonControl)
     On Error GoTo E
     modWelcome.ShowWelcome
@@ -233,8 +217,7 @@ Public Sub cbHelp(control As IRibbonControl)
     s = s & "  · 통계표는 값이 0 인 칸을 비워서 보냅니다. [빈 칸을 0 으로 본다]" & LN
     s = s & "    를 끄면 가장 큰 차이를 놓칠 수 있습니다." & LN
     s = s & "  · 판정은 화면에 보이는 표시값으로 합니다. 저장값은 반올림되지" & LN
-    s = s & "    않은 수라 기준 경계에서 어긋나기 때문입니다." & LN
-    s = s & "  · 근거를 남기려면 [선정 보고서] 와 [인사이트 목록] 을 쓰십시오." & LN & LN
+    s = s & "    않은 수라 기준 경계에서 어긋나기 때문입니다." & LN & LN
     s = s & THIN & LN
     s = s & "powered by seo-yeon"
 

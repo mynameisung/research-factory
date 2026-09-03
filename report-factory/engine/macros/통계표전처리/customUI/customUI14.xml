@@ -70,15 +70,7 @@
           <button id="btnCatalog" label="배너군 목록" imageMso="ListMacros"
                   onAction="cbBannerCatalog"
                   screentip="이 통계표에 어떤 배너군이 있는지 모아 본다"
-                  supertip="배너군마다 나온 표 수와 평균 모수를 한 장에 모읍니다. 맨 아래 한 줄을 복사해 설정의 [보존 배너군] 칸에 붙여 넣을 수 있습니다."/>
-          <button id="btnSelReport" label="선정 보고서" imageMso="TableInsertExcel"
-                  onAction="cbSelectionReport"
-                  screentip="어느 배너를 왜 뺐는지 남긴다"
-                  supertip="표마다 배너군의 판정과 사유를 한 장에 적습니다. 나중에 왜 뺐느냐는 물음에 답할 근거가 됩니다."/>
-          <button id="btnInsList" label="인사이트 목록" imageMso="TableInsertExcel"
-                  onAction="cbInsightList"
-                  screentip="형광 칸을 표로 뽑는다"
-                  supertip="표 제목·보기·배너군·전체값·집단값·차이를 차이가 큰 순서로 늘어놓습니다. 요약을 쓸 때 여기서 골라 쓰면 됩니다."/>
+                  supertip="어느 문항을 기준으로 뽑을지 먼저 고르는 팝업이 뜹니다(기본은 전체 선택). 배너군마다 나온 표 수와 평균 모수를 한 장에 모읍니다. 맨 아래 한 줄을 복사해 설정의 [보존 배너군] 칸에 붙여 넣을 수 있습니다."/>
         </group>
 
         <group id="grpHelp" label="도움말">

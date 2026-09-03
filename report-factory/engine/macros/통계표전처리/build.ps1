@@ -236,11 +236,42 @@ try {
     $welCode = [IO.File]::ReadAllText((Join-Path $src 'frmWelcome.code.txt'), [Text.Encoding]::UTF8)
     $wel.CodeModule.AddFromString($welCode)
 
+    # --- [배너군 목록] 을 뽑을 문항을 고르는 팝업 ----------------------
+    # 문항 목록은 통계표를 열어 봐야 알 수 있으므로(표 최대 276장) 여기서는
+    # 빈 리스트박스만 만들어 둔다. 채우기는 modReport.BannerCatalog 이
+    # frmCatalogPick.Populate 를 불러 실행 중에 한다.
+    $cat = $wb.VBProject.VBComponents.Add(3)
+    $cat.Name = 'frmCatalogPick'
+    $cat.Properties.Item('Caption').Value = '통계표 전처리 - 배너군 목록'
+    $cat.Properties.Item('Width').Value   = 420
+    $cat.Properties.Item('Height').Value  = 372
+
+    function PutC($kind, $name, $left, $top, $width, $height, $caption) {
+        $c = $cat.Designer.Controls.Add("Forms.$kind.1", $name, $true)
+        $c.Left = $left; $c.Top = $top; $c.Width = $width; $c.Height = $height
+        if ($null -ne $caption) { try { $c.Caption = $caption } catch {} }
+        return $c
+    }
+
+    PutC Label 'lblInfo' 12 10 392 40 '문항을 고르세요.' | Out-Null
+    $lst = PutC ListBox 'lstQ' 12 54 392 258 $null
+    $lst.MultiSelect = 1     # fmMultiSelectMulti
+    $lst.ListStyle = 1       # fmListStyleOption - 항목 앞에 체크박스가 붙는다
+
+    PutC CommandButton 'btnAll'    12 320  90 24 '전체 선택' | Out-Null
+    PutC CommandButton 'btnNone'  108 320  90 24 '전체 해제' | Out-Null
+    PutC CommandButton 'btnOK'    236  320  78 26 '확인'      | Out-Null
+    PutC CommandButton 'btnCancel' 320 320  78 26 '취소'      | Out-Null
+
+    $catCode = [IO.File]::ReadAllText((Join-Path $src 'frmCatalogPick.code.txt'), [Text.Encoding]::UTF8)
+    $cat.CodeModule.AddFromString($catCode)
+
     # 폼에 컨트롤이 실제로 들어갔는지 굽기 전에 센다. 하나라도 비면 멈춘다.
     $nSet = @($frm.Designer.Controls).Count
     $nWel = @($wel.Designer.Controls).Count
-    Write-Host ("  폼 확인 : frmSettings $nSet 개 · frmWelcome $nWel 개 컨트롤")
-    if ($nSet -lt 10 -or $nWel -lt 13) { throw "폼 컨트롤이 모자랍니다 (설정 $nSet · 안내 $nWel)" }
+    $nCat = @($cat.Designer.Controls).Count
+    Write-Host ("  폼 확인 : frmSettings $nSet 개 · frmWelcome $nWel 개 · frmCatalogPick $nCat 개 컨트롤")
+    if ($nSet -lt 10 -or $nWel -lt 13 -or $nCat -lt 6) { throw "폼 컨트롤이 모자랍니다 (설정 $nSet · 안내 $nWel · 배너군목록 $nCat)" }
 
     $wb.VBProject.Name = 'TablePrep'
     $wb.Title    = '통계표 전처리'
@@ -324,6 +355,7 @@ try {
     Write-Host "  확인 : $chk"
     if ($chk -notmatch 'frmSettings=(\d+)' -or [int]$matches[1] -lt 10) { $verifyErr += "설정 폼의 컨트롤이 모자랍니다 ($chk)" }
     if ($chk -notmatch 'frmWelcome=(\d+)'  -or [int]$matches[1] -lt 13) { $verifyErr += "안내 폼의 컨트롤이 모자랍니다 ($chk)" }
+    if ($chk -notmatch 'frmCatalogPick=(\d+)' -or [int]$matches[1] -lt 6) { $verifyErr += "배너군 목록 팝업의 컨트롤이 모자랍니다 ($chk)" }
     
     # VBA 는 필요할 때만 컴파일한다. 모듈을 하나씩 건드려 전부 컴파일시킨다.
     $mods = $xl2.Run("'$nm'!CompileAll")
