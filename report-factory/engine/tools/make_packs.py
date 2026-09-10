@@ -30,19 +30,25 @@ PACK_MAP = {
     "요약결론": ["요약", "결론", "해석"],
     "조사개요": [],                       # 분류 태그가 없어 EXTRA_CARDS 로만 채운다
     "공통": ["공통/", "산출물스키마"],
+    # 2026-09-10 신설: /보고서작성 이 RULES.md 전문(308KB) 대신 읽는 팩. 분류 report/* 와 R-PPT-* 카드.
+    "report": ["report/"],
 }
 
 #: 분류 태그 경계와 안 맞는 카드의 명시 등재 (guide-judge 심사 F-3·F-4 반영).
 #: 태그를 고치는 게 아니라 여기 더한다 — 카드 분류는 원저자 표기 그대로 둔다.
 EXTRA_CARDS = {
-    # 배너 설계는 guide-toc 임무다 (guide/18 §2 — 목차·배너 쌍 산출)
-    "목차": ["R-055", "R-056", "R-057", "R-089"],
+    # 배너 설계는 guide-toc 임무다 (guide/18 §2 — 목차·배너 쌍 산출).
+    # R-138·140·142·195 는 감사 F-4(2026-09-02)가 배달 결손으로 잡은 목차 카드.
+    "목차": ["R-055", "R-056", "R-057", "R-089", "R-138", "R-140", "R-142", "R-195"],
+    # guide-body-ment 가 정의에서 직접 인용하는 카드 (감사 F-5 — 팩에 0장이었다)
+    "멘트": ["R-088", "R-139", "R-185"],
     # guide-front (Part Ⅰ + Cover) 가 실제로 딛는 카드들
     "조사개요": ["R-011", "R-013", "R-022", "R-046", "R-124", "R-127"],
     # 카드 포맷(분류·근거·신뢰도)을 안 따르는 산문 카드와, 요약 담당이 실제로 딛는 경계 카드.
     # 태그가 없다는 이유로 빠지면 「설계의 닻은 조사 목적」(R-141) 같은 1급 규칙이 배달되지 않는다.
-    "요약결론": ["R-119", "R-121", "R-126", "R-128", "R-141", "R-142", "R-143",
-              "R-144", "R-145", "R-146", "R-215", "R-216", "R-217"],
+    # 2026-09-10: R-128(저베이스 별표 — PPT 소관으로 정정) 대신 R-188(가이드에는 넣지 않는다)·R-135(계 행 제외)를 싣는다 (감사 A-1 · F-6).
+    "요약결론": ["R-119", "R-121", "R-126", "R-135", "R-141", "R-142", "R-143",
+              "R-144", "R-145", "R-146", "R-188", "R-215", "R-216", "R-217"],
 }
 
 #: 팩별로 담당이 함께 읽어야 하는 knowledge 문서 (포인터 — 내용 복제 금지)
@@ -53,6 +59,9 @@ PACK_DOCS = {
     "조사개요": ["knowledge/00_업무개요.md"],
     "공통": ["knowledge/guide/17_팀구조-제작가이드.md",
              "knowledge/guide/18_오케스트레이션-제작가이드.md"],
+    "report": ["knowledge/report/23_팀구조-PPT제작.md",
+               "knowledge/report/22_검수-체크리스트.md",
+               "knowledge/report/25_차트-카탈로그.md"],
 }
 
 
@@ -87,12 +96,32 @@ def main():
         # 지우지 않는 이유는 폐기 사유를 함께 보여 규칙이 되살아나는 것을 막기 위해서다.
         return "폐기" in (card[3] or "") or "【폐기" in (card[1] or "")
 
+    def _excluded(card):
+        # 2026-09-10 규칙 다이어트: 코퍼스 관찰로 강등된 카드(【지식)와 대표 카드에 흡수된 카드(【흡수)는
+        # 팩에 싣지 않는다. 관찰은 knowledge 부록에, 흡수분은 대표 카드의 「흡수」 줄에 있다.
+        # 꼬리에 번호만 남겨 담당이 「그 카드는 어디 갔나」를 알 수 있게 한다.
+        t = card[1] or ""
+        return "【지식" in t or "【흡수" in t
+
+    def _render(rid, title, cat, trust, body):
+        # 카드에 「- 요지:」 줄이 있으면 팩에는 요지·적용·정정·흡수 줄만 싣고 본문은 원본 포인터로 남긴다.
+        # 담당이 읽는 양을 줄이는 자리다 — 예시·실측 서사·이력은 RULES.md 에서 필요할 때 읽는다.
+        m = re.search(r"^- 요지:\s*(.+?)\s*$", body, re.M)
+        if not m:
+            return body
+        keep = [ln for ln in body.splitlines()
+                if re.match(r"^- (요지|적용|정정|흡수|예외|신뢰도|분류):", ln)]
+        keep.append(f"- 전문: `engine/learning/RULES.md` {rid}")
+        return "\n".join(keep)
+
     for pack, tags in PACK_MAP.items():
         keys = [norm(t) for t in tags]
         def _hit(cat):
             # guide 계열은 키워드 부분일치, 공통 계열은 접두로 가른다.
             return bool(cat) and any(k in cat for k in keys)
         picked = [c for c in cards if _hit(c[2])]
+        if pack == "report":
+            picked += [c for c in cards if c[0].startswith("R-PPT-") and c not in picked]
         for rid in EXTRA_CARDS.get(pack, []):
             if rid not in by_id:
                 raise SystemExit(f"EXTRA_CARDS 의 {rid} 가 RULES.md 에 없다 — 오타이거나 폐기됨")
@@ -104,7 +133,10 @@ def main():
             digits = re.sub(r"\D", "", c[0])
             return (1 if _deprecated(c) else 0, int(digits or 0))
         picked.sort(key=_key)
+        dropped = [c for c in picked if _excluded(c)]
+        picked = [c for c in picked if not _excluded(c)]
         used.update(c[0] for c in picked)
+        used.update(c[0] for c in dropped)
         lines = [f"# 팩: {pack} — 담당 에이전트용 규칙 슬라이스",
                  "",
                  f"자동 생성 (make_packs.py). 원본은 `engine/learning/RULES.md` — **여기를 고치지 말 것.**",
@@ -117,12 +149,29 @@ def main():
             lines.append("")
         for rid, title, cat, trust, body in picked:
             lines.append(f"### {rid} · {title}")
-            lines.append(body)
+            lines.append(_render(rid, title, cat, trust, body))
+            lines.append("")
+        if dropped:
+            lines.append("---")
+            lines.append("이 팩에서 뺀 카드 (코퍼스 관찰로 강등 · 대표 카드에 흡수 — 본문은 RULES.md 와 knowledge 부록): "
+                         + " · ".join(f"{c[0]}" for c in dropped))
             lines.append("")
         (OUT / f"{pack}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
-        report.append(f"  {pack:<6} 카드 {len(picked):>3}장  {sum(len(c[4]) for c in picked):>7,}자")
+        n_slim = sum(1 for c in picked if re.search(r"^- 요지:", c[4], re.M))
+        n_chars = sum(len(_render(*c)) for c in picked)
+        report.append(f"  {pack:<6} 카드 {len(picked):>3}장 (요지형 {n_slim:>3}) 배달 {n_chars:>7,}자 · 뺀 카드 {len(dropped)}장")
 
-    print(f"팩 {len(PACK_MAP)}종 생성 → {OUT}")
+    # 카드 제목 색인 — /회고 · guide-judge · retro-miner 가 RULES.md 전문(300KB) 대신 읽는다.
+    # 한 줄 = 번호 · 상태(폐기/지식/흡수/정정) · 분류 · 제목. 본문이 필요하면 번호로 RULES.md 를 grep 한다.
+    idx = ["# 규칙 카드 색인 (make_packs.py 자동 생성 — 고치지 말 것)", "",
+           f"카드 {len(cards)}장. 상태 표기: 【폐기】 대체됨 · 【지식】 코퍼스 관찰 부록으로 · 【흡수】 대표 카드에 합쳐짐 · (정정) 조항 정정 있음", "",
+           "| 번호 | 상태 | 분류 | 제목 |", "|---|---|---|---|"]
+    for rid, title, cat, trust, body in cards:
+        state = "폐기" if _deprecated((rid, title, cat, trust, body)) else                 "지식" if "【지식" in (title or "") else                 "흡수" if "【흡수" in (title or "") else                 "정정" if re.search(r"^- 정정 \(", body, re.M) else ""
+        clean = re.sub(r"^【[^】]*】\s*", "", title or "")
+        idx.append(f"| {rid} | {state} | {cat or ''} | {clean[:80]} |")
+    (OUT / "_색인.md").write_text("\n".join(idx) + "\n", encoding="utf-8", newline="\n")
+    print(f"팩 {len(PACK_MAP)}종 + 색인 생성 → {OUT}")
     print("\n".join(report))
     uncovered = [(c[0], c[2]) for c in cards if c[0] not in used]
     print(f"어느 팩에도 안 실린 카드 {len(uncovered)}장 (도구·통계표·report 소관 — 정상):")

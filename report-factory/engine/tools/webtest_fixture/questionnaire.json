@@ -1,0 +1,34 @@
+{
+ "meta": {"schema_version": "1.0", "source": "webtest 픽스처 — 모의 설문 5문항 (parse_questionnaire 스키마 부분집합)"},
+ "parts": [],
+ "questions": [
+  {"index": 1, "code": "SQ1", "part": "SQ", "text_full": "SQ1. 귀하께서는 본 건물의 관리 현황을 알고 계십니까? [1개 선택]", "text": "귀하께서는 본 건물의 관리 현황을 알고 계십니까? [1개 선택]",
+   "response_type": "단일", "directives": {"base": [], "range": [], "prog": []}, "base_condition": null, "terminate_options": [3],
+   "options": [
+    {"no": 1, "text": "직접 알고 있음", "terminate": false, "piping": null},
+    {"no": 2, "text": "내부 확인 후 응답 가능", "terminate": false, "piping": null},
+    {"no": 3, "text": "전혀 모름", "terminate": true, "piping": null}]},
+  {"index": 2, "code": "SQ2", "part": "SQ", "text_full": "SQ2. 귀하의 연령을 만 나이로 입력해 주십시오. [RANGE: 18~99]", "text": "귀하의 연령을 만 나이로 입력해 주십시오.",
+   "response_type": "숫자입력", "directives": {"base": [], "range": ["18~99"], "prog": []}, "base_condition": null, "terminate_options": [], "options": []},
+  {"index": 3, "code": "A1", "part": "A", "text_full": "A1. 귀 건물의 소유 형태는 무엇입니까? [1개 선택] [BASE: SQ1=1]", "text": "귀 건물의 소유 형태는 무엇입니까? [1개 선택]",
+   "response_type": "단일", "directives": {"base": ["SQ1=1"], "range": [], "prog": []}, "base_condition": "SQ1=1", "terminate_options": [],
+   "options": [
+    {"no": 1, "text": "기업 소유", "terminate": false, "piping": null},
+    {"no": 2, "text": "개인 소유", "terminate": false, "piping": null},
+    {"no": 3, "text": "구분 소유", "terminate": false, "piping": null},
+    {"no": 4, "text": "국/공유 소유", "terminate": false, "piping": null}]},
+  {"index": 4, "code": "A2", "part": "A", "text_full": "A2. 현재 외부에 맡기고 있는 시설관리 항목을 모두 골라 주십시오. [복수 선택]", "text": "현재 외부에 맡기고 있는 시설관리 항목을 모두 골라 주십시오. [복수 선택]",
+   "response_type": "복수", "directives": {"base": [], "range": [], "prog": []}, "base_condition": null, "terminate_options": [],
+   "options": [
+    {"no": 1, "text": "시설 및 설비 유지보수", "terminate": false, "piping": null},
+    {"no": 2, "text": "보안·경비·주차·출입 관리", "terminate": false, "piping": null},
+    {"no": 3, "text": "미화·위생·청소 관리", "terminate": false, "piping": null},
+    {"no": 4, "text": "법정 점검 및 안전 행정 대응", "terminate": false, "piping": null}]},
+  {"index": 5, "code": "A3", "part": "A", "text_full": "A3. [# SQ1 응답값 파이핑 #] 이라고 응답하셨습니다. 관리 현황 파악 경로를 골라 주십시오. [1개 선택]", "text": "[# SQ1 응답값 파이핑 #] 이라고 응답하셨습니다. 관리 현황 파악 경로를 골라 주십시오. [1개 선택]",
+   "response_type": "단일", "directives": {"base": [], "range": [], "prog": []}, "base_condition": null, "terminate_options": [],
+   "options": [
+    {"no": 1, "text": "관리사무소 문의", "terminate": false, "piping": null},
+    {"no": 2, "text": "계약서 확인", "terminate": false, "piping": null},
+    {"no": 3, "text": "기타", "terminate": false, "piping": null}]}
+ ]
+}

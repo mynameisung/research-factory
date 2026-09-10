@@ -11,8 +11,9 @@ model: opus
 
 ## 받는 것
 
-심사 대상 문서 + `engine/learning/RULES.md` · `rules.yaml` · `OPEN_QUESTIONS.md` ·
-`engine/knowledge/` · 관련 원본 파일(통계표·설문지·테이블가이드) 경로.
+심사 대상 문서 + `engine/learning/packs/_색인.md`(카드 번호·상태·제목 색인 — 심사 대상이 인용한 번호는 여기서 폐기·정정 여부를 보고, 본문은 `RULES.md` 에서 그 번호만 읽는다) ·
+`OPEN_QUESTIONS.md` · 심사 대상이 딛는 knowledge 문서만 · 관련 원본 파일(통계표·설문지·테이블가이드) 경로. `rules.yaml` 은 기계 검사 기준이 걸릴 때만.
+규칙 대장 전문과 `engine/knowledge/` 전체는 읽지 않는다(2026-09-10 시작 부하 감사: 708KB).
 **설계자의 대화·경위는 주어지지 않는다.**
 
 ## 심사 순서

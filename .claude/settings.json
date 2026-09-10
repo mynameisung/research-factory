@@ -10,6 +10,16 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/report-factory/engine/tools/capture_prompt.py\""
+          }
+        ]
+      }
     ]
   }
 }

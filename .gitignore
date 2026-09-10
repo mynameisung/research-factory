@@ -31,3 +31,10 @@ __pycache__/
 *.key
 *apikey*
 .env
+
+# ── 재생성 가능한 산출·개인 로그 (리포에 올리지 않는다) ──────────────
+report-factory/engine/learning/eval/*.json
+report-factory/engine/learning/golden_loop/out/
+report-factory/engine/learning/observations.jsonl
+*.bak
+*.bak_*

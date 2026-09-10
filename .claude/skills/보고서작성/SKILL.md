@@ -22,7 +22,7 @@ description: 리서치 보고서 PPT를 완성한다. 제작팀 회신본에 도
 
 ---
 
-## 판 확인 — 본 절차보다 먼저
+## 판 확인과 조사 메모리 — 본 절차보다 먼저
 
 report-factory 는 GitHub 정본(FineHourTeam/report-factory)에서 갱신된다. 작업 폴더를 건드리지
 않고 원격의 `VERSION` 한 줄만 읽어(`git fetch`, pull 아님) 새 판이 있는지 본다.
@@ -42,11 +42,13 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/update_chec
 - **`JUST_UPGRADED <이전판> <내판>`** 이면 `whats-new <내판>` 을 읽어 「<내판> 으로 올라왔습니다: <바뀐 점>」 한 줄만 말하고 본 절차로 간다.
 - **`CHECK_FAILED …`** 면 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 이것을 최신으로 읽지 않는다.
 
-이 블록은 세 스킬(제작가이드·보고서작성·회고)에 같은 내용으로 들어 있다. 고칠 때는 셋을 함께 고친다.
+그다음 **조사 메모리**를 연다. 조사 폴더 인자를 받았으면 `python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/capture_prompt.py" set-active <프로젝트>/<조사>` 로 활성 조사를 적고, `report-factory/projects/<프로젝트>/<조사>/_memory/MEMORY.md` 를 읽는다. 「결정된 것」은 다시 묻지 않는다. 스킬이 끝날 때 MEMORY.md 의 세 절(결정된 것 · 지시의 요지 · 다음 세션이 알아야 할 것)을 갱신한다. 사용자 입력과 손 편집은 훅이 같은 폴더에 자동으로 남긴다(`knowledge/02_프로젝트-메모리.md`).
+
+이 블록은 네 스킬(제작가이드·보고서작성·회고·웹테스트)에 같은 내용으로 들어 있다. 고칠 때는 넷을 함께 고친다.
 
 ---
 
-## 이 업무의 헌법 3
+## 이 업무의 헌법 4
 
 이걸 어기면 나머지 절차가 전부 헛돈다.
 
@@ -63,21 +65,24 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/update_chec
    매번 전부 잡혀야 하는 검사(수치·패키지·라벨 규칙)에 에이전트를 쓰지 않는다 —
    28장 중 27장만 잡는 날이 온다. 판단이 필요한 곳에만 쓴다(§검증 7로).
 
+4. **차트 데이터는 PPT 안에 둔다(R-244, 사용자 지시 2026-09-10).**
+   값은 임베디드 워크북과 캐시를 함께 고친다(`deckops.apply_chart`). 바깥 xlsx 에 값을 넣고 차트를 연결하면
+   다른 PC 에서 열리지 않는다. 빌드마다 `deckbuild.validate()` 의 `CHART_DATA_EXTERNAL` 이 0건이어야 납품한다.
+   어떤 그림을 고를지는 `report/25_차트-카탈로그.md` 를 본다.
+
 ---
 
 ## 시작 전에 반드시 읽는다
 
-1. `report-factory/engine/learning/RULES.md`
-2. `report-factory/engine/knowledge/report/` 전체 — 반복장표 채우기 · 멘트 보강 · 검수 체크리스트
-   · **`23_팀구조-PPT제작.md`(팀 구조·시야표·배치표)**
-3. `report-factory/engine/knowledge/guide/13_멘트-작성규칙.md` — 멘트 문체는 업무 A와 동일하다
-4. 조사 폴더의 `2_보고서작성/HANDOVER.md` 가 있으면 **그것부터**
+1. 조사 폴더의 `2_보고서작성/HANDOVER.md` 가 있으면 **그것부터**
+2. `report-factory/engine/learning/packs/report.md` — 업무 B 규칙 38장(R-PPT 계열 + report 분류). 규칙 대장 전문을 읽지 않는다
+3. `report-factory/engine/knowledge/report/23_팀구조-PPT제작.md` — 팀 구조·시야표·배치표
+4. `report-factory/engine/knowledge/report/22_검수-체크리스트.md`
+
+**필요할 때 읽는 것**: `report/20`(주입 때) · `report/21` + `guide/13`(멘트 보강이 실제로 생길 때) · `report/24`·`report/25`(차트를 고르거나 그릴 때) ·
+`guide/19`(요약 장표를 손댈 때 — 최종본 5벌·차트 358개 실측 결정표) · `RULES.md` 는 카드 번호로 grep 해 그 카드만.
 
 ---
-
-- `guide/19_요약그래프-데이터설계.md` — **요약 장표의 그래프가 원표를 어떻게 다루는지**
-  납품 최종본 5벌·차트 358개 실측이다. 행을 얼마나 싣는지, 어떤 순서로 세우는지,
-  배너를 언제 올리는지, 두 지표를 한 그래프에 어떻게 겹치는지가 한눈 결정표로 있다.
 
 ## Step 0 — 오리엔테이션 · 경로 판정
 
@@ -209,7 +214,7 @@ python engine/tools/refill_deck.py <in/제작본.pptx> <1_제작가이드/work/s
 - 소수점 — % 1자리, 평균·NPS 2자리
 - 「전체」 열은 **평균 행만** 채운다 — 나머지 행은 차트가 그 자리를 덮는다(실측 23장 무예외)
 - `범례만큼 데이터가 없을때는 빈칸으로 유지` → 계열 개수 고정, 값만 `None`(0 이 아니다)
-- **제작팀 메모는 검수 중에는 남긴다.** 납품본에서만 `--drop-memos` 로 걷는다
+- **제작팀 메모는 검수 중에는 남긴다.** 납품본에서만 `refill_deck.py --drop-memos` 로 걷는다
   (V4 가 `PRODUCTION_MEMO` 를 fatal 로 막는다)
 - 제작팀이 **작업 지시를 그림으로** 붙여 보내는 경우가 있다(실측 s23: 「보기 개수 −1 로
   셀 분할」 안내가 33×17cm 전면 캡처). 본문 장의 전면 그림은 배경이 아니라 지시서다 —
@@ -241,7 +246,7 @@ python engine/tools/refill_deck.py <in/제작본.pptx> <1_제작가이드/work/s
 ## B1. 브랜드 치환
 
 ```bash
-python engine/tools/rebrand.py --src <예시덱.pptx> --profile <클라이언트> --out work/_중간_브랜드적용.pptx
+python engine/tools/rebrand.py --src <예시덱.pptx> --logo <고객사로고.png> --out work/_중간_브랜드적용.pptx   # 인자: --logo · --logo-dark · --no-logo (--profile 은 없다)
 python engine/tools/rebrand.py --src <산출물> --audit-only     # 잔재 감사
 ```
 

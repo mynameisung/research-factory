@@ -45,7 +45,7 @@ model: sonnet
  "observations": [...]}    // 결함도 쟁점도 아닌 관찰. 회고가 먹는다
 ```
 
-⚠ `observations` 는 `engine/learning/observations.jsonl`(훅 자동 포착)과 **동명이물**이다.
+⚠ `observations` 는 조사 폴더의 `_memory/편집기록.jsonl`(훅 자동 포착)과 **동명이물**이다.
 여기서 낸 것은 `{프로젝트}/work/검수/` 파일로만 쌓인다.
 
 - severity: 높음(오독 유발·내용 소실) / 중(품질) / 낮음(미세 표기).

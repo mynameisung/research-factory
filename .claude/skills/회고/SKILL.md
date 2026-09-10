@@ -13,7 +13,7 @@ description: 이번 프로젝트에서 드러난 암묵지를 형식지로 승�
 
 ---
 
-## 판 확인 — 본 절차보다 먼저
+## 판 확인과 조사 메모리 — 본 절차보다 먼저
 
 report-factory 는 GitHub 정본(FineHourTeam/report-factory)에서 갱신된다. 작업 폴더를 건드리지
 않고 원격의 `VERSION` 한 줄만 읽어(`git fetch`, pull 아님) 새 판이 있는지 본다.
@@ -33,7 +33,9 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/update_chec
 - **`JUST_UPGRADED <이전판> <내판>`** 이면 `whats-new <내판>` 을 읽어 「<내판> 으로 올라왔습니다: <바뀐 점>」 한 줄만 말하고 본 절차로 간다.
 - **`CHECK_FAILED …`** 면 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 이것을 최신으로 읽지 않는다.
 
-이 블록은 세 스킬(제작가이드·보고서작성·회고)에 같은 내용으로 들어 있다. 고칠 때는 셋을 함께 고친다.
+그다음 **조사 메모리**를 연다. 조사 폴더 인자를 받았으면 `python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/capture_prompt.py" set-active <프로젝트>/<조사>` 로 활성 조사를 적고, `report-factory/projects/<프로젝트>/<조사>/_memory/MEMORY.md` 를 읽는다. 「결정된 것」은 다시 묻지 않는다. 스킬이 끝날 때 MEMORY.md 의 세 절(결정된 것 · 지시의 요지 · 다음 세션이 알아야 할 것)을 갱신한다. 사용자 입력과 손 편집은 훅이 같은 폴더에 자동으로 남긴다(`knowledge/02_프로젝트-메모리.md`).
+
+이 블록은 네 스킬(제작가이드·보고서작성·회고·웹테스트)에 같은 내용으로 들어 있다. 고칠 때는 넷을 함께 고친다.
 
 ---
 
@@ -42,7 +44,7 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/update_chec
 | 드러나는 순간 | 어디서 읽나 | 값 |
 |---|---|---|
 | AI 산출물을 **사람이 손으로 고침** | `out/.baseline/` vs 최종본 diff | ★★★ |
-| **사용자가 대화에서 직접 지적** | 대화 로그 — 파일에 안 남는다. **반드시 물어서 받는다** | ★★★ |
+| **사용자가 대화에서 직접 지적** | `projects/<조사>/_memory/사용자입력.jsonl` — 훅이 이 폴더의 입력 전부를 자동으로 남긴다(2026-09-10). 전수로 읽고, 파일에 없는 것만 묻는다 | ★★★ |
 | **실측 하네스 결과** | 파손 주입·COM 대조·폭 계측 등 재현 가능한 측정 | ★★★ |
 | **팀 간 반송** | `2_보고서작성/work/반송_가이드팀.md` + `1_제작가이드/work/반송처리_로그.md` | ★★★ |
 | 적대 감사·심사가 격추한 것 | `work/검수/` 의 findings JSON (`*-adversary`, `*-judge`) | ★★ |
@@ -69,7 +71,8 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/update_chec
 - `{조사}/2_보고서작성/work/반송_가이드팀.md` 와 대응하는 처리 로그
 - `{조사}/*/work/판단대기.md`
 - `{조사}/2_보고서작성/out/검수리포트.md` · `fill_deck.py --scan` 메모 전문
-- `engine/learning/observations.jsonl` (훅이 자동 포착한 편집 이력)
+- `{조사}/_memory/편집기록.jsonl` (훅이 자동 포착한 손 편집 이력) · `{조사}/_memory/사용자입력.jsonl` (사용자 지시 원문) · `{조사}/_memory/MEMORY.md`
+  (옛 전역 `engine/learning/observations.jsonl` 은 git 밖 참고용)
 - `engine/learning/OPEN_QUESTIONS.md` — 지난번에 못 풀고 넘긴 것
 - `{프로젝트}/ORIENTATION.md` — 방향성 판단이 맞았는지
 
@@ -108,6 +111,8 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/update_chec
 애매하면 `가설`로 올리고 다음 프로젝트에서 검증한다. **버리지는 않는다.**
 
 `OPEN_QUESTIONS.md` 중 이번에 답이 나온 게 있으면 승격시키고 목록에서 뺀다.
+
+기존 카드와의 겹침·충돌은 `engine/learning/packs/_색인.md`(번호·상태·분류·제목 색인)로 먼저 보고, 겹치는 번호만 `RULES.md` 에서 읽는다. 규칙 대장 전문(309KB)을 읽지 않는다.
 
 ### 결함 3건이 한 뿌리면 — 규칙이 아니라 구조를 고친다
 
@@ -175,6 +180,8 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/update_chec
    (차트타입 규칙이면 `guide/chart_rules.yaml` 도)
 4. **`.claude/skills/*/SKILL.md` · `.claude/agents/*.md`** — 절차·역할·계약이 바뀌었으면
    여기까지 반영한다. ★ 자주 빠뜨리는 자리다
+5. **`python engine/tools/make_packs.py`** — 팩 6종과 색인을 다시 만든다. 담당 에이전트는 규칙 대장이 아니라 팩을 읽으므로,
+   이걸 빠뜨리면 새 규칙이 담당에게 가지 않는다. 새 카드에는 `- 요지:`(2~3줄 압축문)를 꼭 쓴다 — 팩은 요지만 배달한다
 
 ### 무엇이 어디로 가는가
 
@@ -199,7 +206,7 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/update_chec
 
 ## Step 5 — 되먹임 확인
 
-- `/제작가이드`·`/보고서작성` 은 실행 시 `RULES.md` 를 먼저 읽으므로 다음 실행에 즉시 반영된다
+- 담당 에이전트는 `packs/*.md` 를, `/보고서작성` 은 `packs/report.md` 를 읽는다. `make_packs.py` 를 돌린 뒤에야 다음 실행에 반영된다
 - `verify.py` 를 새 `rules.yaml` 로 한 번 돌린다. **기존 산출물이 새 규칙에 걸리면 그것도 보고한다**
   — 이미 납품한 것에 걸리면 그건 사고이므로 즉시 사용자에게 올린다
 - 도구를 고쳤으면 `--selftest` 를 돌려 회귀가 없는지 본다

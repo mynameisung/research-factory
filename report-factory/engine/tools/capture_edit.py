@@ -2,7 +2,9 @@
 """학습 루프 Layer 1 — 자동 포착.
 
 Claude Code의 PostToolUse 훅으로 붙어서, 사람이 프로젝트 산출물을 손으로 고칠 때마다
-그 사실을 `engine/learning/observations.jsonl` 에 남긴다.
+그 사실을 **그 조사 폴더의** `_memory/편집기록.jsonl` 에 남긴다 (2026-09-10 부터 조사별 기록.
+전에는 `engine/learning/observations.jsonl` 한 파일이었는데, 연구원마다 달라지는 개인 로그라
+리포에 올리면 충돌만 났다. 옛 파일은 git 밖에 남겨 둔다). 자세한 것은 `knowledge/02_프로젝트-메모리.md`.
 
 이게 왜 값진가: AI가 만든 제작가이드를 사람이 고친 자리는 곧 **AI가 모르던 규칙**이다.
 `/회고` 가 이 로그와 `out/.baseline/` 스냅샷 diff를 함께 읽어 규칙 후보를 뽑는다.
@@ -42,6 +44,22 @@ IGNORED_SUFFIXES = {".pyc", ".log", ".tmp"}
 def _digest(text: str) -> str:
     """전문 대신 지문만 남긴다. 로그가 비대해지면 아무도 안 읽는다."""
     return hashlib.sha1(text.encode("utf-8", "replace")).hexdigest()[:12]
+
+
+def _project_log(rel: Path) -> Path:
+    """편집된 경로가 속한 조사 폴더의 `_memory/편집기록.jsonl`.
+
+    `projects/<프로젝트>/<조사>/...` 이면 조사 폴더, `projects/<프로젝트>/00_공통/...` 이나
+    조사 폴더가 없으면 프로젝트 폴더에 남긴다. 옛 전역 파일(LOG)은 어느 쪽도 못 정할 때만 쓴다.
+    """
+    parts = rel.parts  # ("projects", "<프로젝트>", "<조사>", ...)
+    if len(parts) >= 2:
+        base = ROOT / parts[0] / parts[1]
+        if len(parts) >= 3 and parts[2] != "00_공통" and (base / parts[2]).is_dir():
+            base = base / parts[2]
+        if base.is_dir():
+            return base / "_memory" / "편집기록.jsonl"
+    return LOG
 
 
 def _classify(rel: Path) -> str:
@@ -106,8 +124,9 @@ def main() -> int:
                 record["bytes"] = len(content)
                 record["digest"] = _digest(content)
 
-        LOG.parent.mkdir(parents=True, exist_ok=True)
-        with LOG.open("a", encoding="utf-8") as fh:
+        log = _project_log(rel)
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with log.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")
     except Exception:
         pass  # 학습 로깅이 실패해도 사용자의 작업을 막지 않는다

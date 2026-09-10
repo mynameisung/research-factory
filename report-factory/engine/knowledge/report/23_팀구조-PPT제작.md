@@ -31,8 +31,8 @@
  ├─ 사람 판단 큐   work/판단대기.md          CI 자산 · 표본 정의 · 예외 장표 등
  ├─ 반송 대장     work/반송_가이드팀.md      정본 결함 → 가이드 팀 소비
  ├─ 생성 — 결정적 스크립트 (에이전트 없음)
- │    setup_deck.py                  구조 22장 (+ --with-prototypes 도너 3장)
- │    build_body.py                  본문 70장 조립·주입 → 92장
+ │    (프로젝트 로컬) setup_deck.py     구조 22장 (+ --with-prototypes 도너 3장) — 비상주 work/ 에만 있다. 엔진 승격 대기
+ │    (프로젝트 로컬) build_body.py     본문 70장 조립·주입 → 92장 — 같은 사정. 엔진에는 deckbuild·fill_deck·refill_deck 이 있다
  │    (요약·결론 주입)                summary_map/conclusion_map 입고 후
  └─ 검증 5로 — 기계 3 + 에이전트 2
       V1  패키지     기계    deckbuild.validate + save_checked + COM     매 빌드

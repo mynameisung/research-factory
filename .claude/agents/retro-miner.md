@@ -19,7 +19,7 @@ model: opus
 제작팀 메모 · 판단대기 큐 · 산출물과 정본.
 **주지 않는 것**: 제작 세션의 대화·의도·경위. 요청하지도 마라. 그게 설계다.
 
-기존 `RULES.md` 와 `OPEN_QUESTIONS.md` 는 **읽어라** — 이미 있는 규칙을 다시 제안하지 않기 위해서,
+`engine/learning/packs/_색인.md`(카드 번호·상태·제목 색인)와 `OPEN_QUESTIONS.md` 는 **읽어라** — 이미 있는 규칙을 다시 제안하지 않기 위해서(겹치는 후보는 그 번호만 `RULES.md` 에서 확인한다),
 그리고 지난번에 못 푼 질문에 이번 증거가 답하는지 보기 위해서.
 
 ## 채굴 방법
@@ -65,7 +65,7 @@ model: opus
 검증 담당들의 산출은 두 팀 공용 5필드(`findings`/`verified`/`not_checked`/`decisions`/
 `observations`)로 떨어진다. 그중 **`observations` 와 `decisions` 가 네 주 먹이**다 —
 전자는 규칙 후보의 원석이고, 후자는 "기계가 못 정한 것"의 목록이라 구조 결손을 가리킨다.
-⚠ 이 `observations` 는 `engine/learning/observations.jsonl` 과 동명이물이다. 둘 다 읽어라.
+⚠ 이 `observations` 는 조사 폴더의 `_memory/편집기록.jsonl`(손 편집 이력)·`_memory/사용자입력.jsonl`(사용자 지시 원문)과 동명이물이다. 셋 다 읽어라 — 이번 조사 기간의 줄만.
 
 - **등재하지 마라.** `RULES.md`·`rules.yaml`·knowledge·스킬 파일을 쓰지 않는다.
   승인과 등재는 오케스트레이터와 사용자 몫이다

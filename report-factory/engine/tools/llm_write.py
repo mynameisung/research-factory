@@ -12,7 +12,7 @@
     python llm_write.py --provider clova --model HCX-005 --task ments \\
         --agent .claude/agents/guide-body-ment.md --input work/샤드/S1.json --out work/검수/clova_ments_S1.json
     python llm_write.py --provider clova --model HCX-007 --task conclusion --reasoning medium \\
-        --agent .claude/agents/guide-conclusion.md --input work/summary_map.json --context work/조사개요.json --out work/검수/clova_conclusion.json
+        --agent .claude/agents/guide-summary-slide.md --input work/summary_map.json --context work/조사개요.json --out work/검수/clova_conclusion.json
     --dry-run 이면 호출 없이 프롬프트와 스키마만 출력한다.
 
 공급자

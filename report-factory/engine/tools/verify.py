@@ -1426,7 +1426,7 @@ def _table_cell(t: dict, row_label: str, col_label: str):
 
 
 CONCLUSION_TITLE_MAX = 30    #: guide/15 §1-9 — 결론 제목 30자 이하
-CONCLUSION_LINE_MAX = 60     #: K-10 — 결론 줄(→ 제언 포함)도 멘트처럼 60자
+CONCLUSION_LINE_MAX = 74     #: R-198 — 요약·결론 줄은 60자 규율을 강제하지 않는다. 물리 한계(74자)만 알린다 (감사 A-25, 2026-09-10)
 
 
 def _ments_from_facts(facts: Path | None) -> list[str]:
@@ -1508,7 +1508,7 @@ def verify_summary(smap: Path, tables: Path, facts: Path | None) -> Report:
         head = (sm.get("headline") or "").strip()
         hb = head[2:] if head.startswith("- ") else head
         if not hb:
-            rep.add("V14", "치명", where, "헤드라인 없음 (R-130)")
+            rep.add("V14", "치명", where, "헤드라인 없음 (R-205·R-206 — R-130 은 폐기)")
         else:
             if len(hb) > HEADLINE_MAX:
                 rep.add("V14", "경고", where, f"헤드라인 {len(hb)}자 > {HEADLINE_MAX}자 — 렌더 두 줄")
@@ -1554,7 +1554,7 @@ def verify_summary(smap: Path, tables: Path, facts: Path | None) -> Report:
                       and not str(pn.get("chart") or "").startswith("배너 표"))
         if n_cross > 2:
             rep.add("V14", "경고", where, f"교차 패널 {n_cross}개 — 꼭지당 2개까지 (R-145 ⑤)")
-        # 근거 줄 — 요약 멘트는 헤드라인 포함 ≤3줄 (R-032 · guide/14 §7: LG 2줄 · SKEE 3줄. 사용자 지시 2026-08-23)
+        # 근거 줄 — 요약 멘트는 헤드라인 포함 ≤3줄 (R-032 · guide/14 §4-2: LG 2줄 · SKEE 3줄. 사용자 지시 2026-08-23)
         if len(sm.get("body") or []) > SUMMARY_BODY_MAX:
             rep.add("V14", "치명", where, f"요약 근거 줄 {len(sm['body'])}줄 > {SUMMARY_BODY_MAX}줄 — 헤드라인 + {SUMMARY_BODY_MAX}줄까지")
         for ln in sm.get("body") or []:
@@ -1699,7 +1699,7 @@ def verify_summary(smap: Path, tables: Path, facts: Path | None) -> Report:
 
 
 def verify_conclusion(cmap: Path, tables: Path, smap: Path | None) -> Report:
-    """guide-conclusion 의 conclusion_map.json — 근거 셀 좌표 · from_summary 존재 · 길이(R-126)."""
+    """guide-summary 가 쓰는 conclusion_map.json — 근거 셀 좌표 · from_summary 존재 · 길이(R-166 줄 수, R-126 은 참고치)."""
     rep = Report()
     with io.open(cmap, encoding="utf-8") as fh:
         doc = json.load(fh)
@@ -1726,10 +1726,10 @@ def verify_conclusion(cmap: Path, tables: Path, smap: Path | None) -> Report:
         body = " ".join(str(x) for x in (c.get("body") or []))
         total += len(body)
         if len(body) > CONCLUSION_BOX_MAX:
-            rep.add("V15", "경고", where, f"박스 {len(body)}자 > {CONCLUSION_BOX_MAX}자 (R-126)")
+            rep.add("V15", "참고", where, f"박스 {len(body)}자 > 참고치 {CONCLUSION_BOX_MAX}자 (R-126 원안 — 줄 수는 R-166 3~9줄이 정본)")
         # 제언은 body 안의 `→` 줄이거나 **action 필드**다. 후자는 조립기가 굵게 뽑는다.
         if not (c.get("action") or any("→" in str(x) for x in (c.get("body") or []))):
-            rep.add("V15", "경고", where, "제언 없음 (R-126: 판단 + → 제언)")
+            rep.add("V15", "경고", where, "제언 없음 (R-181 — action 필드. 화살표 → 는 제언 마커가 아니다)")
         src = c.get("from_summary") or []
         if not src:
             rep.add("V15", "치명", where, "근거 요약 꼭지 없음 (R-078)")

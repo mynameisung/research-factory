@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>모의 웹조사 — 웹테스트 픽스처</title>
+<style>body{font-family:'Malgun Gothic',sans-serif;max-width:640px;margin:40px auto;padding:0 16px}label{display:block;margin:6px 0}button{margin-top:16px;padding:8px 20px}.q{font-weight:bold;margin-bottom:12px}</style>
+</head><body>
+<div id="app"></div>
+<script>
+// 한 페이지 한 문항 · 뒤로가기 없음. 일부러 심어 둔 결함:
+//   A2 보기 2 문구 오타(정본 「보안·경비·주차·출입 관리」→ 「보안·경비 관리」), A2 보기 4 누락, A3 파이핑 미적용(S0 에서 잡힘)
+const Q = [
+  {code:'SQ1', text:'SQ1. 귀하께서는 본 건물의 관리 현황을 알고 계십니까?', type:'radio',
+   opts:['직접 알고 있음','내부 확인 후 응답 가능','전혀 모름'], terminate:{3:'조사 대상이 아닙니다. 설문이 종료되었습니다.'}},
+  {code:'SQ2', text:'SQ2. 귀하의 연령을 만 나이로 입력해 주십시오.', type:'number'},
+  {code:'A1', text:'A1. 귀 건물의 소유 형태는 무엇입니까?', type:'radio', showIf:s=>s.SQ1==='1',
+   opts:['기업 소유','개인 소유','구분 소유','국/공유 소유']},
+  {code:'A2', text:'A2. 현재 외부에 맡기고 있는 시설관리 항목을 모두 골라 주십시오.', type:'checkbox',
+   opts:['시설 및 설비 유지보수','보안·경비 관리','미화·위생·청소 관리']},
+  {code:'A3', text:'A3. {SQ1} 이라고 응답하셨습니다. 관리 현황 파악 경로를 골라 주십시오.', type:'radio', piping:false,
+   opts:['관리사무소 문의','계약서 확인','기타']},
+  {code:'END', text:'설문에 참여해 주셔서 감사합니다.', type:'end'}
+];
+const st = {}; let i = 0;
+function label(code, no){ const q=Q.find(x=>x.code===code); return q && q.opts ? q.opts[Number(no)-1] : ''; }
+function render(){
+  const app = document.getElementById('app');
+  while (i < Q.length && Q[i].showIf && !Q[i].showIf(st)) i++;
+  const q = Q[i];
+  if (!q) { app.innerHTML = '<p>설문에 참여해 주셔서 감사합니다.</p>'; return; }
+  if (q.type === 'end') { app.innerHTML = '<p>' + q.text + '</p>'; return; }
+  let text = q.text;
+  if (q.piping) text = text.replace('{SQ1}', label('SQ1', st.SQ1));   // 파이핑 미적용 결함: piping:false 라 치환하지 않는다
+  let html = '<div class="q">' + text + '</div>';
+  if (q.type === 'radio' || q.type === 'checkbox') {
+    q.opts.forEach((o, k) => { html += '<label><input type="' + q.type + '" name="' + q.code + '" value="' + (k+1) + '"> ' + (k+1) + ') ' + o + '</label>'; });
+  } else if (q.type === 'number') {
+    html += '<input type="number" name="' + q.code + '" min="18" max="99"> 세';
+  }
+  html += '<br><button type="button" id="next" onclick="next()">다음</button>';
+  app.innerHTML = html;
+}
+function next(){
+  const q = Q[i];
+  const el = document.querySelectorAll('[name="' + q.code + '"]');
+  let v = null;
+  if (q.type === 'radio') { el.forEach(e => { if (e.checked) v = e.value; }); }
+  else if (q.type === 'checkbox') { v = Array.from(el).filter(e=>e.checked).map(e=>e.value).join(','); }
+  else { v = el[0] ? el[0].value : ''; }
+  if (!v) { alert('응답해 주십시오'); return; }        // 필수 응답
+  st[q.code] = v;
+  if (q.terminate && q.terminate[v]) { document.getElementById('app').innerHTML = '<p>' + q.terminate[v] + '</p>'; return; }
+  i++; render();
+}
+render();
+</script>
+</body></html>

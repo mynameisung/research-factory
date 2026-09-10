@@ -13,7 +13,7 @@ description: 통계표·설문지·조사개요로 제작팀에 보낼 제작가
 
 ---
 
-## 판 확인 — 본 절차보다 먼저
+## 판 확인과 조사 메모리 — 본 절차보다 먼저
 
 report-factory 는 GitHub 정본(FineHourTeam/report-factory)에서 갱신된다. 작업 폴더를 건드리지
 않고 원격의 `VERSION` 한 줄만 읽어(`git fetch`, pull 아님) 새 판이 있는지 본다.
@@ -33,23 +33,29 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/update_chec
 - **`JUST_UPGRADED <이전판> <내판>`** 이면 `whats-new <내판>` 을 읽어 「<내판> 으로 올라왔습니다: <바뀐 점>」 한 줄만 말하고 본 절차로 간다.
 - **`CHECK_FAILED …`** 면 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 이것을 최신으로 읽지 않는다.
 
-이 블록은 세 스킬(제작가이드·보고서작성·회고)에 같은 내용으로 들어 있다. 고칠 때는 셋을 함께 고친다.
+그다음 **조사 메모리**를 연다. 조사 폴더 인자를 받았으면 `python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/capture_prompt.py" set-active <프로젝트>/<조사>` 로 활성 조사를 적고, `report-factory/projects/<프로젝트>/<조사>/_memory/MEMORY.md` 를 읽는다. 「결정된 것」은 다시 묻지 않는다. 스킬이 끝날 때 MEMORY.md 의 세 절(결정된 것 · 지시의 요지 · 다음 세션이 알아야 할 것)을 갱신한다. 사용자 입력과 손 편집은 훅이 같은 폴더에 자동으로 남긴다(`knowledge/02_프로젝트-메모리.md`).
+
+이 블록은 네 스킬(제작가이드·보고서작성·회고·웹테스트)에 같은 내용으로 들어 있다. 고칠 때는 넷을 함께 고친다.
 
 ---
 
 ## 시작 전에 반드시 읽는다
 
-1. `report-factory/engine/learning/RULES.md` — **가장 먼저.** 이전 프로젝트에서 학습된 규칙이 여기 쌓여 있다
-2. `report-factory/engine/knowledge/00_업무개요.md`, `01_통계표-읽는법.md`
-3. `report-factory/engine/knowledge/guide/` 전체 (목차 설계 · 블록 포맷 · 차트타입 결정표 · 멘트 규칙 · 요약결론 규칙 · 제작팀 지시어 사전 · **17_팀구조** — 역할 분담·검증 5로·문장 정책·PPT 팀 접점 계약 · **18_오케스트레이션** — 파트별 담당 에이전트·팩·배정/수용 규약)
+1. `report-factory/engine/learning/packs/공통.md` — 두 팀 공통 규칙 12장 (헌법·산출물 스키마)
+2. `report-factory/engine/knowledge/guide/18_오케스트레이션-제작가이드.md` — 파트별 담당·팩·배정/수용 규약
+3. `report-factory/engine/knowledge/00_업무개요.md`
 
-**이 스킬은 오케스트레이터다.** 큰 파트는 담당 에이전트(`guide-toc`·`guide-front`·
-`guide-body-ment`·`guide-summary`)에게 맡기고, 수용은 기계 게이트가, 확정은 사람이 한다.
+**필요할 때 읽는 것** (시작 때 읽지 않는다 — 2026-09-10 시작 부하 감사: 규칙 대장 전문 309KB + guide 전체 278KB 를 오케스트레이터가 또 읽고 있었다):
+`guide/17`(반송·계약 다툼) · `01_통계표-읽는법`(Step 1 정합성 이상) · `guide/10·13·14·19`(담당 게이트 반려 원인을 볼 때 그 문서만) ·
+`summary_chart_rules.yaml`(V20 실패) · `RULES.md` 는 **카드 번호로 grep** 해 그 카드만 · `30_외부LLM-CLOVA`(clova_draft 쓸 때).
+규칙 대장 전문과 `guide/` 전체는 담당 에이전트의 팩·포인터가 이미 나눠 갖고 있다. 오케스트레이터가 다시 읽지 않는다.
+
+**이 스킬은 오케스트레이터다.** 큰 파트는 담당 에이전트(설계 `guide-toc`·`guide-front`·`guide-body-ment` / 요약·결론 `guide-summary` → `guide-summary-slide` → `guide-summary-reviewer` → `guide-client-review` / 심사·반증 `guide-judge`·`guide-adversary`)에게 맡기고, 수용은 기계 게이트가, 확정은 사람이 한다.
 규약(guide/18 §3): 배정은 **명시적 ID 목록** + 반환 검산·누락 재발주 / 담당 팩은
 `engine/learning/packs/` (make_packs.py 생성 — RULES 갱신 시 재생성) / 담당 보고는
 findings·verified·not_checked·decisions·observations 5필드 → `work/검수/` 에 저장.
 
-규칙 카드의 신뢰도가 `가설`이면 적용 전에 사용자에게 확인한다.
+담당이 `decisions` 로 올린 `가설` 카드는 적용 전에 사용자에게 확인한다(팩 머리 규약 · guide/18 §3). 오케스트레이터가 규칙 대장을 훑어 가설을 찾지는 않는다.
 
 ---
 
@@ -103,6 +109,9 @@ python engine/tools/parse_questionnaire.py <설문지.docx> <work/questionnaire.
 python engine/tools/parse_table_biff.py  <통계표.xls>  <work/tables.json>
 ```
 `.xlsx` 통계표면 `parse_table_xlsx.py`.
+
+파싱 직후 `python engine/tools/table_lint.py work/tables.json --out work/검수/table_lint.md` 를 돌려 라벨 중복·오기를 잡는다.
+파서는 경고를 내지 않는다(2026-08-24 실측: D4 라벨 중복이 파서 경고 0건으로 통과했다). 정정은 `work/표라벨정정.json` 에 선언하고 `apply_table_fixes.py` 로 적용한다.
 
 파싱 후 **정합성부터 본다**:
 - 표 개수 = 목차 개수인가
@@ -206,7 +215,7 @@ python engine/tools/build_facts.py  <work/questionnaire.json> <work/tables.json>
 경고는 반려가 아니라 재발주 판단 재료다(메인이 본다).
 수용분만 `멘트_확정.json`({ments:[{seq,lines}]})에 모아 `build_facts --ments` 로 주입한다.
 
-**선택 — 하이브리드 초안(`--writer clova`, 사용자 지시 2026-08-23)**: `python engine/tools/clova_draft.py <work>` 가 CLOVA(HCX-007)로 멘트
+**선택 — 하이브리드 초안(사용자 지시 2026-08-23)**: `python engine/tools/clova_draft.py <work>` 가 CLOVA(HCX-007)로 멘트
 초안을 쓰고 같은 게이트에 걸어 수용분(`work/검수/clova_draft_accepted.json`)과 반려 패킷(`work/샤드/재발주_clova.json`)으로 가른다.
 반려·누락분만 `guide-body-ment` 가 ment_facts 로 접지해 다시 쓴다(숫자·보기명이 틀리면 Claude 가 고친다). 수용률이 낮으면
 (비상주 실측 3/69) Claude 단독과 같으므로 로그의 수용률로 계속 쓸지 판단한다. 요약·결론에는 쓰지 않는다(`30_외부LLM-CLOVA.md`).
@@ -237,8 +246,8 @@ chart_type null·미구현 팩트는 담당이 decisions 로 올린다 — 문�
 
 `guide/14_요약결론-작성규칙.md` · `guide/15_한국어-문장지침.md`.
 
-- **`guide-summary`(총괄 · 설계 + 결론)** — 시야는 **통계표 전수**(전수 스캔이 규칙 — 인사이트는
-  헤드라인 밖에 있다). 꼭지를 나누고 표를 배정하고 패널·claims 를 세운다. 돌아온 So what 을 이어
+- **`guide-summary`(총괄 · 설계 + 결론)** — 시야는 **본문 헤더 전수**에서 시작하고(R-201·R-221) 후보가 서면 그 표를 연다 — 통계표를 전수 스캔하지 않는다.
+  인사이트는 정의상 헤드라인 밖에 있으므로(R-073) 후보 발굴은 넓게, 등재는 근거셀로만. 꼭지를 나누고 표를 배정하고 패널·claims 를 세운다. 돌아온 So what 을 이어
   서사를 만들고 **결론 및 제언을 자기 손으로 쓴다**(R-208 — 결론은 꼭지 사이를 넘나드는 판단이라
   한 꼭지만 본 담당은 세울 수 없다). 패널은 **상위·격차 행만** (`· 상위 N` / `· 행 'A'|'B'` —
   구간형·척도·보기 2~4개는 전 행).
@@ -306,11 +315,11 @@ python engine/tools/banner_insight.py work/tables.json --summary-map work/summar
 
 그 뒤 `guide-adversary` 가 산출 xlsm 을 반증하고 **사람이 확정**한다. 병합은 `python engine/tools/merge_part2.py <work>`
 (summary_map + conclusion_map → `목차.md` 첫 펜스 Part Ⅱ 항목 · `### 요약 꼭지` · `### 결론 및 제언` — 손으로 쓰지 않는다).
-**교차분석 패널(R-145, 사용자 지시 2026-08-24)** — 헤드라인이 집단 차이를 말하면 근거 패널은 배너 교차여야 한다. 지시어는 `배너 가로 누적 100% 막대 (군)`(단일 응답·보기 전수) / `배너 가로 묶음 막대 (군)`(중복·TOP2·행 선별) — 빌더가 홈로봇 형식으로 **전치**(행 = 집단, 행마다 Base, 열 = 보기)한다. 차트를 그릴 패널에 `배너 표` 를 쓰면 열이 100% 인 표를 행 방향으로 쌓아 PPT 가 틀어진다. 절단선 밖 군(연면적·소유 형태·입주사 수)도 요약에는 쓴다. 교차 후보 탐색 패킷: `work/variants/_inputs/crosstab/_index.json` + `표N.json`(tables.json 에서 만든 군별 display 요약). xlsm 게이트: `verify --mode guide` V17 이 요약 패널의 모든 수치·Base 를 근거 표에 대조한다.
+**교차분석 패널(R-145, 사용자 지시 2026-08-24)** — 헤드라인이 집단 차이를 말하면 근거 패널은 배너 교차여야 한다. 지시어는 `배너 가로 누적 100% 막대 (군)`(단일 응답·보기 전수) / `배너 가로 묶음 막대 (군)`(중복·TOP2·행 선별) — 빌더가 홈로봇 형식으로 **전치**(행 = 집단, 행마다 Base, 열 = 보기)한다. 차트를 그릴 패널에 `배너 표` 를 쓰면 열이 100% 인 표를 행 방향으로 쌓아 PPT 가 틀어진다. 절단선 밖 군(연면적·소유 형태·입주사 수)도 요약에는 쓴다. 교차 후보 탐색 패킷: `python engine/tools/crosstab_digest.py work --out work/crosstab` 으로 만든 `work/crosstab/_index.json` + `표N.json`(tables.json 에서 만든 군별 display 요약 — 담당 정의가 이 경로를 읽는다). xlsm 게이트: `verify --mode guide` V17 이 요약 패널의 모든 수치·Base 를 근거 표에 대조한다.
 
 **설계의 출발점은 조사 목적이다(R-141)** — guide-summary 는 RFP·킥오프·ToKnowList(00_공통)에서 목적 매핑표(항목 × 문항 × 표 × 꼭지)를 먼저 만들고 부재 항목을 메운다. Part Ⅲ 대분류(R-140)는 ToKnowList 의 의뢰인 구분을 그대로 쓴다.
 
-1. 통계표를 **전수 스캔**한다. To Know List와 대조한다
+1. 본문 헤더를 전수로 이어 읽고 To Know List 와 대조한다 — 표는 후보가 섰을 때 연다(R-201·R-221)
 2. 인사이트 후보를 뽑는다 — **예상과 다른 것**이 값어치가 있다
    - 중요할 줄 알았는데 '보통' 100% → 버린다
    - 안 중요할 줄 알았는데 90% → 채택한다
