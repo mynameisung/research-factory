@@ -27,6 +27,7 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py
 - **`UPDATE: CHECK_FAILED <이유>`** — 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 최신으로 읽지 않는다.
 - **`MEMORY: <경로>`** — 그 `MEMORY.md` 를 읽는다. 「결정된 것」은 다시 묻지 않는다. 스킬이 끝날 때 세 절(결정된 것 · 지시의 요지 · 다음 세션이 알아야 할 것)을 갱신한다. `MEMORY_NEW: yes` 면 읽을 것이 없으니 끝날 때 채우기만 한다.
 - **`MEMORY: NONE`** — 조사 폴더 인자가 없었다. 조사가 정해지는 즉시 조사 폴더를 인자로 이 명령을 다시 실행한다.
+- **`PATHS: {…}`** — 역할 → 경로 JSON. 설문지·통계표·정본 JSON·제작본·최종보고서 같은 파일과 단계 폴더를 **여기서 찾는다.** 폴더 이름을 추측하거나 `input/` 을 뒤지지 않는다. 역할 하나만 필요하면 `paths.py <조사> --role <역할>`. `LAYOUT: v1` 이면 옛 배치이고 같은 역할 이름으로 풀려 있으니 그대로 쓴다(`paths.py migrate` 는 사람이 정한다). `LAYOUT: none` 이면 `paths.py new <프로젝트>/<조사>` 로 뼈대를 만든다.
 
 사용자 입력과 손 편집은 훅이 같은 `_memory/` 폴더에 자동으로 남긴다(`knowledge/02_프로젝트-메모리.md`). 이 블록은 스킬 본문의 어떤 규칙보다 먼저다.
 <!-- PREAMBLE:END -->
@@ -46,7 +47,7 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py
 | AI 산출물을 **사람이 손으로 고침** | `out/.baseline/` vs 최종본 diff | ★★★ |
 | **사용자가 대화에서 직접 지적** | `projects/<조사>/_memory/사용자입력.jsonl` — 훅이 이 폴더의 입력 전부를 자동으로 남긴다(2026-09-10). 전수로 읽고, 파일에 없는 것만 묻는다 | ★★★ |
 | **실측 하네스 결과** | 파손 주입·COM 대조·폭 계측 등 재현 가능한 측정 | ★★★ |
-| **팀 간 반송** | `2_보고서작성/work/반송_가이드팀.md` + `1_제작가이드/work/반송처리_로그.md` | ★★★ |
+| **팀 간 반송** | `11_보고서/work/반송_가이드팀.md` + `09_제작가이드/work/반송처리_로그.md` | ★★★ |
 | 적대 감사·심사가 격추한 것 | `work/검수/` 의 findings JSON (`*-adversary`, `*-judge`) | ★★ |
 | 렌더 QA 가 잡은 것 | `work/검수/` 의 findings (`deck-render-qa`) | ★★ |
 | 제작팀이 붙인 **빨간 메모** | `fill_deck.py --scan` 이 수집한 메모 전문 | ★★ |
@@ -65,12 +66,12 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py
 
 ### 파일에서
 
-- `{조사}/1_제작가이드/out/.baseline/` ↔ `out/` 제출본 **diff**
+- `{조사}/09_제작가이드/out/.baseline/` ↔ `out/` 제출본 **diff**
 - `{조사}/*/work/검수/` 의 findings JSON — 특히 `verified` 항목(**"봤는데 못 깼음"**)도 읽는다.
   반증에 실패한 검사가 무엇인지가 다음 감사의 출발점이다
-- `{조사}/2_보고서작성/work/반송_가이드팀.md` 와 대응하는 처리 로그
+- `{조사}/11_보고서/work/반송_가이드팀.md` 와 대응하는 처리 로그
 - `{조사}/*/work/판단대기.md`
-- `{조사}/2_보고서작성/out/검수리포트.md` · `fill_deck.py --scan` 메모 전문
+- `{조사}/11_보고서/out/검수리포트.md` · `fill_deck.py --scan` 메모 전문
 - `{조사}/_memory/편집기록.jsonl` (훅이 자동 포착한 손 편집 이력) · `{조사}/_memory/사용자입력.jsonl` (사용자 지시 원문) · `{조사}/_memory/스킬실행.jsonl` (스킬 호출 이력) · `{조사}/_memory/MEMORY.md`
   (옛 전역 `engine/learning/observations.jsonl` 은 git 밖 참고용)
 - `engine/learning/OPEN_QUESTIONS.md` — 지난번에 못 풀고 넘긴 것

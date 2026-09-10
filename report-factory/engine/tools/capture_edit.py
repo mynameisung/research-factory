@@ -65,11 +65,13 @@ def _project_log(rel: Path) -> Path:
 def _classify(rel: Path) -> str:
     """어떤 종류의 편집인지. `/회고` 가 이걸로 관찰을 묶는다."""
     parts = set(rel.parts)
-    if "1_제작가이드" in parts:
+    if parts & {"09_제작가이드", "1_제작가이드"}:
         return "guide"
-    if "2_보고서작성" in parts:
+    if parts & {"11_보고서", "2_보고서작성", "12_납품"}:
         return "report"
-    if "00_공통" in parts or "input" in parts:
+    if parts & {"05_웹테스트", "3_웹테스트"}:
+        return "webtest"
+    if parts & {"00_협의", "00_공통", "input", "03_설문지", "06_실사", "07_테이블"}:
         return "input"
     if rel.name in {"ORIENTATION.md", "README.md"}:
         return "orientation"

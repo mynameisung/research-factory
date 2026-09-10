@@ -27,6 +27,7 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py
 - **`UPDATE: CHECK_FAILED <이유>`** — 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 최신으로 읽지 않는다.
 - **`MEMORY: <경로>`** — 그 `MEMORY.md` 를 읽는다. 「결정된 것」은 다시 묻지 않는다. 스킬이 끝날 때 세 절(결정된 것 · 지시의 요지 · 다음 세션이 알아야 할 것)을 갱신한다. `MEMORY_NEW: yes` 면 읽을 것이 없으니 끝날 때 채우기만 한다.
 - **`MEMORY: NONE`** — 조사 폴더 인자가 없었다. 조사가 정해지는 즉시 조사 폴더를 인자로 이 명령을 다시 실행한다.
+- **`PATHS: {…}`** — 역할 → 경로 JSON. 설문지·통계표·정본 JSON·제작본·최종보고서 같은 파일과 단계 폴더를 **여기서 찾는다.** 폴더 이름을 추측하거나 `input/` 을 뒤지지 않는다. 역할 하나만 필요하면 `paths.py <조사> --role <역할>`. `LAYOUT: v1` 이면 옛 배치이고 같은 역할 이름으로 풀려 있으니 그대로 쓴다(`paths.py migrate` 는 사람이 정한다). `LAYOUT: none` 이면 `paths.py new <프로젝트>/<조사>` 로 뼈대를 만든다.
 
 사용자 입력과 손 편집은 훅이 같은 `_memory/` 폴더에 자동으로 남긴다(`knowledge/02_프로젝트-메모리.md`). 이 블록은 스킬 본문의 어떤 규칙보다 먼저다.
 <!-- PREAMBLE:END -->
@@ -56,7 +57,7 @@ questionnaire.json   시나리오.json      덤프_<ID>.json        findings.jso
 
 - `report-factory/engine/knowledge/40_웹테스트.md` — 실사 엔진의 성질(한 페이지 한 문항 · 뒤로가기 불가), 검증할 로직 7종, 수정요청서 양식
 - 조사 폴더의 `_memory/MEMORY.md`
-- 설문지 정본이 이미 있으면 `1_제작가이드/work/questionnaire.json` (없으면 Step 1 에서 만든다)
+- 설문지 정본이 이미 있으면 `09_제작가이드/work/questionnaire.json` (없으면 Step 1 에서 만든다)
 
 ---
 
@@ -65,24 +66,24 @@ questionnaire.json   시나리오.json      덤프_<ID>.json        findings.jso
 ```bash
 ROOT="$(git rev-parse --show-toplevel)"; T="$ROOT/report-factory/engine/tools"
 python -c "import playwright" 2>/dev/null || (python -m pip install -q playwright && python -m playwright install chromium)
-mkdir -p "<조사>/3_웹테스트/in" "<조사>/3_웹테스트/work" "<조사>/3_웹테스트/out"
+mkdir -p "<조사>/05_웹테스트/work" "<조사>/05_웹테스트/out"
 ```
 
-Playwright 와 Chromium 은 설치에 몇 분 걸린다. 처음이면 사용자에게 한 줄 알린다. 설문지 `.docx` 는 `3_웹테스트/in/` 에 둔다.
+Playwright 와 Chromium 은 설치에 몇 분 걸린다. 처음이면 사용자에게 한 줄 알린다. 설문지 `.docx` 는 `03_설문지/` 에 둔다(경로는 PREAMBLE 의 `PATHS:` 로 확인).
 
 ## Step 1 — 설문지 정본
 
 ```bash
-python "$T/parse_questionnaire.py" "<조사>/3_웹테스트/in/<설문지>.docx" "<조사>/3_웹테스트/work/questionnaire.json"
+python "$T/parse_questionnaire.py" "<조사>/03_설문지/<설문지>.docx" "<조사>/05_웹테스트/work/questionnaire.json"
 ```
 
-`1_제작가이드/work/questionnaire.json` 이 이미 있고 설문지 판이 같으면 그것을 복사해 쓴다.
+`09_제작가이드/work/questionnaire.json` 이 이미 있고 설문지 판이 같으면 그것을 복사해 쓴다.
 파서 요약에서 문항 수·`[BASE:]`·`[RANGE:]`·조사 중단 보기 수를 사용자에게 한 줄로 보인다. 설문지 양식이 고객사마다 달라 파서가 놓치는 것이 있다(코드 `A2- b.` 같은 변형). 놓친 문항은 사용자에게 묻지 말고 JSON 을 손으로 보태고 `_memory/MEMORY.md` 에 적는다.
 
 ## Step 2 — 시나리오 행렬
 
 ```bash
-python "$T/webtest_scenarios.py" "<조사>/3_웹테스트/work/questionnaire.json" "<조사>/3_웹테스트/work"
+python "$T/webtest_scenarios.py" "<조사>/05_웹테스트/work/questionnaire.json" "<조사>/05_웹테스트/work"
 ```
 
 `시나리오_매트릭스.md` 를 사용자에게 보인다(행 = 문항, 열 = 시나리오, — = 노출되면 안 됨, ■ = 조사 중단).
@@ -94,8 +95,8 @@ python "$T/webtest_scenarios.py" "<조사>/3_웹테스트/work/questionnaire.jso
 ## Step 3 — 첫 순회 (로그인 · 선택자 맞추기)
 
 ```bash
-python "$T/webtest_walk.py" "<URL>" "<조사>/3_웹테스트/work/시나리오.json" "<조사>/3_웹테스트/work" \
-  --scenario S0 --profile isurvey --headed --login-wait 120 --save-state "<조사>/3_웹테스트/work/auth.json" --save-html 3 --screenshots
+python "$T/webtest_walk.py" "<URL>" "<조사>/05_웹테스트/work/시나리오.json" "<조사>/05_웹테스트/work" \
+  --scenario S0 --profile isurvey --headed --login-wait 120 --save-state "<조사>/05_웹테스트/work/auth.json" --save-html 3 --screenshots
 ```
 
 브라우저가 뜨면 사용자에게 「로그인하고 첫 문항 화면까지 들어가 주세요. 120초 뒤 순회를 시작합니다」 라고 말한다.
@@ -114,8 +115,8 @@ python "$T/webtest_walk.py" "<URL>" "<조사>/3_웹테스트/work/시나리오.j
 ## Step 4 — 나머지 시나리오 순회
 
 ```bash
-python "$T/webtest_walk.py" "<URL>" "<조사>/3_웹테스트/work/시나리오.json" "<조사>/3_웹테스트/work" \
-  --scenario all --profile isurvey --storage-state "<조사>/3_웹테스트/work/auth.json" --screenshots
+python "$T/webtest_walk.py" "<URL>" "<조사>/05_웹테스트/work/시나리오.json" "<조사>/05_웹테스트/work" \
+  --scenario all --profile isurvey --storage-state "<조사>/05_웹테스트/work/auth.json" --screenshots
 ```
 
 시나리오마다 `덤프_<ID>.json` 과 `캡처_<ID>/` 가 남는다. 하나가 중간에 끊기면(`끝:` 줄을 본다) 그 시나리오만 `--scenario <ID>` 로 다시 돈다. 뒤로가기가 안 되는 엔진이므로 재순회는 늘 처음부터다.
@@ -123,7 +124,7 @@ python "$T/webtest_walk.py" "<URL>" "<조사>/3_웹테스트/work/시나리오.j
 ## Step 5 — 정본 대조 → 수정요청서
 
 ```bash
-python "$T/webtest_compare.py" "<조사>/3_웹테스트/work/questionnaire.json" "<조사>/3_웹테스트/work/시나리오.json" "<조사>/3_웹테스트/out" "<조사>/3_웹테스트/work/덤프_"*.json
+python "$T/webtest_compare.py" "<조사>/05_웹테스트/work/questionnaire.json" "<조사>/05_웹테스트/work/시나리오.json" "<조사>/05_웹테스트/out" "<조사>/05_웹테스트/work/덤프_"*.json
 ```
 
 `대조요약.md` 를 읽고 사용자에게 **치명부터** 보인다.
@@ -163,7 +164,7 @@ python "$T/webtest_compare.py" "<조사>/3_웹테스트/work/questionnaire.json"
 
 | 파일 | 위치 | 내용 |
 |---|---|---|
-| `questionnaire.json` | `3_웹테스트/work/` | 설문지 정본 |
+| `questionnaire.json` | `05_웹테스트/work/` | 설문지 정본 |
 | `시나리오.json` · `시나리오_매트릭스.md` | `work/` | 시나리오 행렬(기계 + 사람 보강) |
 | `덤프_<ID>.json` · `캡처_<ID>/` · `html_*.html` | `work/` | 순회 기록 · 화면 캡처 · 선택자 맞춤용 HTML |
 | `auth.json` | `work/` | 로그인 세션. 조사 폴더 밖으로 내보내지 않는다 |

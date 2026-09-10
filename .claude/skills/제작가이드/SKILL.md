@@ -27,6 +27,7 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py
 - **`UPDATE: CHECK_FAILED <이유>`** — 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 최신으로 읽지 않는다.
 - **`MEMORY: <경로>`** — 그 `MEMORY.md` 를 읽는다. 「결정된 것」은 다시 묻지 않는다. 스킬이 끝날 때 세 절(결정된 것 · 지시의 요지 · 다음 세션이 알아야 할 것)을 갱신한다. `MEMORY_NEW: yes` 면 읽을 것이 없으니 끝날 때 채우기만 한다.
 - **`MEMORY: NONE`** — 조사 폴더 인자가 없었다. 조사가 정해지는 즉시 조사 폴더를 인자로 이 명령을 다시 실행한다.
+- **`PATHS: {…}`** — 역할 → 경로 JSON. 설문지·통계표·정본 JSON·제작본·최종보고서 같은 파일과 단계 폴더를 **여기서 찾는다.** 폴더 이름을 추측하거나 `input/` 을 뒤지지 않는다. 역할 하나만 필요하면 `paths.py <조사> --role <역할>`. `LAYOUT: v1` 이면 옛 배치이고 같은 역할 이름으로 풀려 있으니 그대로 쓴다(`paths.py migrate` 는 사람이 정한다). `LAYOUT: none` 이면 `paths.py new <프로젝트>/<조사>` 로 뼈대를 만든다.
 
 사용자 입력과 손 편집은 훅이 같은 `_memory/` 폴더에 자동으로 남긴다(`knowledge/02_프로젝트-메모리.md`). 이 블록은 스킬 본문의 어떤 규칙보다 먼저다.
 <!-- PREAMBLE:END -->
@@ -69,15 +70,15 @@ findings·verified·not_checked·decisions·observations 5필드 → `work/검�
 읽고 **변경사항만** 확인한다. 전체 재질문은 하지 않는다. 바로 Step 1로.
 
 ### 0-2. 없으면 — 의뢰인 의도 자료를 정독한다
-`00_공통/` 에서:
+`00_협의/` 에서:
 - `공통_시장조사개요.docx` — 조사 목적 · 대상 · 기간 · 조사방법 · 표본 구성 · 조사항목
 - `공통_입찰공고문_RFP.docx` — 발주처가 정의한 조사항목. 가격·표본 조항도 본다
 - `공통_킥오프회의록_*.docx` — 왜 이 조사를 하는지, 무엇이 중요하다고 합의됐는지
 - `공통_ToKnowList_*.xlsx` — **의뢰인이 알고 싶은 것 목록. 요약·결론이 답해야 할 질문이다**
 
 해당 조사 폴더에서:
-- `input/*_설문지_*.docx` — 파트 구성과 문항
-- `input/*_통계표_*` — 표 개수, 배너 구성, 베이스
+- `03_설문지/*_설문지_*.docx` — 파트 구성과 문항
+- `07_테이블/*_통계표_*` — 표 개수, 배너 구성, 베이스
 
 ### 0-3. 읽은 것을 요약해 제시한다
 ```
@@ -317,7 +318,7 @@ python engine/tools/banner_insight.py work/tables.json --summary-map work/summar
 (summary_map + conclusion_map → `목차.md` 첫 펜스 Part Ⅱ 항목 · `### 요약 꼭지` · `### 결론 및 제언` — 손으로 쓰지 않는다).
 **교차분석 패널(R-145, 사용자 지시 2026-08-24)** — 헤드라인이 집단 차이를 말하면 근거 패널은 배너 교차여야 한다. 지시어는 `배너 가로 누적 100% 막대 (군)`(단일 응답·보기 전수) / `배너 가로 묶음 막대 (군)`(중복·TOP2·행 선별) — 빌더가 홈로봇 형식으로 **전치**(행 = 집단, 행마다 Base, 열 = 보기)한다. 차트를 그릴 패널에 `배너 표` 를 쓰면 열이 100% 인 표를 행 방향으로 쌓아 PPT 가 틀어진다. 절단선 밖 군(연면적·소유 형태·입주사 수)도 요약에는 쓴다. 교차 후보 탐색 패킷: `python engine/tools/crosstab_digest.py work --out work/crosstab` 으로 만든 `work/crosstab/_index.json` + `표N.json`(tables.json 에서 만든 군별 display 요약 — 담당 정의가 이 경로를 읽는다). xlsm 게이트: `verify --mode guide` V17 이 요약 패널의 모든 수치·Base 를 근거 표에 대조한다.
 
-**설계의 출발점은 조사 목적이다(R-141)** — guide-summary 는 RFP·킥오프·ToKnowList(00_공통)에서 목적 매핑표(항목 × 문항 × 표 × 꼭지)를 먼저 만들고 부재 항목을 메운다. Part Ⅲ 대분류(R-140)는 ToKnowList 의 의뢰인 구분을 그대로 쓴다.
+**설계의 출발점은 조사 목적이다(R-141)** — guide-summary 는 RFP·킥오프·ToKnowList(00_협의)에서 목적 매핑표(항목 × 문항 × 표 × 꼭지)를 먼저 만들고 부재 항목을 메운다. Part Ⅲ 대분류(R-140)는 ToKnowList 의 의뢰인 구분을 그대로 쓴다.
 
 1. 본문 헤더를 전수로 이어 읽고 To Know List 와 대조한다 — 표는 후보가 섰을 때 연다(R-201·R-221)
 2. 인사이트 후보를 뽑는다 — **예상과 다른 것**이 값어치가 있다
@@ -341,7 +342,7 @@ python engine/tools/banner_insight.py work/tables.json --summary-map work/summar
 ## Step 5 — 출력 + 검증
 
 ```bash
-python engine/tools/build_guide.py <work/slide_facts.json> <out/{조사}_제작가이드_YYMMDD.xlsm>        --toc <work/목차.md> --tables <work/tables.json> --questionnaire <work/questionnaire.json>        --overview <work/조사개요.json> --logo <00_공통/{클라이언트}로고.png>        --title "<조사명>" --date "<제출일>" --cover "C19=<클라이언트 챠트색>" --dash-empty
+python engine/tools/build_guide.py <work/slide_facts.json> <out/{조사}_제작가이드_YYMMDD.xlsm>        --toc <work/목차.md> --tables <work/tables.json> --questionnaire <work/questionnaire.json>        --overview <work/조사개요.json> --logo <00_협의/{클라이언트}로고.png>        --title "<조사명>" --date "<제출일>" --cover "C19=<클라이언트 챠트색>" --dash-empty
 python engine/tools/verify.py      <out/…xlsm> <work/tables.json>        --facts <work/slide_facts.json> --questionnaire <work/questionnaire.json> --toc <work/목차.md>
 ```
 

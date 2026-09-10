@@ -37,8 +37,8 @@ R-126(결론은 판단만 — 근거는 요약이 갖는다) · 결론 항목마
 
 ## 받는 것 (시야)
 
-- **의뢰인 원문**(00_공통: RFP·시장조사개요·킥오프 회의록·ToKnowList) — 목적 매핑표의 출처(R-141)
-- **설문지**(input/*설문지*.docx + work/questionnaire.json — 파트·BASE·Part D 컨셉 안내문·D10 제시가 구조) (R-142)
+- **의뢰인 원문**(00_협의: RFP·시장조사개요·킥오프 회의록·ToKnowList) — 목적 매핑표의 출처(R-141)
+- **설문지**(03_설문지/*설문지*.docx + work/questionnaire.json — 파트·BASE·Part D 컨셉 안내문·D10 제시가 구조) (R-142)
 - **본문 헤더 전수**(`멘트_확정.json` 또는 slide_facts[].ment 69줄) — **1급 입력이다.**
   표를 뒤지기 전에 이것부터 이어 읽는다(아래 「읽는 순서」)
 - tables.json 전수 · slide_facts(본문 팩트) · KPI 요약표 · ToKnowList ·

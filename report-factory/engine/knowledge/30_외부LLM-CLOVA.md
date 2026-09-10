@@ -81,7 +81,7 @@ python engine/tools/verify.py work/검수/clova_conclusion.json work/tables.json
 
 ## 6. 1차 파일럿 결과 (2026-08-23, 결론·제언)
 Claude 담당 치명 0·경고 0 vs HCX-007 치명 2·경고 8 vs HCX-005 치명 0·경고 8. 구조 규칙(박스 3+총결론·→ 제언)·근거 좌표·개조식 문체에서 CLOVA 가 게이트를 못 넘음.
-상세: `projects/…/02_비상주/1_제작가이드/work/검수/ab_conclusion_clova.md`. API 실측: HCX-007 은 `max_completion_tokens`+`reasoning_effort`, `response_format` 은 양쪽 40001(프롬프트 강제로 대체).
+상세: `projects/…/02_비상주/09_제작가이드/work/검수/ab_conclusion_clova.md`. API 실측: HCX-007 은 `max_completion_tokens`+`reasoning_effort`, `response_format` 은 양쪽 40001(프롬프트 강제로 대체).
 다음 시도 조건: few-shot(확정본) · claims 압축 입력 · 반려 재발주 1회.
 
 ## 7. 2차 파일럿 (컨텍스트 팩 + few-shot) — 요약 헤드라인 0/5 통과(두 모델), 결론 제언 누락. few-shot 은 HCX-005 가 예시문을 복사하는 부작용.

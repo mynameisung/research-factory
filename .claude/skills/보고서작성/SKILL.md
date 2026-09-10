@@ -27,6 +27,7 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py
 - **`UPDATE: CHECK_FAILED <이유>`** — 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 최신으로 읽지 않는다.
 - **`MEMORY: <경로>`** — 그 `MEMORY.md` 를 읽는다. 「결정된 것」은 다시 묻지 않는다. 스킬이 끝날 때 세 절(결정된 것 · 지시의 요지 · 다음 세션이 알아야 할 것)을 갱신한다. `MEMORY_NEW: yes` 면 읽을 것이 없으니 끝날 때 채우기만 한다.
 - **`MEMORY: NONE`** — 조사 폴더 인자가 없었다. 조사가 정해지는 즉시 조사 폴더를 인자로 이 명령을 다시 실행한다.
+- **`PATHS: {…}`** — 역할 → 경로 JSON. 설문지·통계표·정본 JSON·제작본·최종보고서 같은 파일과 단계 폴더를 **여기서 찾는다.** 폴더 이름을 추측하거나 `input/` 을 뒤지지 않는다. 역할 하나만 필요하면 `paths.py <조사> --role <역할>`. `LAYOUT: v1` 이면 옛 배치이고 같은 역할 이름으로 풀려 있으니 그대로 쓴다(`paths.py migrate` 는 사람이 정한다). `LAYOUT: none` 이면 `paths.py new <프로젝트>/<조사>` 로 뼈대를 만든다.
 
 사용자 입력과 손 편집은 훅이 같은 `_memory/` 폴더에 자동으로 남긴다(`knowledge/02_프로젝트-메모리.md`). 이 블록은 스킬 본문의 어떤 규칙보다 먼저다.
 <!-- PREAMBLE:END -->
@@ -74,7 +75,7 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py
 
 ## 시작 전에 반드시 읽는다
 
-1. 조사 폴더의 `2_보고서작성/HANDOVER.md` 가 있으면 **그것부터**
+1. 조사 폴더의 `11_보고서/HANDOVER.md` 가 있으면 **그것부터**
 2. `report-factory/engine/learning/packs/report.md` — 업무 B 규칙 38장(R-PPT 계열 + report 분류). 규칙 대장 전문을 읽지 않는다
 3. `report-factory/engine/knowledge/report/23_팀구조-PPT제작.md` — 팀 구조·시야표·배치표
 4. `report-factory/engine/knowledge/report/22_검수-체크리스트.md`
@@ -89,10 +90,10 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py
 `ORIENTATION.md` 가 있으면 읽고 변경사항만 확인한다. 없으면 `work/조사개요.json` 을 읽는다.
 둘 다 없으면 `/제작가이드` 의 Step 0 절차를 수행한다.
 
-**업무 A가 무엇을 보냈는지 확인한다** — `1_제작가이드/out/` 제출본과 `.baseline/` 스냅샷.
+**업무 A가 무엇을 보냈는지 확인한다** — `09_제작가이드/out/` 제출본과 `.baseline/` 스냅샷.
 제출 후 사람이 손으로 고친 diff 가 있으면 그게 이번 회고의 학습 데이터다.
 
-**경로를 정한다**: `2_보고서작성/in/` 에 제작본이 있으면 A, 없고 제작팀을 거치지 않기로 했으면 B.
+**경로를 정한다**: `11_보고서/in/` 에 제작본이 있으면 A, 없고 제작팀을 거치지 않기로 했으면 B.
 경로 B는 **사용자 확인을 받고 시작한다** — 예시 덱을 쓰는 일이라 유출 위험이 따라온다.
 
 ### 작업 폴더 위생 (양 경로 공통, 시작 시 1회)
@@ -107,7 +108,7 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py
 
 ## A1. 수령 · 현황 파악
 
-제작본을 `2_보고서작성/in/` 에 놓고:
+제작본을 `11_보고서/in/` 에 놓고:
 
 ```bash
 python engine/tools/fill_deck.py --scan <in/{조사}_제작본_YYMMDD.pptx>
@@ -131,7 +132,7 @@ python engine/tools/fill_deck.py --scan <in/{조사}_제작본_YYMMDD.pptx>
 통과했다(표만 보므로). 그래서 스캔 다음에 이걸 돌린다:
 
 ```bash
-python engine/tools/refill_deck.py <in/제작본.pptx> <1_제작가이드/work/slide_facts.json> --audit-charts
+python engine/tools/refill_deck.py <in/제작본.pptx> <09_제작가이드/work/slide_facts.json> --audit-charts
 ```
 
 실제로 잡아낸 것(에스원 2026-09-03, 차트 69개):
@@ -140,7 +141,7 @@ python engine/tools/refill_deck.py <in/제작본.pptx> <1_제작가이드/work/s
 ## A2. 정본 재반영 — `refill_deck` 이 정본 경로다
 
 ```bash
-python engine/tools/refill_deck.py <in/제작본.pptx> <1_제작가이드/work/slide_facts.json>   --out <out/{조사}_보고서_{rev}_YYMMDD.pptx> --fit-rows
+python engine/tools/refill_deck.py <in/제작본.pptx> <09_제작가이드/work/slide_facts.json>   --out <out/{조사}_보고서_{rev}_YYMMDD.pptx> --fit-rows
 ```
 
 **`fill_deck --fill` 을 이 자리에 쓰지 않는다.** 그건 문항코드로 표를 찾으므로
@@ -391,7 +392,7 @@ fatal 은 "PowerPoint 가 거부한다"가 아니라 **"이대로 납품하면 �
 ## V2-b 덱 ↔ 정본 한 장씩 대조 〔기계 · 매 빌드〕
 
 ```bash
-python engine/tools/audit_deck_values.py <out/최종.pptx> <1_제작가이드/work/slide_facts.json>   --md <out/장별대조.md>
+python engine/tools/audit_deck_values.py <out/최종.pptx> <09_제작가이드/work/slide_facts.json>   --md <out/장별대조.md>
 ```
 
 V2 가 표 셀을 통계표와 대조한다면, 이건 **차트 값까지** 장별로 맞춰 본다.
@@ -417,7 +418,7 @@ V2 가 표 셀을 통계표와 대조한다면, 이건 **차트 값까지** 장�
 ## V2 수치 전수 대조 〔기계 · 매 빌드〕
 
 ```bash
-python engine/tools/verify.py <out/최종.pptx> <1_제작가이드/work/tables.json>     --mode deck --facts <1_제작가이드/work/slide_facts.json>     --questionnaire <1_제작가이드/work/questionnaire.json> --out <out/검수리포트.md>
+python engine/tools/verify.py <out/최종.pptx> <09_제작가이드/work/tables.json>     --mode deck --facts <09_제작가이드/work/slide_facts.json>     --questionnaire <09_제작가이드/work/questionnaire.json> --out <out/검수리포트.md>
 ```
 
 > `--deck <파일>` 형태는 폐기됐다(2026-09-01 실측: 그대로 치면 「멘트 모드는 --facts 가
@@ -437,7 +438,7 @@ python engine/tools/verify.py <out/최종.pptx> <1_제작가이드/work/tables.j
 ## V2-b 차트 전수 감사 〔기계 · 매 빌드〕
 
 ```bash
-python engine/tools/refill_deck.py <out/최종.pptx> <1_제작가이드/work/slide_facts.json>   --audit-charts --md <out/차트감사_{rev}.md>
+python engine/tools/refill_deck.py <out/최종.pptx> <09_제작가이드/work/slide_facts.json>   --audit-charts --md <out/차트감사_{rev}.md>
 ```
 
 **V2 는 표를 본다. 차트는 여기서 본다.** 이 둘을 나눠 두는 이유가 실측으로 있다 —
@@ -487,7 +488,7 @@ V1 이 「PowerPoint 가 여는가」를 본다면 V4 는 **「사람이 보기�
   **정밀도 약 70%라 차단하지 않는다** — 사람이 판정한다. 빈도비 내림차순으로 나온다.
   실측: 납품된 최종본 5벌 **전부**에서 오타를 찾았다(`출입동제` 1회 ↔ `출입통제` 423회 등)
 
-경로 B 빌드 스크립트(`projects/…/2_보고서작성/work/build_body.py` — 아직 엔진에 없다) 끝에서 자동으로 돈다. fatal 이면 거기서 멈춘다. 경로 A 에서는 위 명령을 손으로 돌린다.
+경로 B 빌드 스크립트(`projects/…/11_보고서/work/build_body.py` — 아직 엔진에 없다) 끝에서 자동으로 돈다. fatal 이면 거기서 멈춘다. 경로 A 에서는 위 명령을 손으로 돌린다.
 
 ## V5 렌더 QA 〔에이전트 `deck-render-qa` · 챕터 단위 병렬〕
 
@@ -521,9 +522,9 @@ V1 이 「PowerPoint 가 여는가」를 본다면 V4 는 **「사람이 보기�
 
 헌법 1에 따라 **고치지 않고 반송**한다.
 
-- `2_보고서작성/work/반송_가이드팀.md` 에 append. **이 파일은 PPT 세션만 쓴다**
+- `11_보고서/work/반송_가이드팀.md` 에 append. **이 파일은 PPT 세션만 쓴다**
 - 항목마다 `R-PPT-NNN` 연번 + 심각도(높음/중/낮음) + 근거
-- 가이드 팀은 자기 파일(`1_제작가이드/work/반송처리_로그.md`)에 처리 상태를 쓰고
+- 가이드 팀은 자기 파일(`09_제작가이드/work/반송처리_로그.md`)에 처리 상태를 쓰고
   반영 완료를 메시지로 통지한다. 상태 칸 갱신은 통지받은 뒤 내가 한다
 - **정본이 재빌드되면 덱도 재빌드한다.** 통지 전에 미리 빌드해 봐야 버린다
 
@@ -531,8 +532,8 @@ V1 이 「PowerPoint 가 여는가」를 본다면 V4 는 **「사람이 보기�
 
 | 소유 | 파일 |
 |---|---|
-| PPT 세션 | `2_보고서작성/**` (산출물·빌드 스크립트·HANDOVER·반송 대장) |
-| 가이드 세션 | `1_제작가이드/**` · 정본 데이터(`slide_facts.json` · `tables.json`) |
+| PPT 세션 | `11_보고서/**` (산출물·빌드 스크립트·HANDOVER·반송 대장) |
+| 가이드 세션 | `09_제작가이드/**` · 정본 데이터(`slide_facts.json` · `tables.json`) |
 
 상대 소유 파일은 **직접 수정하지 않고 메시지로 넘긴다.**
 한 경로에 두 세션이 쓰면 나중 것이 이긴다 — 실제로 HANDOVER 가 덮여쓰인 적이 있다.
