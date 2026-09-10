@@ -4,6 +4,29 @@
 
 통계표·설문지·조사개요를 넣으면 제작가이드(.xlsm)와 보고서 PPT 가 나온다. 연구원은 git 을 몰라도 된다.
 
+## 0. 설치 — 30초
+
+**요구 사항:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code) · [Git](https://git-scm.com/) · Python 3.11+ · (개선 공유용) [GitHub CLI](https://cli.github.com/)
+
+Claude Code 를 열고 아래 상자를 그대로 복사해 붙여넣으면 Claude 가 알아서 한다 (상자 오른쪽 위 복사 단추).
+
+```text
+report-factory 설치: git clone https://github.com/FineHourTeam/report-factory.git 로 원하는 위치에 받고, 그 폴더에서 powershell -File setup.ps1 (macOS/Linux 는 ./setup) 을 실행한 다음, 그 폴더를 Claude Code 작업 폴더로 열어 줘.
+```
+
+직접 하려면 터미널에서:
+
+```bash
+git clone https://github.com/FineHourTeam/report-factory.git
+cd report-factory
+powershell -File setup.ps1
+```
+
+macOS/Linux 는 마지막 줄 대신 `./setup`. 끝나면 그 폴더를 Claude Code 작업 폴더로 연다.
+
+클론한 폴더가 곧 작업 폴더다. 스킬·에이전트·엔진이 상대 경로로 서로를 찾으므로 **폴더 안 구조는 바꾸지 않는다.**
+설치되면 이 폴더에서 입력하는 지시는 조사별 `_memory/` 에 자동으로 저장된다.
+
 ## 1. 업무 흐름
 
 ```mermaid
@@ -196,30 +219,7 @@ RULES.md (사람용 대장, 카드 R-nnn)
 어느 조사에 기록할지는 `projects/.active` 가 정하고, 스킬이 조사 폴더 인자를 받으면 적어 둔다. 자세한 것은
 `knowledge/02_프로젝트-메모리.md`. `/회고` 는 이 두 원문을 ★★★ 관찰 소스로 읽는다.
 
-## 9. 설치 — 30초
-
-**요구 사항:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code) · [Git](https://git-scm.com/) · Python 3.11+ · (개선 공유용) [GitHub CLI](https://cli.github.com/)
-
-Claude Code 를 열고 아래 상자를 그대로 복사해 붙여넣으면 Claude 가 알아서 한다 (상자 오른쪽 위 복사 단추).
-
-```text
-report-factory 설치: git clone https://github.com/FineHourTeam/report-factory.git 로 원하는 위치에 받고, 그 폴더에서 powershell -File setup.ps1 (macOS/Linux 는 ./setup) 을 실행한 다음, 그 폴더를 Claude Code 작업 폴더로 열어 줘.
-```
-
-직접 하려면 터미널에서:
-
-```bash
-git clone https://github.com/FineHourTeam/report-factory.git
-cd report-factory
-powershell -File setup.ps1
-```
-
-macOS/Linux 는 마지막 줄 대신 `./setup`. 끝나면 그 폴더를 Claude Code 작업 폴더로 연다.
-
-클론한 폴더가 곧 작업 폴더다. 스킬·에이전트·엔진이 상대 경로로 서로를 찾으므로 **폴더 안 구조는 바꾸지 않는다.**
-설치되면 이 폴더에서 입력하는 지시는 조사별 `_memory/` 에 자동으로 저장된다.
-
-## 10. 업그레이드와 협업
+## 9. 업그레이드와 협업
 
 ```
 연구원 1·2·3                       관리자(리드)                 GitHub FineHourTeam/report-factory (비공개)
@@ -242,7 +242,7 @@ macOS/Linux 는 마지막 줄 대신 `./setup`. 끝나면 그 폴더를 Claude C
 - **고르기**: 관리자가 공용으로 쓸 PR 만 병합하고, 그때 `VERSION` 과 `CHANGELOG.md` 를 함께 올린다. CHANGELOG 항목이
   곧 연구원 화면에 뜨는 「바뀐 점」 문구다.
 
-## 11. 새 조사 시작하기
+## 10. 새 조사 시작하기
 
 1. 뼈대를 만든다. 프로젝트 README·ORIENTATION 은 템플릿에서 복사되고, 조사 폴더는 5절의 단계 폴더로 생긴다.
 
@@ -256,7 +256,7 @@ python report-factory/engine/tools/paths.py new <연도>_<클라이언트>_<프�
    조사 폴더는 `projects/<프로젝트>/<조사>` 꼴이면 된다. 오리엔테이션(조사 목적·의뢰인이 알고 싶은 것·요약·결론 필요 여부)부터 시작한다.
 4. `engine/` 은 건드리지 않는다. 새로 배운 규칙은 `/회고` 로 올리고, 도구 개선은 `/개선공유` 로 보낸다.
 
-## 12. 여기 없는 것
+## 11. 여기 없는 것
 
 - `report-factory/projects/` — 고객 데이터. 어떤 경우에도 리포에 올리지 않는다.
 - `report-factory/engine/refs/` — 코퍼스 원본 5벌과 하우스 그래프 가이드(157MB). 규칙의 근거이며 사내 드라이브로 전달한다.
