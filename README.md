@@ -1,4 +1,4 @@
-# report-factory
+# report-factory &nbsp;<sub><sup>powered by seo-yeon</sup></sub>
 
 > 통계표가 나온 순간부터 납품 PPT 까지, 리서치 보고서 제작을 Claude Code 팀으로 바꾼다.
 
