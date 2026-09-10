@@ -46,9 +46,11 @@ NS = {"c": C_NS}
 
 REFS_DIR = Path(__file__).resolve().parents[1] / "refs"
 
+#: 골든셋 실물은 **코퍼스 사례 폴더가 정본**이다 — 종전에는 refs 루트에 같은 바이트의
+#: 사본을 따로 두어 15MB 가 중복됐다(2026-08-31 정리). 사본은 refs/_archive 로 옮겼다.
 DECKS = [
-    ("예시_제작본_LG홈로봇_최종.pptx", "ground_truth_LG홈로봇.json"),
-    ("예시_제작본_SKEE만족도_0127.pptx", "ground_truth_SKEE.json"),
+    ("5_LG홈로봇/5-5. lg 홈로봇조사 보고서 제작본.pptx", "ground_truth_LG홈로봇.json"),
+    ("1_SKEE만족도/1-5. skee 만족도 보고서 최종본.pptx", "ground_truth_SKEE.json"),
 ]
 
 # 본문 레이아웃. 두 덱 모두 `3_master-1`.

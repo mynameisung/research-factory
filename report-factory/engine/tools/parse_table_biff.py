@@ -32,6 +32,7 @@ try:  # 모듈로 import 될 때와 스크립트로 실행될 때 모두 동작�
         Grid,
         TableParseError,
         build_document,
+        normalize_grid_columns,
         summarize,
     )
 except ImportError:  # pragma: no cover
@@ -41,6 +42,7 @@ except ImportError:  # pragma: no cover
         Grid,
         TableParseError,
         build_document,
+        normalize_grid_columns,
         summarize,
     )
 
@@ -420,6 +422,11 @@ def parse(path: str | Path, *, prefer: str = "auto",
         raise TableParseError(f"입력 파일이 없습니다: {p}")
     grids, reader = read_grids(p, prefer=prefer)
     table_grid, index_grid = pick_sheets(grids)
+    # 수작업 열이 끼어 밀린 파일 보정 (정상 파일에서는 항등)
+    table_grid, col_fix = normalize_grid_columns(table_grid)
+    if col_fix["dropped_leading"] or col_fix["dropped_middle"]:
+        print(f"[parse_table_biff] 열 밀림 보정: 앞 {col_fix['dropped_leading']}열 제거"
+              f" · 중간 열 {col_fix['dropped_middle']} 제거", file=sys.stderr)
     return build_document(
         table_grid, index_grid,
         source=str(p.resolve()),
@@ -430,6 +437,7 @@ def parse(path: str | Path, *, prefer: str = "auto",
         extra_meta={
             "reader": reader,
             "sheets": list(grids),
+            "column_normalization": col_fix,
             "generated_at": _dt.datetime.now().isoformat(timespec="seconds"),
         },
     )
@@ -453,7 +461,8 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     try:
-        in_groups = tuple(g.strip() for g in args.in_groups.split(";") if g.strip()) \n            or BANNER_GROUPS_IN_REPORT
+        in_groups = (tuple(g.strip() for g in args.in_groups.split(";") if g.strip())
+                     or BANNER_GROUPS_IN_REPORT)
         doc = parse(args.input, prefer=args.prefer, skip_bad_tables=args.skip_bad,
                     in_report_groups=in_groups)
     except TableParseError as e:

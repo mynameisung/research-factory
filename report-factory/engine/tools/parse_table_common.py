@@ -587,6 +587,56 @@ def build_index(index_grid: Grid | None,
     return entries, warnings
 
 
+# ── 열 밀림 보정 ────────────────────────────────────────────────────────────
+BASE_LABEL = "Base for %"
+
+
+def normalize_grid_columns(grid: Grid) -> tuple[Grid, dict[str, Any]]:
+    """수작업이 얹힌 통계표의 **열 밀림**을 바로잡는다.
+
+    DP 가 준 통계표는 A열이 행 라벨(`Base for %`)이고 C열이 「전체」다. 연구원이
+    손계산 열을 왼쪽에 끼워 넣으면 표 전체가 오른쪽으로 밀려 파서가 표를 하나도
+    못 찾는다(에스원 비상주 2026-09-06 실측: 왼쪽 작업 열 6개 + 라벨과 「전체」
+    사이에 계산 열 1개 = 53열). 정상 파일에서는 항등이다.
+
+    ① `Base for %` 가 처음 나오는 열을 0열로 당긴다(그 앞은 작업 열).
+    ② 첫 배너 머리행의 「전체」 열이 2열보다 뒤면 2열~그 앞 열을 지운다.
+    반환: (보정된 그리드, 무엇을 지웠는지 기록). 지운 열의 내용은 버린다 —
+    그 열이 필요하면 호출자가 원 그리드에서 따로 뜬다.
+    """
+    info: dict[str, Any] = {"dropped_leading": 0, "dropped_middle": []}
+    label_col: int | None = None
+    for r in range(grid.nrows):
+        for c in range(min(grid.ncols, 40)):
+            if grid.text(r, c).strip() == BASE_LABEL:
+                label_col = c
+                break
+        if label_col is not None:
+            break
+    if label_col is None:
+        return grid, info
+    values = [row[label_col:] for row in grid.values]
+    formats = [row[label_col:] for row in grid.formats]
+    info["dropped_leading"] = label_col
+
+    total_col: int | None = None
+    for r in range(min(len(values), 200)):
+        for c in range(1, min(len(values[r]), 12)):
+            v = values[r][c]
+            if isinstance(v, str) and v.strip() == "전체":
+                total_col = c
+                break
+        if total_col is not None:
+            break
+    if total_col is not None and total_col > 2:
+        drop = list(range(2, total_col))
+        keep = [c for c in range(len(values[0])) if c not in drop]
+        values = [[row[c] if c < len(row) else None for c in keep] for row in values]
+        formats = [[row[c] if c < len(row) else "General" for c in keep] for row in formats]
+        info["dropped_middle"] = [c + label_col for c in drop]   # 원 시트 기준 열 번호
+    return Grid(name=grid.name, values=values, formats=formats), info
+
+
 # ── 최상위 빌더 ────────────────────────────────────────────────────────────
 def build_document(table_grid: Grid,
                    index_grid: Grid | None,

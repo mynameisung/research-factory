@@ -593,13 +593,16 @@ SUMMARY_CHART = "전체 : 텍스트 박스"
 SUMMARY_BASE = "[Base: 전체(n=500)/ Unit: %]"
 
 
-def conclusion_layout(n_items: int) -> str:
+def conclusion_layout(n_items: int, *, overall: bool = False) -> str:
     """결론 장표의 레이아웃 지시.
 
     LG 는 이 칸에 산문으로 지시한다 — `제목 - 내용 형태의 박스 3개 -> 총결론 박스 하나
     구성 부탁드립니다.` (B308). 비워 두면 제작팀이 만들 수가 없다.
-    항목 수에 맞춰 단 구성을 제안한다.
+    항목 수에 맞춰 단 구성을 제안하고, 총론이 있으면 LG 어휘를 그대로 쓴다.
     """
+    if overall:
+        return (f"제목 - 내용 형태의 박스 {n_items}개 -> 총결론 박스 하나 "
+                f"구성 부탁드립니다.")
     if n_items <= 3:
         return f"제목 - 내용 형태의 박스 {n_items}개 구성 부탁드립니다."
     cols = 3 if n_items % 3 == 0 else 2
@@ -721,25 +724,43 @@ def panel_chart_type(chart: str) -> str:
     제작팀이 행 방향으로 막대를 쌓아도 각 행이 100% 가 되도록 표기에 못 박는다 (R-145, 홈로봇 실측 r153).
     """
     scope, _, rest = chart.partition(" ")
-    if scope == "배너" and rest and not rest.startswith("표"):
+    if scope == "배너" and rest and not _is_table_body(rest):
         m = re.search(r"\(([^)]*)\)", rest)
-        groups = m.group(1).strip() if m else "배너"
-        body = rest[:m.start()].strip() if m else rest.strip()
+        # 괄호(배너군 선택자)만 걷어낸다 — 그 **뒤에 오는 꼬리 지시**(`· 전·후 같은
+        # 보기끼리 점선으로 연결` 등)는 제작팀 지시이므로 남긴다. r75 실측에서
+        # `rest[:m.start()]` 가 괄호 이후를 통째로 버려 점선 지시가 사라졌다.
+        clean = (rest[:m.start()] + rest[m.end():]).strip() if m else rest.strip()
+        body, _sep, tail = clean.partition(" · ")
+        body = body.strip()
         if not body.endswith("그래프"):
             body += " 그래프"
-        # 합이 100 이 되는 것은 **누적 100%** 뿐이다. 묶음 막대(중복응답·TOP2 요약·행 선별)는 합이 100 이 아니므로
-        # 「각 행 Base 100%」라고 적으면 제작팀이 정규화해 정본과 어긋난다 (반증관 실측 2026-08-24:
-        # 표74 행 합 171.5 · 표81 선별 3행 합 124.8 · 표9001 TOP2 3지표 합 198.2).
-        tail = ("각 행 Base 100%" if "누적" in body
-                else "각 행 Base = 그 집단 n · 행 합 100% 아님")
-        return f"배너 : {body} (행 = {groups} 집단, {tail})"
+        if tail.strip():
+            body += f" · {tail.strip()}"
+        # 괄호 부연(`(행 = … 집단, 각 행 Base 100%)`)을 뺐다 — 사용자 지시 2026-09-01
+        # 「배너에 쓸 데 없는 거 지우기」. 배너군 이름과 집단은 **표 안에 군 이름 행과
+        # 집단 행으로 이미 서 있고**, 행마다 `Base for %` 칸이 붙는다. 같은 말을 지시어에
+        # 한 번 더 적으면 제작팀이 읽어야 할 줄만 길어진다. 누적인지 묶음인지는
+        # 지시어 본문(`가로 누적 100% 막대` ↔ `가로 묶음 막대`)이 이미 가른다.
+        return f"배너 : {body}"
     return f"{scope} : {rest}".strip() if rest else scope
+
+
+def _is_table_body(rest: str) -> bool:
+    """배너 지시어의 본문이 **표**인가 — 그리는 지시가 아니라 옮겨 싣는 지시인가.
+
+    「표 (일부 위탁)」처럼 표로 시작하는 것만 보다가, 사용자가 실물에서
+    「좌우 가로막대 표 (…)」라고 고친 판(2026-09-02)을 전치 차트로 오판했다.
+    수식어가 앞에 붙어도 **본문이 표로 끝나면 표다** — 「좌우 가로막대」는 그 표의
+    값 칸을 어떻게 칠할지에 대한 제작팀 지시일 뿐, 자료 구조는 표 그대로다.
+    """
+    body = rest.split("(")[0].strip()
+    return body.startswith("표") or body.endswith("표")
 
 
 def is_transposed(chart: str) -> bool:
     """배너 패널인데 `표` 가 아니면(막대 등) 전치 교차표 — 행 = 전체 + 배너 집단, 열 = 보기."""
     scope, _, rest = chart.partition(" ")
-    return scope == "배너" and bool(rest) and not rest.lstrip().startswith("표")
+    return scope == "배너" and bool(rest) and not _is_table_body(rest)
 
 
 #: 패널 배치 지시의 **행 선별** 꼬리 — `전체 가로막대 · 상위 3` / `… · 행 'A'|'B'`.
@@ -929,6 +950,16 @@ def panel_source(spec: dict, by_page: dict[int, dict],
         m_groups = re.search(r"\(([^)]*)\)", spec["chart"])
         if m_groups:
             grid = select_panel_columns(grid, re.split(r"[·,/]", m_groups.group(1)))
+            # 지정한 배너군이 그리드에 없으면 **전체 열 하나만** 남는다 — 그러면 배너 패널이
+            # 아니라 전체값 한 줄짜리 그림이 되는데, 목차의 패널 제목은 「연면적별 …」로 남아
+            # 읽는 이도 심사자도 그 축이 그려진 줄로 믿는다. 조용히 넘어가면 안 되는 자리다.
+            # 실측 (비상주 r26, 2026-09-01): 꼭지 7 의 P63·P64 가 「건물 연면적」을 지정했으나
+            # 연면적은 배너 절단선 밖(in_report=false)이라 본문 슬라이드 그리드에 없었고,
+            # 두 패널이 「전체」 한 줄로 렌더됐다. 검수도 칸 대조도 통과했다 — 틀린 값이 아니라
+            # 없는 값이라서다. 절단선 밖 배너군은 `표{n}` 으로 참조해야 원표에서 다시 뽑는다.
+            if len(grid.get("base_row") or []) <= 2:
+                warn(f"요약 패널 {ref} — 배너군 「{m_groups.group(1)}」 열이 그리드에 없어 "
+                     f"전체 열만 남았습니다. 절단선 밖 배너군이면 `표{{n}}` 으로 참조하십시오")
     # 범례는 **이 패널에 실리는 열** 기준으로 — 선별로 저베이스 열이 빠졌으면 범례도 뺀다 (ADV-06).
     # 비배너 패널은 전체 열 하나만 실리므로 전체 n 만 본다 (비판 평가 2026-08-23: n=500 패널에 별표 주석이 붙고
     # 정작 n<30 열이 있는 배너 패널에는 없던 반전을 고침). 슬라이드가 물려준 base_unit 의 주석도 떼고 다시 판정한다.
@@ -951,11 +982,17 @@ def panel_source(spec: dict, by_page: dict[int, dict],
         n_data = n_total + (max(len(r["cells"]) for r in grid["rows"]) - 1 if banner else 0)
     ct = panel_chart_type(spec["chart"])
     if transpose and mean_rows and "누적" in ct:
-        # 누적 100% 는 구간 열끼리의 이야기다 — 평균 열이 합산에 끼면 행 합이 100 을 넘는다 (반증 F4)
-        ct += " · [평균] 열은 막대에서 제외하고 우측 텍스트로"
+        # 누적 100% 는 구간 열끼리의 이야기다 — 평균 열이 합산에 끼면 행 합이 100 을 넘는다 (반증 F4).
+        # 전치 패널에서 평균은 **열**이 되므로 행수식어 칸을 못 쓴다. 그래서 지시어에 남기되,
+        # 설명 대신 하우스 통용 어휘 한 마디로 적는다 — 제작팀은 이 말을 신호로 읽는다
+        # (지시어 사전 §1-1 · 사용자 2026-09-01 「차트에서 평균은 텍스트로 보통 빼거든」).
+        ct += " · [평균] 은 그래프 상단 Text"
+    # 요약 장표의 패널에는 문항 회색 줄을 두지 않는다 (사용자 지시 2026-09-01).
+    # 요약은 표를 여러 장 모아 놓는 자리라 문항이 패널마다 붙으면 그림보다 글이 많아지고,
+    # 애초에 어느 문항인지는 근거 표기(`* 근거: …`)와 패널 제목이 이미 말한다.
     return {**spec, "grid": grid, "banner": banner, "overlay": overlay, "transpose": transpose,
             "n_data": n_data, "question": question, "base_unit": base_unit,
-            "chart_type": ct}
+            "chart_type": ct, "no_question": True}
 
 
 def write_panel(ws, skin: Skin, *, top: int, label_col: int, label_span: int,
@@ -973,12 +1010,18 @@ def write_panel(ws, skin: Skin, *, top: int, label_col: int, label_span: int,
     first = label_end + 1
     mod_col = label_col - 1
 
-    ws.cell(top, label_col, panel["title"]).font = skin.font_b
-    skin.row_label(ws, top)
-    skin.row_label(ws, top + 1)                       # 제목과 문항 사이 빈 줄 (LG 138)
-
-    panel_row = top + 2
-    ws.cell(panel_row, label_col, panel["question"])
+    if panel.get("no_question"):
+        # 요약·결론 장표에는 문항 회색 줄을 두지 않는다 (사용자 지시 2026-09-01).
+        # LG 실측도 요약 패널은 **제목 자리에 문항을 적어** 줄을 하나만 쓴다(r139·r159).
+        # 우리는 주제 제목을 쓰므로 그 자리를 제목이 차지하고 문항 줄은 만들지 않는다.
+        panel_row = top
+        ws.cell(panel_row, label_col, panel["title"]).font = skin.font_b
+    else:
+        ws.cell(top, label_col, panel["title"]).font = skin.font_b
+        skin.row_label(ws, top)
+        skin.row_label(ws, top + 1)                   # 제목과 문항 사이 빈 줄 (LG 138)
+        panel_row = top + 2
+        ws.cell(panel_row, label_col, panel["question"])
 
     group_row = grid["banner_group_row"][1:]          # [0] 은 라벨 열 자리
     label_row = grid["banner_label_row"][1:]
@@ -991,7 +1034,10 @@ def write_panel(ws, skin: Skin, *, top: int, label_col: int, label_span: int,
         ws.cell(hdr, first + 1, cols[1])
         banner_start, vmerge = first + 2, [first, first + 1]
     else:
-        ws.cell(hdr, first, group_row[0])
+        # 첫 열 머리는 라벨을 우선 쓴다. 보통 표는 라벨도 「전체」라 달라지는 것이 없고,
+        # 직접 생성한 병합표만 라벨에 지표 이름을 담는다 — 군을 「전체」에서 바꾸면
+        # 절단선 로직이 열을 버리므로(표9005 실측), 군은 두고 표시만 라벨이 진다.
+        ws.cell(hdr, first, (label_row[0] or "").strip() or group_row[0])
         banner_start, vmerge = first + 1, [first]
 
     spans: list[tuple[int, int]] = []
@@ -1002,6 +1048,12 @@ def write_panel(ws, skin: Skin, *, top: int, label_col: int, label_span: int,
         for j, l in enumerate(label_row[1:]):
             ws.cell(hdr + 1, banner_start + j, l)
         spans = _group_spans(group_row[1:], banner_start)
+        # 집단 라벨이 빈 열은 군 이름 칸을 두 행으로 합친다 — 군 하나가 곧 열 하나인
+        # 파생표(표9005 「일부 위탁한 비율」)에서 위 칸에만 글이 있고 아래 칸이 비면
+        # 머리가 잘린 것처럼 보인다 (사용자가 실물에서 직접 셀을 합쳐 고침, 2026-09-02).
+        vmerge = list(vmerge) + [banner_start + j for j, l in enumerate(label_row[1:])
+                                 if not str(l or "").strip()
+                                 and str(group_row[1:][j] or "").strip()]
 
     base_r = hdr + 2
     ws.cell(base_r, label_col, "Base for %")
@@ -1062,11 +1114,15 @@ def write_panel_transposed(ws, skin: Skin, *, top: int, label_col: int, label_sp
     base_vals = grid["base_row"][1:]
     last_col = first + len(cols)
 
-    ws.cell(top, label_col, panel["title"]).font = fb
-    skin.row_label(ws, top)
-    skin.row_label(ws, top + 1)
-    panel_row = top + 2
-    ws.cell(panel_row, label_col, panel["question"])
+    if panel.get("no_question"):                     # 요약·결론은 문항 회색 줄을 쓰지 않는다
+        panel_row = top
+        ws.cell(panel_row, label_col, panel["title"]).font = fb
+    else:
+        ws.cell(top, label_col, panel["title"]).font = fb
+        skin.row_label(ws, top)
+        skin.row_label(ws, top + 1)
+        panel_row = top + 2
+        ws.cell(panel_row, label_col, panel["question"])
     hdr = panel_row + 1
     ws.cell(hdr, first, "Base for %")
     for j, c in enumerate(cols):
@@ -1075,13 +1131,21 @@ def write_panel_transposed(ws, skin: Skin, *, top: int, label_col: int, label_sp
     # 데이터 행: 전체 → 군 이름 행 → 집단 행들
     row = hdr + 1
     lines = []                                       # (라벨, base, 값들, 군이름행?)
-    lines.append(("전체", base_vals[0], [r["cells"][0] for r in rows], False))
+    # 첫 행 라벨도 라벨을 우선 쓴다 — 직접 생성한 전·후 비교표는 첫 열이 「제시 전」이다
+    # (군은 절단선 통과를 위해 「전체」로 남는다 · 표9004 실측 2026-09-02).
+    first_lab = (str(label_row[0]).strip() if label_row else "") or "전체"
+    lines.append((first_lab, base_vals[0], [r["cells"][0] for r in rows], False))
+    #: 집단이 하나뿐인 군은 군 이름 행을 만들지 않는다 — 두 행짜리 전·후 표에
+    #: 「[시점]」 띠가 끼면 표가 세 줄이 되고 읽는 이만 헷갈린다.
+    from collections import Counter as _Counter
+    _gcnt = _Counter(g for g in group_row[1:] if g)
     cur = ""
     for i in range(1, len(label_row)):
         g = group_row[i] if i < len(group_row) else ""
         if g and g != cur:
             cur = g
-            lines.append((f"[{g}]", None, [], True))
+            if _gcnt.get(g, 0) > 1 or not str(label_row[i]).strip():
+                lines.append((f"[{g}]", None, [], True))
         lines.append((str(label_row[i]).strip(), base_vals[i] if i < len(base_vals) else None,
                       [(r["cells"][i] if i < len(r["cells"]) else None) for r in rows], False))
     first_data = row
@@ -1167,12 +1231,22 @@ def plan_summary(panels: list[dict]) -> tuple[list[tuple], list[tuple], list[tup
 
 
 def summary_subtitles(toc_path: Path | None) -> dict[int, str]:
-    """summary_map.json 의 subtitle(꼭지가 아우르는 문항 묶음 — guide/14 §6) — 요약 블록 Sub title 칸 (비판 평가 2026-08-23)."""
-    try:
-        sm = json.loads((Path(toc_path).parent / "summary_map.json").read_text(encoding="utf-8"))
-        return {int(x["no"]): str(x.get("subtitle") or "") for x in sm.get("summaries", [])}
-    except Exception:                                # noqa: BLE001
-        return {}
+    """요약 블록의 Sub title 칸 — **제목을 그대로 되풀이한다** (사용자 지시 2026-09-02).
+
+    종전에는 정본의 `subtitle`(꼭지가 아우르는 문항 묶음 — guide/14 §6)을 실었다.
+    그런데 그 줄은 「입주사 수별 관리 운영 방식 · 위탁 중인 업무 · 가장 중요한 위탁 서비스 ·
+    월 지불 비용」처럼 길어, 제목 아래에서 목차를 한 번 더 읽는 꼴이 됐다.
+    코퍼스도 이쪽에 가깝다 — LG 요약 블록 여섯 중 다섯이 부제 빈칸이다.
+
+    정본의 `subtitle` 은 **지우지 않는다.** 설계 기록이고 `guide/14 §6` 의 산출물이므로
+    남기되, 시트에 쓸 때만 제목으로 대체한다. 「결론 및 제언」은 요약 꼭지가 아니라
+    이 함수를 타지 않는다(그 블록은 지금도 부제가 빈칸이다).
+    """
+    # 2026-09-02 사용자 지시로 **비운다** — 「Slide title 이랑 똑같잖아」.
+    # 제목 되풀이(같은 날 오전 지시)를 하루 써 보고 무의미하다고 판정했다.
+    # 코퍼스와도 맞다: LG 요약 블록 여섯 중 다섯이 부제 빈칸이다.
+    # 정본의 subtitle 필드는 설계 기록으로 남고, 시트에는 내보내지 않는다.
+    return {}
 
 
 def write_summary_block(ws, row: int, skin: Skin, *, slide_title: str, qu: str,
@@ -1286,11 +1360,15 @@ def write_summary_block(ws, row: int, skin: Skin, *, slide_title: str, qu: str,
 #: 확정 목차 코드블록의 한 줄은 여러 항목을 **두 칸 이상**으로 벌려 적는다.
 #    `   1. 시장      2. 공백      8. 결론 및 제언`
 #    항목명 자체에 공백이 들어갈 수 있으므로(`결론 및 제언` — 고정 섹션명) 먼저
-#    두 칸 이상으로 쪼갠 뒤 각 토큰을 통째로 읽는다. 꼬리 괄호(`(12장)`)는 버린다.
-RE_TOC_ITEM = re.compile(r"^(\d+)\.\s*(.+?)\s*(?:\([^)]*\))?$")
+#    두 칸 이상으로 쪼갠 뒤 각 토큰을 통째로 읽는다.
+#    꼬리 괄호는 **장수 표기(`(12장)`)일 때만** 버린다 — 아무 괄호나 버리면 통계표 원제의
+#    괄호까지 잘려 목차 시트와 본문 시트의 제목이 어긋난다 (제작팀 반송 2026-09-01:
+#    부록 3 이 `D9. 지불 용의 비용` ↔ `D9. 지불 용의 비용(서비스료)` 로 갈렸다).
+RE_TOC_ITEM = re.compile(r"^(\d+)\.\s*(.+?)\s*(?:\(\s*\d+\s*장\s*\))?$")
 RE_PART_HEAD = re.compile(r"^Part\s+([ⅠⅡⅢⅣ])\.\s*(.+?)\s*$")
 RE_TOC_GROUP = re.compile(r"^([A-Z])\.\s+(\S.*?)\s*$")      #: 대분류 행 `A. 건물 관리 현황` (한 줄에 하나, 챕터 항목과 같은 줄 금지)
-RE_PII_HEAD = re.compile(r"^\*\*(\d+)\.\s*(.+?)\*\*\s*←\s*(.*?)\s*$")
+#: `**3. 꼭지 제목** ← 근거` — 번호는 **선택**이다. 번호 없는 머리는 결론의 총론 박스다.
+RE_PII_HEAD = re.compile(r"^\*\*(?:(\d+)\.\s*)?(.+?)\*\*\s*←\s*(.*?)\s*$")
 
 #: 요약 꼭지의 **패널 배치 지시**. 꼭지 제목 바로 아래 펜스 코드블록 안에 한 줄씩 적는다.
 #:
@@ -1354,12 +1432,18 @@ def _closes_ment(text: str) -> bool:
     return 0xAC00 <= o <= 0xD7A3 and (o - 0xAC00) % 28 == 16      # 종성 16 = ㅁ
 
 
+#: 목차.md 의 멘트 줄 앞에 붙는 **구조 표지**. 파서가 헤드라인·소결론을 가르는 데 쓰지만
+#: 장표에는 나가지 않는다 — 덱이 세 줄을 같은 굵기 불릿으로 렌더하므로 표지가 그대로
+#: 인쇄되면 글머리가 두 겹이 된다 (사용자 지시 2026-09-02 「-과 ➔ 빼자」).
+RE_MENT_MARKER = re.compile(r"^\s*[-–—➔→★※•·]\s*")
+
+
 def _ment_lines(body: list[str]) -> list[str]:
     """물리 줄 목록 → 멘트 줄 목록. 개조식이 끝날 때까지 이어 붙인다."""
     out: list[str] = []
     buf = ""
     for ln in body:
-        t = _clean(ln).strip()
+        t = RE_MENT_MARKER.sub("", _clean(ln)).strip()
         if not t:
             continue
         buf = f"{buf} {t}" if buf else t
@@ -1472,8 +1556,13 @@ def parse_toc(path: Path, part_label: "dict[str, str] | None" = None) -> dict[st
                 continue
             m = RE_PII_HEAD.match(ln.strip())
             if m:
-                cur_item = {"no": int(m.group(1)), "title": _clean(m.group(2)),
-                            "source": _clean(m.group(3)), "body": [], "panels": []}
+                # 번호가 없는 머리(`**총론** ← 결론 1 · 결론 2`)는 **총결론 박스**다.
+                # LG 실측 어휘 `제목 - 내용 형태의 박스 3개 -> 총결론 박스 하나 구성` 의 그 박스로,
+                # 앞 박스들을 합쳐 최종 제언 하나로 닫는다 (사용자 지시 2026-09-01).
+                no = int(m.group(1)) if m.group(1) else None
+                cur_item = {"no": no, "title": _clean(m.group(2)),
+                            "source": _clean(m.group(3)), "body": [], "panels": [],
+                            "is_overall": no is None}
                 out.append(cur_item)
             elif (cur_item is not None and ln.strip() and not ln.startswith("|")
                     and not re.fullmatch(r"[-=_*\s]+", ln)):
@@ -1774,7 +1863,10 @@ def write_structure_head(ws, row: int, toc: dict, overview: dict,
             no = int(item.split(".")[0])
             s = toc["summaries"].get(no)
             if s:
-                qu = f"* 근거: {s['source']}" if s.get("source") else ""
+                # 근거 표기는 시트에 내보내지 않는다 (사용자 지시 2026-09-02
+                # 「요약·결론에서는 Question/Reference 값만 없애줘」). 어느 표를 썼는지는
+                # 정본(summary_map.claims)과 각 패널 제목·Base 가 이미 진다.
+                qu = ""
                 # `Slide title` 은 **확정 목차**의 항목명을 쓴다 (검수가 이 이름으로
                 # 요약 블록을 알아본다). 요약 꼭지 제목과 어긋나면 목차.md 안에서
                 # 두 곳이 따로 논다는 뜻이므로 조용히 넘기지 않는다.
@@ -1806,26 +1898,28 @@ def write_structure_head(ws, row: int, toc: dict, overview: dict,
                 # 목차.md 의 요약 번호에 없는 항목 = 결론 꼭지
                 body = []
                 for c in toc["conclusions"]:
-                    body.append((f"{c['no']}. {c['title']}", f"← {c['source']}"))
+                    # 총론 박스는 번호를 달지 않는다 — 앞 박스들의 상위 판단이지
+                    # 나란히 놓이는 세 번째 항목이 아니다.
+                    head = c["title"] if c.get("is_overall") else f"{c['no']}. {c['title']}"
+                    body.append((head, f"← {c['source']}"))
                     for ln in c["body"]:
                         body += [(t, "") for t in _sentences(ln)]
-                n_items = len(toc["conclusions"])
+                n_items = sum(1 for c in toc["conclusions"] if not c.get("is_overall"))
                 # 스케치 도형 앵커 — `Data` 라벨 아래 첫 행. 제목 띠에 박스 제목을 적는다 (LG 본문_제작용 결론 블록 실측)
                 SKETCH_ANCHORS.append({"row": row + len(LABELS) + 1 + len(body) + 2,   # 텍스트 줄 아래
                                        "titles": [c["title"] for c in toc["conclusions"]]})
                 row_before = row
                 row = write_struct_block(ws, row, skin, slide_title=item,
-                    chart_type=toc.get("conclusion_layout") or conclusion_layout(n_items),
+                    chart_type=(toc.get("conclusion_layout")
+                                or conclusion_layout(n_items, overall=any(
+                                    c.get("is_overall") for c in toc["conclusions"]))),
                     # 결론은 표가 없는 텍스트 장표다. Base 를 하나로 못 박으면 거짓이 된다 —
                     # 박스마다 근거 요약이 다르고 그 요약들의 Base 가 87·198·266·300·500 으로 다르다.
                     # LG 도 이 칸을 비워 뒀다(r309). 근거는 `Question/Reference` 의 요약 추적으로 남는다.
                     base_unit="",
                     # 근거 표기는 결론 항목들이 실제로 가리키는 것을 모아 쓴다. 요약 꼭지에서
                     # 도출한 덱이면 「요약 꼭지」가, 본문 장에서 직접 끌어온 덱이면 그 장 번호가 나온다.
-                    qu=("* 근거: " + " / ".join(
-                        f"{c['no']}. {c['source']}" for c in toc["conclusions"] if c.get("source"))
-                        if body and any(c.get("source") for c in toc["conclusions"])
-                        else ("* 근거: Part Ⅱ 요약 꼭지" if body else "")),
+                    qu="",   # 근거 표기 미표시 — 요약 블록과 같은 규칙 (2026-09-02)
                     rows=body); n += 1
                 # 스케치 도형 자리 예약 — 박스 6행 + 화살표 2행 + 총결론 6행 + 여백 (다음 블록과 겹치지 않게)
                 row += SKETCH_ROWS
@@ -1877,20 +1971,87 @@ def write_toc(ws, slides: list[dict], toc: dict | None = None) -> None:
 #: `Chart type`·`Data` 는 본문_제작용 블록의 같은 이름 라벨을 그대로 옮긴 것이다 (사용자 지시 2026-08-27).
 #: 연구원이 이 시트만 훑어도 「무슨 그림으로 그리는가 · 무슨 멘트가 붙는가」를 볼 수 있게 한다 —
 #: 본문 시트로 건너뛰지 않아도 되도록. 자리는 `구성 및 BASE` 바로 뒤다.
-RESEARCH_TOC_COLS = ("챕터", "서브 타이틀", "문항코드", "질문", "표", "구성 및 BASE",
+#: `설문 Part` 는 **챕터 앞**에 둔다 — 보고서 챕터가 설문지의 어느 파트에서 왔는지를
+#: 연구원이 한눈에 대조하도록(사용자 지시 2026-08-29). 보고서 목차는 설문 순서를
+#: 재구성하므로(R-024) 한 챕터가 여러 파트에 걸치기도 하고, 그 사실 자체가 검토거리다.
+RESEARCH_TOC_COLS = ("설문 Part", "챕터", "서브 타이틀", "문항코드", "질문", "표", "구성 및 BASE",
                      "Chart type", "Data", "P", "요약·결론", "링크")
 
 
-def appendix_specs(toc: dict, by_page: dict, by_index: dict, warn) -> list[dict]:
-    """요약·결론이 쓴 표 가운데 **본문에 실리지 않은 것**을 부록 대상으로 모은다 (사용자 지시 2026-08-24).
+def questionnaire_parts(path: Path | None) -> dict[str, str]:
+    """문항코드 → 설문지 파트 제목. `questionnaire.json` 의 `parts[].question_codes` 에서 뒤집는다."""
+    if not path:
+        return {}
+    try:
+        doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    except Exception:                                  # noqa: BLE001 — 없으면 열을 비운다
+        return {}
+    out: dict[str, str] = {}
+    for p in doc.get("parts") or []:
+        if p.get("synthetic"):                         # 파트 헤더가 없어 만들어 낸 자리는 적지 않는다
+            continue
+        title = str(p.get("title") or "").strip()
+        for code in p.get("question_codes") or []:
+            out[str(code)] = title
+    for q in doc.get("questions") or []:               # 파트 목록에 빠진 문항은 개별 필드로 보완
+        code, part = str(q.get("code") or ""), str(q.get("part") or "")
+        if code and code not in out and part:
+            hit = next((str(p.get("title") or "") for p in (doc.get("parts") or [])
+                        if str(p.get("code")) == part and not p.get("synthetic")), "")
+            if hit:
+                out[code] = hit
+    return out
 
-    「요약 및 결론에 나온 숫자는 다 조사 결과에서 찾을 수 있어야 한다」가 요구다. 교차 패널은 본문 절단선
-    밖 배너군(건물 연면적·입주사 수 등)을 원표에서 끌어오므로, 그 수치는 본문 어디에도 없다.
-    그래서 **그 표를 부록에 싣는다** — 부록에 실리면 독자가 찾을 수 있고, 검수 V18 도 통과한다.
+
+#: 직접 생성한 파생표를 **부록에 실을 만한 표**로 볼 최소 원천 수.
+#: 둘을 나란히 둔 것(표9004 = 표77·79 전·후 대비)은 원표 두 장을 보면 그만이지만,
+#: 아홉을 모아 지표 사슬을 세운 것(표9001)은 그 사슬이 모아 놓은 표에만 있다.
+DERIVED_APPENDIX_MIN_SOURCES = 3
+
+
+def _derived_covered(tidx: int, by_index: dict, by_page: dict) -> bool:
+    """직접 생성한 파생표인데 **원천 표가 전부 본문에 있어** 부록이 필요 없는가.
+
+    파생표는 통계표에 없으므로 「본문에 없는 표」로 잡히지만, 그 값은 원표에 그대로 있다.
+    원표가 다 실려 있으면 독자는 본문에서 수치를 찾을 수 있고, 그때 부록은 장 수만 늘린다.
+    다만 원천이 여럿(`DERIVED_APPENDIX_MIN_SOURCES` 이상)이면 **모아 놓은 것 자체가 발견**이라
+    부록에 싣는다 — 흩어진 원표로는 지표 사슬을 볼 수 없기 때문이다.
+
+    **배너 패널이어도 이 검사를 먼저 탄다.** 파생표의 열 이름은 우리가 지은 것이라
+    본문에 없는 배너군으로 잡히지만, 그것은 우리가 만든 이름이지 새 수치가 아니다
+    (표9005 「중요도 / 위탁 중」 두 열은 표18·표32 의 전체 열을 옮긴 것뿐이다).
+    """
+    t = by_index.get(tidx) or {}
+    src = t.get("generated_from") or []
+    if not src or len(src) >= DERIVED_APPENDIX_MIN_SOURCES:
+        return False
+    in_body = {i for s in by_page.values() for i in (s.get("source_tables") or [])}
+    return all(i in in_body for i in src)
+
+
+def appendix_specs(toc: dict, by_page: dict, by_index: dict, warn) -> list[dict]:
+    """요약·결론이 쓴 **교차 수치 가운데 본문에서 찾을 수 없는 것**만 부록으로 모은다.
+
+    판정 단위는 **표가 아니라 값**이다 (사용자 정정 2026-09-02: 「APPENDIX 는 교차분석에서
+    쓰이는 거고, 조사 결과에서 숫자 자체를 찾을 수 있으면 안 뽑아도 돼. 너는 표 단위로
+    생각하는 것 같아」). 그래서
+
+    - **전체값 패널은 부록을 만들지 않는다.** 전체 값은 그 문항(또는 파생표의 원천 문항)
+      본문 장표에 그대로 있다 — 표를 모아 놓았다는 사실은 부록 사유가 아니다.
+    - **배너 패널은 그 군이 본문 절단선 안이면 만들지 않는다.** 용도·권역·관리 운영 방식
+      교차는 본문 모든 장표의 배너 표에 이미 있다 — A8 TOP2 Summary 의 용도 값도
+      항목별 본문 장표에서 찾아진다.
+    - 남는 것은 **절단선 밖 교차**(입주사 수·건물 연면적 등)뿐이다. 그 수치는 본문
+      어디에도 없으므로 부록이 받친다 — V18(요약 수치 추적)도 이것으로 통과한다.
 
     돌려주는 각 항목: {ref, table, groups, title, why}
-      · `groups` 가 비면 표 전체가 본문에 없다는 뜻이고, 차 있으면 그 배너군만 본문 밖이라는 뜻이다.
     """
+    #: 본문 장표들이 실제로 실은 배너군의 합집합 — 「찾을 수 있는가」의 자(尺)다.
+    #: 절단선이 프로젝트 전역이므로(모든 본문 장표가 같은 IN 군을 편다) 합집합으로 족하다.
+    body_universe: set[str] = set()
+    for sl in by_page.values():
+        g = (sl.get("grid") or {}).get("banner_group_row") or []
+        body_universe |= {str(x).strip() for x in g[1:] if str(x).strip()}
     def body_groups_of(page: int | None, tidx: int | None) -> set[str] | None:
         """본문에 실린 그 표의 배너군 집합. 본문에 없으면 None."""
         sl = by_page.get(page) if page is not None else None
@@ -1908,20 +2069,19 @@ def appendix_specs(toc: dict, by_page: dict, by_index: dict, warn) -> list[dict]
         for spec in s.get("panels") or []:
             ref = str(spec.get("ref") or "")
             chart = str(spec.get("chart") or "")
-            if not chart.startswith("배너"):
-                continue                       # 전체값 패널은 본문에도 같은 값이 있다
-            m = re.search(r"\(([^)]*)\)", chart)
-            groups = [g.strip() for g in re.split(r"[·,/]", m.group(1))] if m else []
             page = int(ref[1:]) if ref.startswith("P") else None
             tidx = int(ref[1:]) if ref.startswith("표") else None
-            bg = body_groups_of(page, tidx)
-            if bg is None:
-                why, missing = "본문에 없는 표", groups
-            else:
-                missing = [g for g in groups if g and g not in bg]
-                if not missing:
-                    continue                   # 본문에 이미 같은 배너군으로 실려 있다
-                why = "본문에 싣지 않은 배너 기준"   # 독자 대면 표기 — 내부 은어(절단선·배너군) 금지 (초독자 감사 2026-08-28)
+            banner = chart.startswith("배너")
+            if not banner:
+                continue                       # 전체값 패널 — 값은 본문(원천) 장표에 있다
+            if tidx is not None and _derived_covered(tidx, by_index, by_page):
+                continue                       # 파생표인데 원천이 전부 본문에 있다 (표9004·표9005)
+            m = re.search(r"\(([^)]*)\)", chart)
+            groups = [g.strip() for g in re.split(r"[·,/]", m.group(1))] if m else []
+            missing = [g for g in groups if g and g not in body_universe]
+            if not missing:
+                continue                       # 그 교차는 본문 배너 표에서 찾아진다
+            why = "본문에 싣지 않은 배너 기준"   # 독자 대면 표기 — 내부 은어(절단선·배너군) 금지 (초독자 감사 2026-08-28)
             key = (ref, tuple(sorted(missing)))
             if key in seen:
                 continue
@@ -1951,6 +2111,17 @@ def write_appendix(ws, row: int, skin_body: Skin, skin_struct: Skin, specs: list
                 warn(f"부록 {sp['ref']} — 통계표를 찾지 못해 건너뜁니다")
                 continue
             grid = BF.build_grid(t, extra_groups=set(sp["groups"]) or None, small_base_mark=False)
+            # 부록은 **본문에 없는 조각만** 싣는다 (사용자 지적 2026-09-02 「이거 실제로
+            # 있는데 왜 부록으로 뺐어」). 종전에는 원표의 보고서 열 전부(용도·권역·…)를
+            # 실어, 본문에 이미 있는 표를 한 번 더 붙인 것으로 읽혔다. 걸린 배너군이
+            # 있으면 전체 + 그 군만 남긴다 — 부제의 사유(「본문에 싣지 않은 배너 기준」)와
+            # 실물이 그대로 맞는다.
+            if sp["groups"]:
+                grid = select_panel_columns(grid, list(sp["groups"]))
+            else:
+                # 걸린 배너군이 없는 표(직접 생성 병합표)는 요약이 전체 열만 썼다 —
+                # 배너 17열을 다 실으면 이 표만 본문 장표처럼 넓어져 또 중복으로 읽힌다.
+                grid = select_panel_columns(grid, ["(전체만)"])
             qu = t.get("title_full") or ""
             base_n = t.get("base_n")
         else:
@@ -1986,10 +2157,42 @@ def part2_usage(toc_path: Path | None) -> dict:
     if not toc_path:
         return out
     W = Path(toc_path).parent
+
+    # 요약이 **Summary 표**(예: A8 만족도 TOP2 Summary = 표19)를 쓰면, 본문에 실리는 것은 같은
+    # 문항의 **항목별 원표**(표21~27)라 표 번호가 어긋나 연구부 시트의 「요약·결론」 열이 빈다.
+    # 만족도 일곱 장 전부가 「요약에 안 쓰인 장표」로 보였다 (사용자 지적 2026-09-01).
+    # 실제로는 그 일곱 장을 요약한 표를 요약이 쓰고 있으므로, 원표 행에도 같은 라벨을 붙인다.
+    matrix_kin: dict[int, list[int]] = {}
+    try:
+        _t = json.loads((W / "tables.json").read_text(encoding="utf-8"))
+        _tl = _t["tables"] if isinstance(_t, dict) else _t
+        by_code: dict[str, dict[str, list[int]]] = {}
+        for t in _tl:
+            code = t.get("question_code")
+            if not code:
+                continue
+            h = t.get("hints") or {}
+            slot = by_code.setdefault(code, {"summary": [], "item": []})
+            if h.get("is_summary"):
+                slot["summary"].append(t["index"])
+            elif h.get("is_matrix_item"):
+                slot["item"].append(t["index"])
+        for slot in by_code.values():
+            for s in slot["summary"]:
+                if slot["item"]:
+                    matrix_kin[s] = sorted(slot["item"])
+    except Exception as e:                           # noqa: BLE001
+        print(f"[research_toc] Summary↔원표 매핑 실패: {e}")
+
     def add(key, label):
         out.setdefault(key, [])
         if label not in out[key]:
             out[key].append(label)
+        if key[0] == "T":
+            for kin in matrix_kin.get(key[1], []):
+                out.setdefault(("T", kin), [])
+                if label not in out[("T", kin)]:
+                    out[("T", kin)].append(label)
     try:
         sm = json.loads((W / "summary_map.json").read_text(encoding="utf-8"))
         for sres in sm.get("summaries", []):
@@ -2037,7 +2240,7 @@ def part2_usage(toc_path: Path | None) -> dict:
 
 
 def write_research_toc(ws, toc: dict | None, banner_note: str | None = None, part2_use: dict | None = None,
-                       body_index: dict | None = None) -> None:
+                       body_index: dict | None = None, q_parts: dict | None = None) -> None:
     """`part 3 목차(연구부 확인용)` — 본문 한 장 = 한 행.
 
     LG 는 이 시트에서 여러 문항을 한 행에 묶었다(`A1, A2, A3, A5, A6`). 우리는 접지
@@ -2063,12 +2266,13 @@ def write_research_toc(ws, toc: dict | None, banner_note: str | None = None, par
         return cell
 
     put(2, 1, "Part Ⅲ. 조사 결과", bold=True)
-    put(2, 3, banner_note or "배너 3군 공통 — 용도(6) · 권역(6) · 관리 운영 방식(4)")
+    put(2, 4, banner_note or "배너 3군 공통 — 용도(6) · 권역(6) · 관리 운영 방식(4)")
     for i, name in enumerate(RESEARCH_TOC_COLS):
         put(4, 1 + i, name, bold=True)
 
     r = 5
     prev_chapter = None
+    prev_part = None
     group_of = (toc.get("parts", {}).get("Ⅲ") or {}).get("group_of") or {}
     prev_group = None
     for a in rows:
@@ -2076,28 +2280,33 @@ def write_research_toc(ws, toc: dict | None, banner_note: str | None = None, par
             r += 1                                   # 챕터 사이 한 줄 비움 (LG 실측)
         prev_chapter = a["chapter"]                  # 대분류 행은 쓰지 않는다 (사용자 지시 2026-08-23)
         bi = (body_index or {}).get(a["page"]) or {}
-        put(r, 1, a["chapter"])
-        put(r, 2, a["sub"])
-        put(r, 3, a["question"])
-        put(r, 4, bi.get("qu") or "")
-        put(r, 5, a["tables"])
-        put(r, 6, a["base"])
-        put(r, 7, bi.get("chart_type") or "")
-        c_ment = put(r, 8, bi.get("ment") or "")
+        # 설문 Part — 문항코드에서 찾는다. 같은 파트가 이어지면 첫 행에만 적어 눈이 덜 피로하다.
+        part_title = (q_parts or {}).get(str(a["question"]).strip(), "")
+        if part_title and part_title != prev_part:
+            put(r, 1, part_title, bold=True)
+        prev_part = part_title or prev_part
+        put(r, 2, a["chapter"])
+        put(r, 3, a["sub"])
+        put(r, 4, a["question"])
+        put(r, 5, bi.get("qu") or "")
+        put(r, 6, a["tables"])
+        put(r, 7, a["base"])
+        put(r, 8, bi.get("chart_type") or "")
+        c_ment = put(r, 9, bi.get("ment") or "")
         c_ment.alignment = Alignment(vertical="top", wrap_text=True)
-        put(r, 9, a["page"])
+        put(r, 10, a["page"])
         if part2_use:
             tags = set(part2_use.get(("P", a["page"]), [])) | {t for n in re.findall(r"\d+", str(a.get("tables") or "")) for t in part2_use.get(("T", int(n)), [])}
             if tags:
-                put(r, 10, " · ".join(sorted(tags, key=lambda x: (x.startswith("결론"), x))))
+                put(r, 11, " · ".join(sorted(tags, key=lambda x: (x.startswith("결론"), x))))
         if bi.get("row"):                            # 본문_제작용 의 Slide title 행으로 가는 하이퍼링크 (사용자 지시 2026-08-23)
-            c = put(r, 11, f"P{a['page']} 표 보기")
+            c = put(r, 12, f"P{a['page']} 표 보기")
             from openpyxl.worksheet.hyperlink import Hyperlink
             c.hyperlink = Hyperlink(ref=c.coordinate, location=f"'{bi.get('sheet', '본문_제작용')}'!A{bi['row']}", display=f"P{a['page']} 표 보기")
             c.font = Font(name="나눔고딕", size=11, underline="single", color="0563C1")
         r += 1
 
-    for col, w in zip("ABCDEFGHIJK", (14.6, 26.0, 10.0, 60.0, 10.0, 40.0, 30.0, 64.0, 6.0, 30.0, 12.0)):
+    for col, w in zip("ABCDEFGHIJKL", (26.0, 14.6, 26.0, 10.0, 60.0, 10.0, 40.0, 30.0, 64.0, 6.0, 30.0, 12.0)):
         ws.column_dimensions[col].width = w
     ws.freeze_panes = "A5"
 
@@ -2359,6 +2568,8 @@ def main() -> int:
                     help="확정 목차(work/목차.md) — 표지·목차·간지·요약 블록의 원본")
     ap.add_argument("--tables", type=Path, default=None,
                     help="통계표 JSON (기본: facts 폴더의 tables.json) — 표1 응답자 특성용")
+    ap.add_argument("--questionnaire", type=Path, default=None,
+                    help="설문지 JSON (기본: facts 폴더의 questionnaire.json) — 연구부 확인용 시트의 「설문 Part」 열")
     ap.add_argument("--overview", type=Path, default=None,
                     help="조사 목적·설계 JSON (기본: 목차.md 폴더의 조사개요.json)")
     ap.add_argument("--title", default=None, help="Cover!C4 보고서 제목")
@@ -2529,7 +2740,8 @@ def main() -> int:
 
     write_toc(wb[TOC_SHEET], slides, toc)
     if RESEARCH_TOC_SHEET in wb.sheetnames:
-        write_research_toc(wb[RESEARCH_TOC_SHEET], toc, args.banner_note, part2_use=part2_usage(args.toc), body_index=body_index)
+        write_research_toc(wb[RESEARCH_TOC_SHEET], toc, args.banner_note, part2_use=part2_usage(args.toc),
+                           body_index=body_index, q_parts=questionnaire_parts(args.questionnaire or (args.facts.parent / "questionnaire.json")))
     wb.save(args.out)
 
     # ── 제작팀 송부본: `_` 접두 시트 제거.

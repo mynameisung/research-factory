@@ -15,8 +15,15 @@
                   supertip="데이터막대·배너 음영·형광을 그대로 담아 저장합니다. 가져오기로 연 사본이면 원본 파일 이름 뒤에 _전처리후 를 붙여 제안합니다."/>
           <button id="btnRunAll" label="한 번에 실행" size="large" imageMso="MacroPlay"
                   onAction="cbRunAll"
-                  screentip="1 → 2 → 3 을 잇달아 실행한다"
-                  supertip="배너 선정, 데이터막대, 인사이트을 순서대로 실행합니다. 되돌릴 수 없는 삭제는 하지 않으므로, 결과를 보고 직접 누르시면 됩니다."/>
+                  screentip="1 → 2 → 3 → 4 를 잇달아 실행한다"
+                  supertip="배너 선정, 데이터막대, 인사이트, 빈 칸 채우기를 순서대로 실행합니다. 되돌릴 수 없는 삭제(제외 배너 삭제)는 하지 않으므로, 결과를 보고 직접 누르시면 됩니다."/>
+        </group>
+
+        <group id="grpSettings" label="설정">
+          <button id="btnSettings" label="설정" size="large" imageMso="ControlProperties"
+                  onAction="cbSettings"
+                  screentip="보존 배너군·Base 하한·인사이트 기준을 정한다"
+                  supertip="세 기능이 함께 쓰는 기준을 한 자리에서 고칩니다. 저장하면 다음에 엑셀을 다시 열어도 그대로 남습니다."/>
         </group>
 
         <group id="grpBanner" label="1. 배너 선정">
@@ -28,10 +35,6 @@
                   onAction="cbDeleteShaded"
                   screentip="회색으로 칠한 배너를 지운다"
                   supertip="표마다 회색 배너 범위를 지우고 왼쪽으로 당깁니다. 매크로가 한 일은 Ctrl+Z 로 되돌아가지 않으므로, 설정의 [삭제 전 백업] 을 켜 두는 편이 안전합니다."/>
-          <button id="btnSettings" label="설정" size="large" imageMso="ControlProperties"
-                  onAction="cbSettings"
-                  screentip="보존 배너군·Base 하한·인사이트 기준을 정한다"
-                  supertip="세 기능이 함께 쓰는 기준을 한 자리에서 고칩니다. 저장하면 다음에 엑셀을 다시 열어도 그대로 남습니다."/>
         </group>
 
         <group id="grpBars" label="2. 데이터막대">

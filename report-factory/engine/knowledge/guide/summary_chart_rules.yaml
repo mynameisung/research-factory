@@ -1,0 +1,403 @@
+# 요약·결론 패널의 그래프 결정 규칙 — 기계 판독용
+#
+# 소비자: engine/tools/rules.py (decide_summary_chart · audit_summary_panels)
+#         engine/tools/verify.py (--mode summary 게이트)
+# 사람용 해설: guide/19_요약그래프-데이터설계.md · guide/14_요약결론-작성규칙.md
+#
+# 왜 본문용(chart_rules.yaml)과 갈라 두는가
+# ------------------------------------------------
+# 본문은 표 한 장이 슬라이드 한 장이고 배너를 전폭에 편다. 요약은 표 여러 장을 한 장에
+# 모으고 배너 표를 떼며, 같은 표라도 본문과 다른 그림으로 다시 그린다(한옥 전수 대조에서
+# 24개 중 6개가 차트 종류를 바꿨다 — 19 §9-1). 판단의 입력도 다르다 — 본문은 문항 유형이
+# 정하고, 요약은 **패널이 놓일 자리 폭과 그 꼭지가 이미 쓴 그림**이 함께 정한다.
+#
+# 근거 표기
+#   corpus:<사례>#s<슬라이드>   납품 최종본 실측 (engine/refs/ground_truth_*.json · gt_*_최종본.json)
+#   doc:19#<절>                 guide/19_요약그래프-데이터설계.md 의 절
+#   user:<날짜>                 사용자(연구원) 지시
+#
+# 신뢰도: 확정 / 검증중 / 가설
+
+schema_version: "1.0"
+generated_at: "2026-09-01"
+
+corpus:
+  sample: "납품 최종본 5벌 · 요약 슬라이드 104장 · 차트 358개"
+  cases:
+    - {name: 1_SKEE만족도,      요약장: 20, 차트: 46, 판형cm: 27.52}
+    - {name: 2_SH청안주,        요약장: 6,  차트: 12, 판형cm: 33.87}
+    - {name: 3_대전한옥지구,    요약장: 6,  차트: 24, 판형cm: 33.87}
+    - {name: 4_에스원물리보안,  요약장: 61, 차트: 213, 판형cm: 33.87, note: "같은 고객사"}
+    - {name: 5_LG홈로봇,        요약장: 11, 차트: 63, 판형cm: 33.87}
+  chart_mix:      # 358개의 종류별 실측 분포 (doc:19#2)
+    가로막대:            {n: 176, share: 0.492, cases: 5, categories: [1, 15, 7],  width_median: 0.15}
+    100%세로누적:        {n: 57,  share: 0.159, cases: 5, categories: [1, 12, 1],  width_median: 0.22}
+    세로묶음막대:        {n: 44,  share: 0.123, cases: 4, categories: [3, 16, 6],  width_median: 0.30}
+    도넛:                {n: 42,  share: 0.117, cases: 4, categories: [2, 7, 4],   width_median: 0.21}
+    "+-세로누적":        {n: 23,  share: 0.064, cases: 2, categories: [1, 7, 1],   width_median: 0.18}
+    가로100%누적:        {n: 14,  share: 0.039, cases: 2, categories: [1, 5, 1],   width_median: 0.30}
+
+# ---------------------------------------------------------------------------
+# 0. 입력 계약 — 판정기에 들어오는 것
+# ---------------------------------------------------------------------------
+input_contract:
+  panel:
+    ref:        {type: str,  note: "P{n}(본문 페이지) 또는 표{n}(통계표·파생표)"}
+    position:   {type: str,  domain: [상, 좌, 중, 우, 우하, 하]}
+    chart:      {type: str,  note: "설계자가 적은 지시어. 판정기는 이것을 심사한다"}
+    base_n:     {type: int}
+    topic:      {type: str}
+  table:        # tables.json#tables[].hints 를 그대로 받는다
+    has_scale_rows:   {type: bool}
+    scale_points:     {type: "int|null", domain: [null, 5, 7, 10]}
+    is_ranking:       {type: bool}
+    rank_scope:       {type: "str|null"}
+    is_multi:         {type: bool}
+    is_summary:       {type: bool,  note: "여러 표의 지표를 모은 병합 요약표"}
+    summary_kind:     {type: "str|null", domain: [null, top2, mean, top1, prepost]}
+    has_mean_row:     {type: bool}
+    has_total_row:    {type: bool}
+    is_interval:      {type: bool,  note: "구간형 금액·면적 (「~ 미만」 보기)"}
+    n_option_rows:    {type: int}
+  context:
+    banner_groups:  {type: list, note: "패널이 쓰는 배너군. 비면 전체 1열"}
+    slot_width:     {type: float, note: "판형 대비 폭. 0.85+ = 전폭"}
+    peer_charts:    {type: list, note: "같은 꼭지의 다른 패널이 이미 쓰는 그림"}
+
+# ---------------------------------------------------------------------------
+# 1. 불변식 — 어기면 설계가 틀린 것이다. 게이트가 막는다.
+# ---------------------------------------------------------------------------
+invariants:
+
+  - id: SC-001
+    severity: fatal
+    name: 「그래프 상단 Text」로 얹는 지표를 독립 그래프로 그리지 않는다
+    rule: >
+      평균(`[N점 평균]`·`[평균 : 만원]`·`[NPS]`)은 차트에서 빼서 그래프 위에 텍스트로
+      올리는 지표다. 그것을 다시 **자기 혼자 카테고리가 되는 별도 패널**로 작도하면,
+      제작팀은 같은 지표를 두 번 그리게 되고 독자는 그 평균이 어느 그래프에 딸린
+      것인지 알 수 없다. 평균은 **그 값을 낳은 TOP2 차트 위에** 얹는다.
+    detect:
+      panel_is_mean_only: true       # 패널의 데이터 행이 평균 행뿐이거나, topic 이 평균만 가리킬 때
+    remedy: >
+      평균 패널을 지우고, 같은 항목의 TOP2 차트를 세로막대로 세운 뒤 `그래프 상단 Text`
+      행수식어로 평균을 얹는다. 두 표(TOP2 표 · 평균 표)가 갈라져 있으면 병합 요약표를
+      직접 만든다(R-076 · doc:19#6-1).
+    evidence:
+      - "user:2026-09-01 「그래프 상단 text라고 한 것을 별도의 그래프로 하면 안 돼」"
+      - "user:2026-09-01 「차트에서 평균은 텍스트로 보통 빼거든. 그래프 상단 text라고 표시하라고 하는 이유가 그런 거지」"
+      - "corpus:1_SKEE#s20·s21·s28 — TOP2 세로막대 위에 5점 평균 텍스트. 평균 단독 차트 0건"
+      - "doc:19#7-1 — 평균의 매체 3종은 모두 **다른 차트에 얹는** 방식이다"
+    confidence: 확정
+
+  - id: SC-002
+    severity: fatal
+    name: 최상위 보기(「매우 ~」)를 단독 차트로 그리지 않는다
+    rule: >
+      척도의 최상위 한 보기만 뽑아 별도 차트로 그린 사례는 코퍼스 358개 중 **0건**이다.
+      하우스는 TOP2 를 쓰고 TOP1 을 쓰지 않는다. 최상위의 얇음을 보이려면 보기 분포를
+      세워(100% 세로누적·+−세로누적) 그 칸의 길이로 읽게 한다.
+    detect:
+      summary_kind: [top1]
+    remedy: 패널을 지우거나, 같은 지표를 보기 분포(계열 = 보기 전수)로 다시 세운다
+    evidence:
+      - "user:2026-09-01 「TOP2 만 쓰고 TOP1은 사용 안 합니다」"
+      - "doc:19#7-2 — 최상위 보기 단독 차트 실측 0건"
+    confidence: 확정
+    supersedes:
+      rule: R-212
+      what: >
+        R-212 는 「최상위(「매우 ~」)가 비어 있지 않은지 함께 본다」고 했는데, 그것을
+        **장표로 세우는** 방식까지 허용한 것으로 읽혀 표9003 같은 단독 패널이 생겼다.
+        확인은 설계자가 하되 **장표에 최상위 단독 차트를 만들지 않는다**로 좁힌다.
+
+  - id: SC-003
+    severity: fatal
+    name: 요약 패널에는 배너 표를 달지 않는다
+    rule: >
+      본문 차트는 4~13행 × 15~17열 배너 표를 달고, 요약 패널은 그 표를 뗀다.
+      배너를 요약에 올릴 때는 **표가 아니라 차트의 축**으로 올린다(SC-102).
+    evidence:
+      - "doc:19#9-1 — 한옥 전수 대조 24/24 에서 배너 표를 뗐다. 예외 0건"
+    confidence: 확정
+    exempt_when: >
+      **막대 수가 자리에 담기지 않을 때**는 표로 싣는다. 실측이 금지한 것은 「차트에 딸려
+      오던 배너 표를 요약까지 끌고 오는 것」이지, 배너를 표로 **대신 싣는 것**이 아니다.
+      묶음 막대는 막대 수가 집단 × 계열이라 금세 불어난다 — 7집단 × 4항목이면 28개이고,
+      어느 자리에 두어도 라벨이 겹쳐 값을 읽을 수 없다(비상주 r54 렌더 실측, 사용자 판정
+      2026-09-02). 덱 빌더도 같은 자리에서 스스로 표로 되돌린다(「범례가 잘린다 — 표로
+      되돌린다」). 그때는 정본이 **처음부터 표로 지시**해야 가이드와 덱이 어긋나지 않는다.
+    exempt_threshold:
+      grouped_bars_max: 20        # 집단 수 × 계열 수. 넘으면 표를 허용한다
+      note: >
+        누적 100% 막대는 막대 수가 집단 수와 같으므로(계열은 한 막대 안에 쌓인다) 이
+        임계에 걸리지 않는다 — 표86 권역 7집단 × 3계열은 막대 7개다.
+
+  - id: SC-009
+    severity: warn
+    name: 문장이 읽지 않는 배너는 싣지 않는다
+    rule: >
+      배너 축을 실었으면 그 꼭지의 문장이 **그 축을 한 번은 불러야** 한다. 축 이름
+      (「입주사가 많을수록」·「연면적이 클수록」)이든 집단 이름(「업무시설」·「서남권」)이든
+      상관없다. 아무도 부르지 않는 배너는 독자에게 「여기 뭔가 갈리는 것이 있다」고
+      말해 놓고 무엇이 갈리는지는 말하지 않는 것이다.
+    detect: 패널의 배너군 이름과 그 군의 집단 라벨이 헤드라인·본문 어디에도 없을 때
+    remedy: 축을 문장에서 짚거나, 읽지 않을 축이면 패널에서 뺀다
+    evidence:
+      - "user:2026-09-02 「요약에 배너가 있는 표가 있는데 해당 배너를 읽지 않으면 굳이 배너가 있을 필요가 없지 않아?」"
+      - "실측 (비상주 r55): 표78 을 「건물 연면적 · 용도」 두 축으로 실었으나 문장은 연면적만 읽었다"
+    note: >
+      집단 이름은 문장에서 줄여 부르는 일이 흔하다 — 「전체 외부 전문업체 위탁」을
+      「전체 위탁」으로. 그래서 판정은 어절 단위 부분일치로 한다.
+    confidence: 확정
+
+  - id: SC-004
+    severity: warn
+    name: 전폭 자리는 병합 지표 패널과 배너 패널만 쓴다
+    rule: 판형의 0.85 이상을 차지하는 패널 14개는 전부 병합 지표(4) 또는 배너(10)다
+    evidence: ["doc:19#10-2 — 예외 0건"]
+    confidence: 확정
+
+  - id: SC-005
+    severity: warn
+    name: 병합 지표 패널은 그 꼭지를 독점한다
+    rule: >
+      척도 여러 문항을 모은 병합 요약표를 세운 장에 **바깥 문항의 패널이 함께 실린
+      사례는 4사례 7장 중 0건**이다. 세우기로 했으면 그 꼭지는 그 표만으로 채운다.
+    evidence: ["doc:19#6-3"]
+    confidence: 확정
+
+  - id: SC-006
+    severity: warn
+    name: 한 꼭지의 패널은 2~4개
+    rule: 요약 104장의 차트 수 분포에서 3패널이 53장으로 절반이고 2~4패널이 76%다
+    range: {min: 2, max: 4, hard_max: 6}
+    evidence: ["doc:19#10-1"]
+    confidence: 확정
+
+  - id: SC-007
+    severity: warn
+    name: 한 꼭지 안에서 같은 그림을 셋 이상 반복하지 않는다
+    rule: >
+      코퍼스에서 한 장에 같은 차트 종류가 셋 이상 반복되는 자리는 **같은 표의 다른
+      지표를 격자로 되풀이하는 경우뿐이다**(LG s17 5그룹 × 3지표 · s18 4폼팩터 × 3지표).
+      서로 다른 문항 넷을 모두 가로막대로 그리면 독자가 네 패널을 한 그림으로 읽는다.
+    exempt_when: 같은 표(또는 같은 병합표)의 다른 지표를 반복하는 격자
+    evidence:
+      - "user:2026-09-01 「요약결론 차트 다변화」"
+      - "doc:19#10-1 — 6패널 초과 장은 전부 격자 반복"
+    confidence: 검증중
+
+  - id: SC-008
+    severity: warn
+    name: 결론 장표에는 차트를 싣지 않는다
+    rule: 5사례 중 4사례의 결론 장표는 차트 0건이다. 물리보안 s77 하나만 4개를 싣는다
+    evidence: ["doc:19#11-2"]
+    confidence: 검증중
+
+# ---------------------------------------------------------------------------
+# 2. 결정표 — 원표의 모양에서 그림을 고른다 (doc:19#2 한눈 결정표)
+#    위에서부터 평가하고 처음 걸리는 것을 쓴다.
+# ---------------------------------------------------------------------------
+decision_table:
+
+  - id: SC-101
+    name: 병합 지표 요약표 — 항목이 카테고리, 지표가 계열
+    when: {table.is_summary: true, table.summary_kind: [top2, mean]}
+    then:
+      chart: "전체 세로묶음막대"
+      alt:   "전체 100% 세로누적막대"      # ② 보기 분포를 항목마다 쌓는 방식 (SH s10)
+      categories: [5, 13]
+      series: [1, 2]
+      width: [0.67, 0.96]
+      graph_top_text_rows: ["[{scale_points}점 평균]"]
+      occupies_section: true                # SC-005
+      companion_table: "항목 라벨 · Base · 요약지표를 담은 표를 차트와 함께 둔다"
+    evidence: ["corpus:1_SKEE#s10,s20,s21,s28", "corpus:2_SH#s10", "doc:19#6-1"]
+    confidence: 확정
+
+  - id: SC-102
+    name: 배너 집단을 축으로 올린다 — 세우는 방향이 폭을 정한다
+    when: {context.has_banner: true}
+    then:
+      chart_horizontal_groups: "배너 세로묶음막대"    # 집단을 가로로 늘어놓는다
+      chart_vertical_groups:   "배너 가로막대"        # 집단을 세로로 세운다(전치)
+      categories: [7, 16]
+      width_horizontal: [0.64, 0.95]
+      width_vertical: 0.24
+      note: >
+        집단을 가로로 늘어놓으면 판형의 0.64~0.95 가 필요하고, 세로로 세우면 0.24 에
+        14집단이 들어간다. 자리 폭이 없으면 세로로 세운다.
+    evidence: ["corpus:3_한옥#s9", "corpus:5_LG#s12,s13", "corpus:4_물리보안#s12,s14,s17", "doc:19#5-2"]
+    confidence: 확정
+
+  - id: SC-103
+    name: 사다리 척도 한 문항 — 전체 1열로 접는다
+    when: {table.has_scale_rows: true, table.is_summary: false, context.has_banner: false}
+    then:
+      chart: "전체 +-세로누적막대"           # 보기 전수를 남길 때 (물리보안)
+      alt:   "전체 100% 세로누적막대"        # 3점으로 압축할 때 + 마지막 계열이 [N점 평균] (SKEE)
+      categories: 1
+      series: [4, 5]
+      width: [0.16, 0.24]
+      graph_top_text_rows: ["【TOP2】", "[{scale_points}점 평균]"]
+      note: >
+        본문 척도 패널은 전폭에 배너를 다 펴고, 요약 척도 패널은 전체 1열로 접는다.
+        두 사례에서 예외 0건이다. 접는 정도(보기 전수 vs 3점 압축)는 갈린다.
+    evidence: ["doc:19#9-2 — 물리보안 21/21 · SKEE 16/16"]
+    confidence: 확정
+
+  - id: SC-104
+    name: 순위 문항 (1순위 + 1~N순위 쌍)
+    when: {table.is_ranking: true}
+    then:
+      chart: "전체 가로겹침막대"
+      categories: [4, 12]
+      series: 2
+      series_order: "긴 값(1~N순위)이 뒤·흐린 색"
+      width: [0.15, 0.25]
+    evidence: ["doc:19#2 — 4/5 사례"]
+    confidence: 확정
+
+  - id: SC-105
+    name: 중복응답 (합 100 제약 없음)
+    when: {table.is_multi: true}
+    then:
+      chart: "전체 가로막대"
+      categories: [4, 15]
+      series: 1
+      width: [0.15, 0.25]
+      label_table: "보기 라벨은 왼쪽 별도 1열 표로 빼고 막대만 좁게 그린다"
+      note: 자르기 전에 라벨 표로 빼는 길을 먼저 본다(doc:19#3-3 · #10-3)
+    evidence: ["doc:19#2 — 5/5 사례 · 176건"]
+    confidence: 확정
+
+  - id: SC-106
+    name: 구간형 금액·면적 — 구간을 다 보여줄 때
+    when: {table.is_interval: true, table.has_mean_row: true}
+    then:
+      chart: "전체 100% 세로누적막대"
+      categories: 1
+      series: [5, 7]
+      width: [0.24, 0.33]
+      graph_top_text_rows: ["[평균 : {unit}]"]
+      mean_medium: "마지막 계열로 넣는다 — 눈금에 안 잡히고 라벨만 뜬다"
+    evidence: ["doc:19#2 — 2/5 사례", "doc:19#7-1"]
+    confidence: 확정
+
+  - id: SC-107
+    name: 구간형 — 구간을 접을 때
+    when: {table.is_interval: true, context.fold_intervals: true}
+    then:
+      chart: "전체 가로막대"
+      categories: 4
+      series: 1
+      width: 0.16
+      mean_medium: "차트 밖 텍스트 표"
+    evidence: ["corpus:3_한옥#s10 — 1/5 사례"]
+    confidence: 검증중
+
+  - id: SC-108
+    name: 사전·사후 같은 문항 재측정
+    when: {table.summary_kind: [prepost]}
+    then:
+      chart: "전체 100% 세로누적막대 2열"
+      categories: 2
+      series: 4
+      width: 0.24
+      companion: "N×N 이동표를 함께 둔다"
+    evidence: ["corpus:5_LG#s11 — 1/5 사례"]
+    confidence: 검증중
+
+  - id: SC-109
+    name: 단일응답 3~7보기
+    when: {table.n_option_rows: {min: 3, max: 7}}
+    then:
+      chart: "전체 도넛"
+      alt: ["전체 가로막대", "전체 세로막대"]
+      categories: [3, 7]
+      series: 1
+      width: [0.20, 0.33]
+      unresolved: true
+      note: 도넛·가로막대·세로막대를 가르는 기준은 확인하지 못했다. 정본이 패널마다 명시한다
+    evidence: ["doc:19#8-3 · #11-1"]
+    confidence: 가설
+
+  - id: SC-110
+    name: 예/아니오 두 보기
+    when: {table.n_option_rows: 2}
+    then:
+      chart: "전체 도넛"                     # 말단일 때
+      alt: "전체 100% 세로누적막대"          # 아래에 서브베이스 문항이 딸린 분기점일 때
+      unresolved: true
+      note: >
+        한옥 안에서 5:5 로 갈리고 SH 는 분기점 둘을 모두 도넛으로 썼다. 이 가설은 이미
+        한 번 기각된 이력이 있다(ANALYSIS_요약가공 §7). 다시 세우지 않는다.
+    evidence: ["doc:19#8-3"]
+    confidence: 가설
+
+  - id: SC-111
+    name: 중요도 × 만족도
+    when: {context.is_ipa: true}
+    then:
+      chart: "좌 : IPA, 우: 가로 겹침 막대"
+      series: 2
+      width: [0.45, 0.70]
+      companion: "사분면 배정표"
+    evidence: ["doc:19#2 — 2/5 사례"]
+    confidence: 확정
+
+  - id: SC-112
+    name: 자유응답·꼬리가 긴 오픈코딩
+    when: {table.is_open: true}
+    then:
+      chart: "전체 : 텍스트 목록"
+      note: 차트를 그리지 않고 「라벨 + 수치」를 탭 구분 텍스트로 나열한다. 8행 정원
+      width: 0.24
+    evidence: ["doc:19#2 — 1/5 사례(가이드 해부 근거)"]
+    confidence: 검증중
+
+  - id: SC-900
+    name: 폴백 — 어느 규칙에도 걸리지 않는다
+    when: {}
+    then:
+      chart: "전체 가로막대"
+      unresolved: true
+      note: 실측 절대 다수(49.2%)가 가로막대이므로 그리로 떨어뜨리되 사람이 반드시 확인한다
+    confidence: 가설
+
+# ---------------------------------------------------------------------------
+# 3. 지표를 차트에 얹는 매체 (doc:19#7-1)
+# ---------------------------------------------------------------------------
+metric_medium:
+  차트의_마지막_계열:
+    applies_to: [100% 세로누적막대]
+    realized: "4~7번째 계열이 [5점 평균]·[평균: 원]·[NPS]. 눈금에 안 잡히고 라벨만 뜬다"
+    observed: 39
+    cases: [1_SKEE, 4_물리보안]
+  두번째_plot:
+    applies_to: [세로묶음막대]
+    realized: "plot_count=2 · 계열 ['Top2','5점 평균'] · 값 축 0~120 으로 벌린다"
+    observed: 3
+    cases: [1_SKEE]
+  차트밖_표:
+    applies_to: [어느 차트에나]
+    realized: "차트 위에 TOP2(%) / 5점 평균(점) 2행 표를 얹는다"
+    observed: 다수
+    cases: [3_한옥, 2_SH, 4_물리보안]
+    note: 표 매체가 가장 흔하고 어느 차트에나 붙는다. 계열 매체는 100% 누적에만 붙는다
+
+# ---------------------------------------------------------------------------
+# 4. 행 절단 (doc:19#3)
+# ---------------------------------------------------------------------------
+row_cut:
+  prefer: 값 기준
+  forms:
+    값_기준:   {문구: ["* 1순위 기준 3.0%미만 미제시", "* 3.0%미만 미제시", "* 1+2+3순위 기준 10% 미만 제외"], observed: 20, cases: 2}
+    순위_기준: {문구: ["* 상위 10위까지만 제시", "* 상위 5위까지만 제시"], observed: 3, cases: 1}
+  rule: >
+    개수로 자르면(「상위 4」) 표마다 잘리는 위치가 달라지고 독자가 「4위까지만 의미가
+    있다」로 잘못 읽는다. 값으로 자르면 잘린 이유가 문구에 드러난다.
+    같은 고객사(에스원)의 선례는 값 기준 하나뿐이다.
+  footnote_needed_when: 되돌리지 않고 잘라 합이 깨질 때. 「기타」에 되돌려 합 100 을 지키면 각주가 필요 없다
+  not_a_cut: 평균 행을 차트에서 빼 텍스트로 올리는 것은 절단이 아니라 지표 배치다

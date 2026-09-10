@@ -1009,6 +1009,264 @@ def graph_top_text(table: dict,
     return out
 
 
+
+# ─────────────────────────────────────────────────────────────
+# 요약·결론 패널의 그래프 — `summary_chart_rules.yaml` 이 정본
+#
+# 본문(`decide_chart_type`)과 갈라 둔 이유는 YAML 머리말에 적었다. 요컨대 요약은
+# 표 여러 장을 한 장에 모으고 배너 표를 떼며, 같은 표라도 본문과 다른 그림으로 다시
+# 그린다. 판단의 입력도 자리 폭과 그 꼭지가 이미 쓴 그림을 포함한다.
+#
+# 이 판정기는 **설계자가 적은 지시어를 심사**한다. 지시어를 대신 써 주지 않는다 —
+# 갈리는 자리(SC-109·SC-110)가 실측으로 남아 있어 자동 결정이 성립하지 않기 때문이다.
+# ─────────────────────────────────────────────────────────────
+
+SUMMARY_CHART_RULES = ENGINE / "knowledge" / "guide" / "summary_chart_rules.yaml"
+
+#: 차트 지시어 → 그림 종류. 표기가 흔들려도(`가로 막대 그래프` · `가로막대`) 같은 것으로 본다.
+CHART_FAMILY = (
+    ("ipa",            (r"IPA", r"산점도")),
+    ("텍스트목록",      (r"텍스트\s*목록", r"텍스트\s*박스", r"^\s*text\s*$")),
+    ("꺾은선",          (r"꺾은\s*선", r"꺽은\s*선", r"라인\s*차트", r"line")),
+    ("도넛",            (r"도넛", r"원\s*그래프", r"파이")),
+    ("100%세로누적",    (r"100\s*%?\s*세로\s*누적", r"세로\s*100\s*%", r"100%\s*세로")),
+    ("가로100%누적",    (r"가로\s*누적\s*100\s*%", r"가로\s*100\s*%\s*누적")),
+    ("+-세로누적",      (r"\+\s*[-−]\s*세로", r"±\s*세로")),
+    ("가로겹침막대",    (r"가로\s*겹침",)),
+    ("세로묶음막대",    (r"세로\s*묶음",)),
+    ("가로묶음막대",    (r"가로\s*묶음",)),
+    ("세로막대",        (r"세로\s*막대",)),
+    ("가로막대",        (r"가로\s*막대",)),
+    ("표",              (r"^\s*(전체|배너)?\s*:?\s*표\s*$",)),
+)
+
+
+def load_summary_chart_rules(path: Path | None = None) -> dict:
+    """`summary_chart_rules.yaml` 을 읽는다. 못 읽으면 빈 dict — 호출자가 판단을 미룬다."""
+    p = path or SUMMARY_CHART_RULES
+    if not p.exists():
+        return {}
+    try:
+        import yaml  # type: ignore
+    except ImportError:
+        return {}
+    with p.open(encoding="utf-8") as fh:
+        return yaml.safe_load(fh) or {}
+
+
+def chart_family(chart: str) -> str:
+    """차트 지시어에서 그림 종류를 뽑는다. 못 알아보면 빈 문자열."""
+    t = str(chart or "")
+    for name, pats in CHART_FAMILY:
+        if any(re.search(p, t, re.IGNORECASE) for p in pats):
+            return name
+    return ""
+
+
+#: 그림 종류 → OOXML 차트 타입. **독자가 한눈에 같은 그림으로 보는 단위**가 이것이다.
+#: 코퍼스 실측 분포(19 §2)도 이 단위로 셌다 — 겹침·묶음은 계열 수만 다른 BAR_CLUSTERED 다.
+#: 다변화(SC-007)를 셀 때는 종류가 아니라 이 타입으로 세야 「네 패널이 다 가로막대」가 잡힌다.
+CHART_OOXML = {
+    "가로막대": "BAR_CLUSTERED", "가로겹침막대": "BAR_CLUSTERED", "가로묶음막대": "BAR_CLUSTERED",
+    "세로막대": "COLUMN_CLUSTERED", "세로묶음막대": "COLUMN_CLUSTERED",
+    "100%세로누적": "COLUMN_STACKED_100", "가로100%누적": "BAR_STACKED_100",
+    "+-세로누적": "COLUMN_STACKED", "도넛": "DOUGHNUT", "꺾은선": "LINE",
+    "ipa": "XY_SCATTER", "표": "TABLE", "텍스트목록": "TEXT",
+}
+
+
+def chart_ooxml(chart: str) -> str:
+    """차트 지시어 → OOXML 차트 타입. 못 알아보면 빈 문자열."""
+    return CHART_OOXML.get(chart_family(chart), "")
+
+
+#: 「그래프 상단 Text」로 얹는 지표의 이름들. 이 지표만 담은 패널은 SC-001 위반이다.
+TOP_TEXT_METRIC = re.compile(r"(\[[^\]]*평균[^\]]*\]|NPS|\d+\s*점\s*평균|평균\s*점수)")
+
+#: 최상위 보기 단독 패널의 표지 — SC-002.
+TOP_BOX_MARK = re.compile(r"(최상위|TOP\s*1|「?매우」?\s*(응답|비율|응답률))")
+
+
+#: 배너 축을 문장이 「부른다」고 볼 표지. 축 이름 자체(「입주사」·「연면적」)이거나
+#: 집단 이름인데, 집단은 문장에서 줄여 부르는 일이 흔하다 —
+#: 「전체 외부 전문업체 위탁」을 「전체 위탁」으로, 「800평 이상」을 그대로.
+#: 그래서 집단명은 **어절 단위 부분일치**로 본다.
+def _axis_is_read(group: str, table: dict | None, said: str) -> bool:
+    g = re.sub(r"[\s·/]+", "", str(group or ""))
+    if g and g in re.sub(r"[\s·/]+", "", said):
+        return True                                   # 축 이름을 그대로 불렀다
+    core = [w for w in re.split(r"[\s·/(),]+", str(group or "")) if len(w) >= 2]
+    if any(w in said for w in core):
+        return True                                   # 「건물 연면적」 → 「연면적」
+    for b in (table or {}).get("banners") or []:
+        if b.get("group") != group:
+            continue
+        lab = str(b.get("label") or "").strip()
+        if lab and lab in said:
+            return True
+        words = [w for w in re.split(r"[\s·/(),]+", lab) if len(w) >= 2]
+        if words and sum(1 for w in words if w in said) >= max(1, len(words) - 1):
+            return True                               # 줄여 부른 집단명
+    return False
+
+
+@dataclass
+class SummaryFinding:
+    """요약 패널 감사 결과 한 건."""
+    rule_id: str
+    severity: str            # fatal | warn
+    where: str               # 「요약 3 · 좌」 처럼 사람이 찾아갈 수 있는 좌표
+    message: str
+    remedy: str = ""
+
+    def line(self) -> str:
+        mark = "✗" if self.severity == "fatal" else "⚠"
+        head = f"  {mark} [{self.rule_id}] {self.where} — {self.message}"
+        return head if not self.remedy else chr(10).join([head, f"      → {self.remedy}"])
+
+
+def _panel_is_mean_only(panel: dict, table: dict | None) -> bool:
+    """패널이 평균 지표만 담고 있는가 — SC-001 의 검출.
+
+    두 갈래로 본다. ① 주제·지시어가 평균만 가리키거나(`… 5점 평균`), ② 붙은 표의
+    데이터 행이 평균 행뿐일 때. 표를 못 찾으면 ①만으로 판단한다.
+    """
+    topic = str(panel.get("topic") or "")
+    chart = str(panel.get("chart") or "")
+    # 평균을 **얹는** 패널은 위반이 아니다 — 그것이 바로 이 규칙이 요구하는 모습이다.
+    # 지시어에 상단 Text·상단 표가 적혀 있으면 평균은 다른 차트 위에 실린다.
+    if re.search(r"(상단\s*(표|Text)|그래프\s*상단)", chart, re.IGNORECASE):
+        return False
+    says_mean = bool(TOP_TEXT_METRIC.search(topic) or re.search(r"(^|[^가-힣])평균\s*$", topic))
+    if says_mean and not re.search(r"(TOP\s*2|【TOP|top2)", topic + chart, re.IGNORECASE):
+        return True
+    if table is not None:
+        rows = [r for r in (table.get("rows") or []) if r.get("kind") not in (None, "total")]
+        if rows and all(r.get("kind") == "mean" for r in rows):
+            return True
+    return False
+
+
+def audit_summary_panels(summaries: list[dict],
+                         tables: dict[int, dict] | None = None,
+                         rules: dict | None = None,
+                         *, conclusion: dict | None = None) -> list[SummaryFinding]:
+    """요약 꼭지 전체를 `summary_chart_rules.yaml` 의 불변식으로 심사한다.
+
+    돌려주는 것은 findings 목록이고 **아무것도 고치지 않는다.** 고칠지는 설계자가
+    정한다 — 갈리는 자리가 실측으로 남아 있어(SC-109·SC-110) 자동 교정이 성립하지 않는다.
+    """
+    rules = rules if rules is not None else load_summary_chart_rules()
+    inv = {i["id"]: i for i in (rules.get("invariants") or [])}
+    tables = tables or {}
+    out: list[SummaryFinding] = []
+
+    def sev(rid: str, default: str = "warn") -> str:
+        return str((inv.get(rid) or {}).get("severity") or default)
+
+    for s in summaries:
+        no = s.get("no")
+        panels = s.get("panels") or []
+        fams: list[str] = []
+        #: 이 꼭지가 실제로 쓴 문장 전부 — 배너 축을 읽었는지 여기서 찾는다(SC-009).
+        said = " ".join([str(s.get("headline") or ""), *(str(x) for x in (s.get("body") or []))])
+
+        for p in panels:
+            where = f"요약 {no} · {p.get('position') or '?'}({p.get('ref') or '?'})"
+            ref = str(p.get("ref") or "")
+            m = re.match(r"표(\d+)$", ref)
+            tbl = tables.get(int(m.group(1))) if m else None
+
+            # SC-001 — 평균을 독립 그래프로 그리지 않는다
+            if _panel_is_mean_only(p, tbl):
+                out.append(SummaryFinding(
+                    "SC-001", sev("SC-001", "fatal"), where,
+                    f"평균 지표를 독립 패널로 작도했습니다 — 「{p.get('topic')}」",
+                    "패널을 지우고, 같은 항목의 TOP2 차트 위에 `그래프 상단 Text` 로 평균을 얹으십시오"))
+
+            # SC-002 — 최상위 보기 단독 차트 금지
+            hint_kind = str(((tbl or {}).get("hints") or {}).get("summary_kind") or "")
+            if hint_kind == "top1" or TOP_BOX_MARK.search(str(p.get("topic") or "")):
+                out.append(SummaryFinding(
+                    "SC-002", sev("SC-002", "fatal"), where,
+                    f"최상위(「매우」) 단독 차트입니다 — 「{p.get('topic')}」. 코퍼스 358개 중 실측 0건이고 하우스는 TOP1 을 쓰지 않습니다",
+                    "패널을 지우거나, 같은 지표를 보기 분포(계열 = 보기 전수)로 다시 세우십시오"))
+
+            # SC-003 — 요약 패널에 배너 표를 달지 않는다.
+            #   다만 **묶음 막대가 자리에 안 담기면 표가 맞다**(exempt_when). 막대 수는
+            #   집단 × 계열이라 금세 불어난다 — 7집단 × 4항목 = 28개는 어느 자리에서도
+            #   라벨이 겹친다. 누적 100% 는 계열이 한 막대에 쌓이므로 이 임계에 안 걸린다.
+            if re.search(r"배너\s*:?\s*표", str(p.get("chart") or "")):
+                n_series = len(re.findall(r"'[^']*'", str(p.get("chart") or ""))) or 1
+                n_group = 1 + sum(1 for b in (tbl or {}).get("banners") or []
+                                  if b.get("in_report") and b.get("group") not in (None, "", "전체"))
+                cap = int(((inv.get("SC-003") or {}).get("exempt_threshold")
+                           or {}).get("grouped_bars_max", 20))
+                is_merged = bool(((tbl or {}).get("hints") or {}).get("is_summary"))
+                # 여러 표를 모은 **병합 요약표**는 애초에 표로 읽히려고 만든 것이다 —
+                # 지표 두 개를 한 행에 나란히 두는 것이 그 표의 목적이므로 예외로 둔다.
+                if n_series * n_group <= cap and not is_merged:
+                    out.append(SummaryFinding(
+                        "SC-003", sev("SC-003", "fatal"), where,
+                        f"요약 패널에 배너 표를 달았습니다 — 막대로 그리면 {n_series}계열 × 집단이라 "
+                        f"{cap}개 이하이므로 차트로 담깁니다",
+                        "배너를 올리려면 표가 아니라 차트의 축으로 올리십시오 (SC-102)"))
+
+            # SC-009 — 문장이 읽지 않는 배너는 싣지 않는다
+            if str(p.get("chart") or "").startswith("배너"):
+                mg = re.search(r"\(([^)]*)\)", str(p.get("chart")))
+                groups = [g.strip() for g in re.split(r"[·,/]", mg.group(1))] if mg else []
+                for g in groups:
+                    if not g or _axis_is_read(g, tbl, said):
+                        continue
+                    out.append(SummaryFinding(
+                        "SC-009", sev("SC-009"), where,
+                        f"배너 축 「{g}」 를 실었는데 문장이 그 축을 한 번도 부르지 않습니다",
+                        "축 이름이나 집단 이름을 문장에서 짚으십시오. 읽지 않을 축이면 패널에서 빼십시오"))
+
+            fam = chart_ooxml(p.get("chart") or "")
+            if fam:
+                fams.append(fam)
+
+        # SC-006 — 한 꼭지의 패널 수
+        rng = (inv.get("SC-006") or {}).get("range") or {}
+        lo, hi = int(rng.get("min", 2)), int(rng.get("max", 4))
+        if panels and not (lo <= len(panels) <= hi):
+            out.append(SummaryFinding(
+                "SC-006", sev("SC-006"), f"요약 {no}",
+                f"패널이 {len(panels)}개입니다 — 실측은 {lo}~{hi}개가 76%입니다",
+                "꼭지를 나누거나 패널을 합치십시오"))
+
+        # SC-007 — 다변화. 두 눈으로 본다.
+        #   ① 지시어 종류가 셋 이상 겹치면 정말 같은 그림이 되풀이되는 것이다.
+        #   ② 종류는 갈렸어도 OOXML 타입이 전부 하나면(가로막대 ↔ 가로겹침막대) 독자 눈에는
+        #      한 그림이다. 다만 데이터가 전부 순위·중복응답이면 그것이 정답인 자리도 있으므로
+        #      ②는 「검토 요청」이지 오류가 아니다.
+        kinds = [chart_family(p.get("chart") or "") for p in panels]
+        kinds = [k for k in kinds if k]
+        for fam in set(kinds):
+            if kinds.count(fam) >= 3:
+                out.append(SummaryFinding(
+                    "SC-007", sev("SC-007"), f"요약 {no}",
+                    f"같은 그림({fam})이 {kinds.count(fam)}번 반복됩니다 — 독자가 패널들을 한 그림으로 읽습니다",
+                    "같은 표의 다른 지표를 격자로 되풀이하는 자리가 아니라면 그림을 갈라 주십시오"))
+        if len(fams) >= 3 and len(set(fams)) == 1:
+            out.append(SummaryFinding(
+                "SC-007", sev("SC-007"), f"요약 {no}",
+                f"패널 {len(fams)}개가 모두 같은 차트 타입({fams[0]})입니다",
+                "배너 축이 있는 패널을 세로묶음막대로 세우면 갈립니다. 데이터가 전부 순위·중복응답이라 "
+                "가로막대가 정답이면 그대로 두고 이 경고를 넘기십시오"))
+
+    # SC-008 — 결론 장표의 차트
+    if conclusion:
+        for it in (conclusion.get("items") or []):
+            if it.get("panels"):
+                out.append(SummaryFinding(
+                    "SC-008", sev("SC-008"), f"결론 {it.get('no')}",
+                    "결론 장표에 패널을 실었습니다 — 5사례 중 4사례는 결론 차트가 0건입니다"))
+    return out
+
+
 __all__ = [
     "round_half_up", "fmt_pct", "fmt_mean",
     "LEVEL_LADDER", "level_word",
@@ -1025,4 +1283,7 @@ __all__ = [
     "ChartDecision", "load_chart_rules", "build_context", "decide_chart_type",
     "graph_top_text_rows", "graph_top_text", "top_text_label", "top_text_unit",
     "TOP_TEXT_MEDIA",
+    "SUMMARY_CHART_RULES", "load_summary_chart_rules", "chart_family",
+    "CHART_OOXML", "chart_ooxml",
+    "SummaryFinding", "audit_summary_panels",
 ]

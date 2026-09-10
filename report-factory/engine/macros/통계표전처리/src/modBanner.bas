@@ -75,11 +75,11 @@ Public Sub SelectBanners()
     msg = "표 " & n & "장을 훑었습니다." & vbCrLf & vbCrLf & _
           "선정한 배너군 : " & kept & "개" & vbCrLf & _
           "음영 처리한 배너군 : " & dropped & "개" & vbCrLf & vbCrLf & _
-          "기준" & vbCrLf & _
-          "  보존 목록 : " & IIf(Len(Trim$(keep)) = 0, "(지정 안 함 - Base 기준만 적용)", keep) & vbCrLf & _
-          "  Base 하한 : " & minBase & " 이상이 배너 항목의 절반 이상" & vbCrLf & _
-          "  판정 단위 : 표 한 장이 아니라 통계표 전체 (배너군 이름별로 한 번)" & vbCrLf & _
-          "              같은 배너군이 표마다 남았다 없어졌다 하지 않습니다"
+          "이번에 적용한 기준" & vbCrLf & _
+          "1. 보존 목록 : " & IIf(Len(Trim$(keep)) = 0, "(지정 안 함 - Base 기준만 적용)", keep) & vbCrLf & _
+          "2. Base 하한 : 배너 항목의 절반 이상이 " & minBase & " 이상이어야 남긴다" & vbCrLf & _
+          "3. 판정 단위 : 표 한 장이 아니라 통계표 전체(배너군 이름별로 한 번)." & vbCrLf & _
+          "              같은 배너군이 표마다 남았다 없어졌다 하지 않는다"
     If Len(unknown) > 0 Then
         msg = msg & vbCrLf & vbCrLf & _
               "[확인 필요] 보존 목록에 적었지만 이 시트에 없는 이름이 있습니다." & vbCrLf & _
@@ -286,12 +286,13 @@ Public Function IsShaded(ws As Worksheet, t As TTable, g As Long) As Boolean
 End Function
 
 '==========================================================================
-Private Sub Shade(ws As Worksheet, t As TTable, g As Long)
+' [배너군 목록] 이 문항을 좁혀 뽑을 때도 이 두 곳을 그대로 쓰므로 Public 이다.
+Public Sub Shade(ws As Worksheet, t As TTable, g As Long)
     ws.Range(ws.Cells(t.GroupRow, t.GroupFirst(g)), _
              ws.Cells(t.EndRow, t.GroupLast(g))).Interior.Color = SHADE_COLOR
 End Sub
 
-Private Sub ClearShade(ws As Worksheet, t As TTable, g As Long)
+Public Sub ClearShade(ws As Worksheet, t As TTable, g As Long)
     ' 음영이 없는 배너군은 곧바로 지나간다.
     If Not IsShaded(ws, t, g) Then Exit Sub
     ' 범위를 통째로 한 번에 지운다. 칸마다 색을 물어 가며 지우면 표가 많을 때

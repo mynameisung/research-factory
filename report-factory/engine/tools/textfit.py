@@ -417,7 +417,7 @@ def _char_split(text, usable, W):
 # ─────────────────────────────────────────────────────────────
 
 ENGINE = Path(__file__).resolve().parents[1]
-SELFTEST_DECK = ENGINE / 'refs' / '예시_제작본_LG홈로봇_최종.pptx'
+SELFTEST_DECK = ENGINE / 'refs' / '5_LG홈로봇' / '5-5. lg 홈로봇조사 보고서 제작본.pptx'
 SELFTEST_SLIDE = 23
 A_NS = 'http://schemas.openxmlformats.org/drawingml/2006/main'
 

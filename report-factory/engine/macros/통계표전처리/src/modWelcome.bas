@@ -55,6 +55,7 @@ Public Function CompileAll() As String
     s = s & " " & modConfig.Ping()
     s = s & " " & modDash.Ping()
     s = s & " " & modInsight.Ping()
+    s = s & " " & modInstall.Ping()
     s = s & " " & modOpen.Ping()
     s = s & " " & modReport.Ping()
     s = s & " " & modRibbon.Ping()

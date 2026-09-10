@@ -112,6 +112,12 @@ Public Sub RunCatalogFiltered(picked() As Boolean)
     modUtil.HeaderRow rpt, 3, Array("배너군 이름", "나온 표 수", "항목 수(평균)", _
                                     "Base " & minBase & " 통과율", "평균 Base", "판정", "항목 보기")
 
+    ' 배너 선정과 같은 판정(그 배너군 항목의 절반 이상이 Base 를 넘는가)을
+    ' 여기서도 그대로 쓴다. 이름별로 한 번만 정해, 뒤에서 시트 전체에
+    ' 똑같이 적용한다(표마다 다르게 판정하면 같은 배너가 남았다 없어졌다 한다).
+    Dim passByName As Object
+    Set passByName = CreateObject("Scripting.Dictionary")
+
     Dim r As Long, k As Variant, keepAll As String
     r = 4
     For Each k In names.Keys
@@ -121,6 +127,7 @@ Public Sub RunCatalogFiltered(picked() As Boolean)
         If s(1) > 0 Then ratio = s(2) / s(1)
         If s(1) > 0 Then avgBase = s(3) / s(1)
         If s(0) > 0 Then avgItems = s(1) / s(0)
+        passByName(k) = (ratio >= 0.5)
 
         rpt.Cells(r, 1).Value = names(k)
         rpt.Cells(r, 2).Value = s(0)
@@ -149,10 +156,47 @@ Public Sub RunCatalogFiltered(picked() As Boolean)
     Finish rpt, 7, 3
     modUtil.EndWork
     rpt.Activate
+
+    ' [배너 선정] 처럼 이 판정을 시트에도 그대로 입힐지 물은 뒤 적용한다.
+    ' 원본 시트를 건드리는 일이라 보고서만 볼 때와 달리 한 번 확인을 받는다.
+    Dim shadeMsg As String
+    If modConfig.Ask( _
+        "지금 나온 판정(읽을 수 있음 / 모수 부족)을 [배너 선정] 처럼" & vbCrLf & _
+        "원본 시트에도 회색 음영으로 입힐까요?" & vbCrLf & vbCrLf & _
+        "문항 " & pickedN & "개 기준으로 정한 것이라, [설정] 의 [보존 배너군]" & vbCrLf & _
+        "텍스트 목록과는 다른 결과가 나올 수 있습니다. 이미 칠해 둔 음영이" & vbCrLf & _
+        "있다면 이 판정으로 다시 칠해 덮어씁니다.", "배너군 목록 → 음영 적용") Then
+
+        modUtil.BeginWork "판정대로 음영을 입히는 중입니다"
+        Dim kept2 As Long, dropped2 As Long
+        For i = 1 To n
+            For g = 1 To tabs(i).GroupCount
+                Dim gk As String
+                gk = modConfig.Squash(tabs(i).GroupName(g))
+                If passByName.Exists(gk) Then
+                    If passByName(gk) Then
+                        modBanner.ClearShade ws, tabs(i), g
+                        kept2 = kept2 + 1
+                    Else
+                        modBanner.Shade ws, tabs(i), g
+                        modBars.ClearBarsIn ws.Range(ws.Cells(tabs(i).BaseRow, tabs(i).GroupFirst(g)), _
+                                                      ws.Cells(tabs(i).EndRow, tabs(i).GroupLast(g)))
+                        dropped2 = dropped2 + 1
+                    End If
+                End If
+            Next g
+            modUtil.Progress "판정대로 음영을 입히는 중입니다", i, n
+        Next i
+        modUtil.EndWork
+
+        shadeMsg = vbCrLf & vbCrLf & "시트에도 적용했습니다 — 선정 " & kept2 & "개 · 음영 " & dropped2 & "개." & vbCrLf & _
+                   "[제외 배너 삭제] 로 지울 수 있습니다."
+    End If
+
     modConfig.Say "문항 " & pickedN & "개(전체 " & n & "개 가운데)에서 배너군 " & names.Count & "종을 " & _
                   "'배너군 목록' 시트에 모았습니다." & vbCrLf & vbCrLf & _
                   "맨 아래 한 줄을 복사해 리본의 [보존 배너군] 칸에 붙여 넣은 뒤," & vbCrLf & _
-                  "보고서에 쓰지 않을 이름만 지우시면 됩니다.", vbInformation
+                  "보고서에 쓰지 않을 이름만 지우시면 됩니다." & shadeMsg, vbInformation
 End Sub
 
 '==========================================================================

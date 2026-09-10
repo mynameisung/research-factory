@@ -1143,7 +1143,9 @@
 
 ### R-126 · 결론 장표는 판단만 싣는다 — 근거는 요약이 갖는다
 - 분류: guide / 요약결론
-- 규칙: 결론 박스 하나는 **한 문장의 판단 + 결정적 수치 1~2개 + `→` 제언**으로 끝낸다. 목표 분량은 **박스당 150자 안팎**이고 장표 합계 900자를 넘기지 않는다. 요약 장표에 이미 있는 근거 사슬을 결론에서 다시 늘어놓지 않는다.
+- 규칙: 결론 박스 하나는 **한 문장의 판단 + 결정적 수치 1~2개 + `→` 제언**으로 끝낸다. 요약 장표에 이미 있는 근거 사슬을 결론에서 다시 늘어놓지 않는다.
+- **길이 조항 정정 (2026-09-01)**: 「박스당 150자·장표 900자」는 코퍼스 실측과 어긋나므로 **참고치로 강등**한다. SH Key point 01 은 3줄 218자, 02 는 9줄 약 650자로 2.5배 기울고 장표 합계가 900자를 넘는다. 실제 제약은 글자 수가 아니라 **박스 높이**(3.59cm 대 9.02cm)이고, 4사례 공통 골격은 「번호·라벨 + 제목 1줄 + **내용 3~9줄**」이다(R-166). `verify --mode conclusion` 은 줄 수로 검사하고 글자 수는 「참고」로만 낸다.
+- **수치 조항 (2026-09-01 재확인)**: 이 카드의 「결정적 수치 1~2개」가 정본이다. R-207 이 한때 절대 금지로 좁혔으나 사용자 확인(「결론에 수치 쓸 때도 있긴 해」)과 코퍼스 5사례 반례로 조건부로 되돌렸다 — 자세한 것은 R-207.
 - 근거: 실측 — 6박스 3단×2행 구성에서 초안이 1,756자(박스당 293자)였다. 16:9 한 장에 들어가지 않는다. 압축 후 933자(박스당 155자).
 - 왜: R-078 이 「결론은 요약에서만 나온다」고 정한 순간 **근거의 자리는 요약**이 된다. 결론이 근거를 반복하면 두 장이 같은 말을 하고 결론 장표만 넘친다.
 - 함께: 결론 블록의 `Base/Unit` 은 **비운다**. 박스마다 근거 요약이 다르고 그 Base 가 87·198·266·300·500 으로 갈리므로 하나로 못 박으면 거짓이 된다. LG 도 비워 뒀다(r309).
@@ -1179,7 +1181,7 @@
 - 신뢰도: 확정 (원저자 진술)
 - 이력: 2026-08-22 신규
 
-### R-130 · 요약 장표의 멘트 첫 줄은 수치 없는 판단 헤드라인이다
+### R-130 · 【폐기 — R-205 로 대체】 요약 장표의 멘트 첫 줄은 수치 없는 판단 헤드라인이다
 - 분류: guide / 요약결론
 - 규칙: 요약 꼭지 멘트의 **1줄은 `- ` 접두를 단 판단 헤드라인**으로 쓴다. 수치를 넣지 않는다. 근거 수치는 2줄부터 개조식으로 잇는다.
 - 근거: 예시_제작가이드_LG홈로봇 `본문_제작용` r134~135 실측 —
@@ -1188,9 +1190,9 @@
 - 왜: 요약 장표는 표 2~4개가 이미 수치를 보여 준다. 헤드라인까지 수치를 반복하면 **읽는 사람이 「그래서 뭐」에 도달하는 데 두 번 읽어야 한다.**
 - 대조: SKEE 는 1줄부터 수치를 쓴다(`전반적 만족도는 71.4%로 …`). 두 하우스가 갈리는 자리이므로 **클라이언트 선례가 없으면 LG 방식(헤드라인 우선)을 택한다** — 판단이 먼저 읽히는 쪽이 보고서로 낫다.
 - **반례 (코퍼스 5사례 재측정 2026-08-24 · PPT 팀 반송 G-1)**: 근거로 삼은 LG r134~135 는 **LG 가이드 6꼭지 중 유일한 1건**이고, 그 문장은 같은 조사의 최종본 s9 에서 **4줄 수치 병기 블록으로 교체**됐다. 최종본 요약문 첫 줄에 수치가 들어가는 비율은 SKEE 90%(18/20) · SH 83%(5/6) · 한옥 83%(5/6) · LG 60%(6/10) 으로 **4사례 전부 과반**이다. 가이드에 요약 문장을 쓰는지 자체가 하우스 변이여서, SH·한옥은 가이드 멘트가 0건이다.
-- 신뢰도: **조건부** (2026-08-24 확정 → 강등) — 「수치 없는 1줄 판단 헤드라인」은 LG 가이드 1건에서만 관찰된다. 납품물 기준으로는 **수치 병기 개조식 2~4줄**이 다수파다. 어느 쪽으로 갈지는 사용자 결정 사항(판단 큐).
-- 측정: `engine/refs/corpus_20260824/ANALYSIS_요약헤드라인.md`
-- 이력: 2026-08-22 신규 · 2026-08-24 코퍼스 재측정으로 확정 → 조건부
+- 신뢰도: **폐기** (2026-08-24 확정 → 조건부 → 2026-08-30 폐기) — R-205 가 대체한다. **이 카드를 지적 근거로 인용하지 마라.** 헤드라인 상한은 40자가 아니라 렌더 한 줄(74자)이고 수치를 넣어도 된다. 카드를 지우지 않고 남기는 이유는, 지운 규칙이 다시 살아나는 것을 막기 위해 폐기 사유를 함께 보이려는 것이다.
+- 측정: `engine/refs/ANALYSIS_요약헤드라인.md`
+- 이력: 2026-08-22 신규 · 2026-08-24 코퍼스 재측정으로 확정 → 조건부 · 2026-08-30 R-205 로 폐기 · 2026-09-01 잔재 6곳 제거(에이전트 3·지식 3)
 
 ### R-131 · 요약 패널의 머리는 두 줄이다 — 주제명 + 「코드. 원문」
 - 분류: guide / 요약결론
@@ -1390,7 +1392,7 @@ r10 부터 셋째 갈래 `배너 가로 묶음 막대 (군)` 이 들어온다 �
 같은 부류의 부재 2건 — **Qu 표기를 끌 수 없다**(3/5 사례는 Qu 를 아예 안 쓴다: 사례 2·3·4 가 0%) ·
 **멘트 박스 없는 템플릿을 못 다룬다**(사례 3 은 소제목이 멘트를 겸하고 멘트 박스가 0개다).
 ★ 교훈은 개별 기능이 아니다 — **표본 2벌로 만든 시스템은 표본에 없는 것을 「없어도 되는 것」으로 착각한다.**
-판단 큐 D-1·D-2·D-3 (`corpus_20260824/ANALYSIS_PPT.md` §7).
+판단 큐 D-1·D-2·D-3 (`refs/ANALYSIS_PPT.md` §7).
 
 ## R-PPT-147 정본의 차트 지시는 **구조로** 읽는다 — 문자열 정확일치가 아니다 (코퍼스 4벌 실측 2026-08-24)
 같은 그림을 하우스마다 다르게 적는다. 실측:
@@ -1508,7 +1510,7 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 **2차 이관 완료 (PPT 팀, 2026-08-24)** — 중복이 없어 남겨 두었던 덱 소관 카드도 옮겼다:
 `R-147`→`R-PPT-147`(차트 어휘) · `R-148`→`R-PPT-148`(전체 열) · `R-149`→`R-PPT-149`(필수 필드) ·
 `R-151`→`R-PPT-151`(순위 순서) · `R-152`→`R-PPT-152`(tiny base). 문서 인용도 함께 바꿨다
-(`knowledge/report/24_…` · `corpus_20260824/ANALYSIS_PPT.md`, 가이드 팀 R-150 카드 안의 상호 참조 1곳 포함).
+(`knowledge/report/24_…` · `refs/ANALYSIS_PPT.md`, 가이드 팀 R-150 카드 안의 상호 참조 1곳 포함).
 → **`R-147`·`R-148`·`R-149`·`R-151`·`R-152` 번호가 비었다.** 가이드 팀이 쓸 수 있다
 (`GOAL_제작가이드.md` 가 「시스템 diff: RULES.md(R-147~)」로 적고 있어 그 자리를 돌려준다).
 현재 덱 소관 최대 번호는 **R-PPT-155**.
@@ -1538,14 +1540,14 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary` 패널 행 선별 · `build_guide.write_summary_block` · `verify` V18(신설 제안)
 - 이력: 2026-08-24 신규 (코퍼스 4사례 해부 · 반증관 좌표 정정 반영)
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/summary_3_한옥.md 블록1 r33~40 (표9 A2 8행→3행, 기타 1.43, 합 100)
-  - engine/refs/corpus_20260824/_extracted/body_3_한옥.md r172 「기타 (관광용/식당용으로 적합하다 등) C=0.57」 · r561 「기타 C=2.74」 — 재합산 기준선
-  - engine/refs/corpus_20260824/_extracted/summary_3_한옥.md 블록5 r136~144 (표22 C1-2 14행→4행, 기타 6.30, 합 99.99)
-  - engine/refs/corpus_20260824/_extracted/summary_1_SKEE.md 블록10~24 이유 패널 24/24 무절단 전행
-  - engine/refs/corpus_20260824/_extracted/summary_2_SH청안주.md 블록10 r251~260 (표37 22행→10행, 합 제약 없음)
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s14 base_unit_footnotes ['* 상위 10위까지만 제시'] — 반례 계열
+  - engine/refs/_extracted/summary_3_한옥.md 블록1 r33~40 (표9 A2 8행→3행, 기타 1.43, 합 100)
+  - engine/refs/_extracted/body_3_한옥.md r172 「기타 (관광용/식당용으로 적합하다 등) C=0.57」 · r561 「기타 C=2.74」 — 재합산 기준선
+  - engine/refs/_extracted/summary_3_한옥.md 블록5 r136~144 (표22 C1-2 14행→4행, 기타 6.30, 합 99.99)
+  - engine/refs/_extracted/summary_1_SKEE.md 블록10~24 이유 패널 24/24 무절단 전행
+  - engine/refs/_extracted/summary_2_SH청안주.md 블록10 r251~260 (표37 22행→10행, 합 제약 없음)
+  - engine/refs/_extracted/gt_2_SH_최종본.json s14 base_unit_footnotes ['* 상위 10위까지만 제시'] — 반례 계열
 - 신뢰도: 확정
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-156 요약의 각주는 두 갈래다 — 절단 각주와 저베이스 각주를 따로 판정한다
@@ -1559,13 +1561,13 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `build_guide.write_summary_block` 각주 생성 · `verify` V19(신설 제안) · R-128 과 같은 층
 - 이력: 2026-08-24 신규 (기존 「자르지 않으면 base 가 아무리 작아도 각주가 없다」를 반증으로 폐기하고 대체)
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_제작본.json s9·s10 base_unit_footnotes = ['*Too small base(n<30)'] · 행 절단 0건 (직접 실측)
-  - engine/refs/corpus_20260824/_extracted/summary_5_LG.md 블록8 r183 — 소득 5집단 base (23)(22)(30)(19)(6)
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s14 '* 상위 10위까지만 제시' (절단 각주)
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s20·s26 '* 소수 응답 생략' · s29 '* 1+2+3순위 기준 10% 미만 제외'
-  - engine/refs/corpus_20260824/_extracted/summary_1_SKEE.md 블록16 r350~351 (Base (1) 패널이 무각주로 실림 — 반례)
+  - engine/refs/_extracted/gt_5_LG_제작본.json s9·s10 base_unit_footnotes = ['*Too small base(n<30)'] · 행 절단 0건 (직접 실측)
+  - engine/refs/_extracted/summary_5_LG.md 블록8 r183 — 소득 5집단 base (23)(22)(30)(19)(6)
+  - engine/refs/_extracted/gt_2_SH_최종본.json s14 '* 상위 10위까지만 제시' (절단 각주)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s20·s26 '* 소수 응답 생략' · s29 '* 1+2+3순위 기준 10% 미만 제외'
+  - engine/refs/_extracted/summary_1_SKEE.md 블록16 r350~351 (Base (1) 패널이 무각주로 실림 — 반례)
 - 신뢰도: 확정
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-157 요약 척도 패널의 요약지표는 TOP2 하나가 아니다 — TOP2 + N점평균이 기본이고, 평균의 매체는 3종이다
@@ -1582,13 +1584,13 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary` 패널 지표 행 · `build_guide` 짝 Mean 표 결합(R-144 ③) · `verify` V21(신설 제안)
 - 이력: 2026-08-24 신규 (기존 「요약지표는 TOP2 하나로 단일화」 · 「평균은 차트로 그리지 않는다」 두 진술을 반증으로 폐기하고 대체)
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s20·s21·s28 — plot_count=2, series_names ['Top2','5점 평균'] (직접 실측)
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s11~s19·s22~s27 — 3점 압축 16패널 계열 ['불만족','보통','만족','[5점 평균]']
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s9 표 ['TOP2(%)','28.4',…] · ['5점 평균(점)','2.78',…] ↔ summary_3_한옥.md 블록2 r67 (TOP2 단독)
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s12·s13 표 4지표 (TOP2·BOT2·4점평균·100점환산)
-  - engine/refs/corpus_20260824/_extracted/summary_2_SH청안주.md 블록9 r235 F='중앙' G='평균: 2,763만원' (도넛 중앙 라벨)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s20·s21·s28 — plot_count=2, series_names ['Top2','5점 평균'] (직접 실측)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s11~s19·s22~s27 — 3점 압축 16패널 계열 ['불만족','보통','만족','[5점 평균]']
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s9 표 ['TOP2(%)','28.4',…] · ['5점 평균(점)','2.78',…] ↔ summary_3_한옥.md 블록2 r67 (TOP2 단독)
+  - engine/refs/_extracted/gt_2_SH_최종본.json s12·s13 표 4지표 (TOP2·BOT2·4점평균·100점환산)
+  - engine/refs/_extracted/summary_2_SH청안주.md 블록9 r235 F='중앙' G='평균: 2,763만원' (도넛 중앙 라벨)
 - 신뢰도: 확정
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-158 요약 패널도 소수점 규칙의 예외가 아니다 — 라벨 % 는 1자리, 평균은 2자리
@@ -1601,12 +1603,12 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide/12 §8` 에 「요약 패널 포함」 명시 · `deck_lint` 또는 `verify` V20(신설 제안)
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s9 표 rows[0] ['TOP2(%)','28.4','32.0','23.5','26.6','30.2','25.4','20.0'] · rows[1] ['5점 평균(점)','2.78',…] (직접 실측)
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s10 표11 rows[0] ['【TOP2】','91.5','93.7','80.5 ',…] · rows[1] ['GAP','+2.2','','+2.2','','+21.4',…]
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s12 표 ['[4점 평균]','3.82'] · ['[100점 환산 평균]','93.88']
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s10·s11 AUTO_SHAPE 텍스트 '소수점 자릿수 변경' (검수 메모)
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s9 표 rows[0] ['TOP2(%)','28.4','32.0','23.5','26.6','30.2','25.4','20.0'] · rows[1] ['5점 평균(점)','2.78',…] (직접 실측)
+  - engine/refs/_extracted/gt_2_SH_최종본.json s10 표11 rows[0] ['【TOP2】','91.5','93.7','80.5 ',…] · rows[1] ['GAP','+2.2','','+2.2','','+21.4',…]
+  - engine/refs/_extracted/gt_2_SH_최종본.json s12 표 ['[4점 평균]','3.82'] · ['[100점 환산 평균]','93.88']
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s10·s11 AUTO_SHAPE 텍스트 '소수점 자릿수 변경' (검수 메모)
 - 신뢰도: 확정
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-159 요약은 본문의 문항과 패널을 통째로 버린다 — 버린 것을 설계 기록에 남긴다
@@ -1618,12 +1620,12 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary` 산출 계약에 `dropped[]` 추가 · `guide-summary-reviewer` 렌즈에 「버린 것 중 최빈·최저가 있는가」
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/body_1_SKEE.md r1431~1439 — 블록68 좌 8행 + 우 8행, 우 r1438 '없다' 32.14 (직접 실측)
-  - engine/refs/corpus_20260824/_extracted/summary_1_SKEE.md r436~439 — 요약 블록20 은 좌 상위 4행만
-  - engine/refs/corpus_20260824/_extracted/body_3_한옥.md r261 (C2)·r284 (C3)·r582 (C6) — 요약 미등재 3문항
-  - engine/refs/corpus_20260824/_extracted/summary_3_한옥.md 블록1~6 — 6꼭지 전수, C2·C3·C6 0건
+  - engine/refs/_extracted/body_1_SKEE.md r1431~1439 — 블록68 좌 8행 + 우 8행, 우 r1438 '없다' 32.14 (직접 실측)
+  - engine/refs/_extracted/summary_1_SKEE.md r436~439 — 요약 블록20 은 좌 상위 4행만
+  - engine/refs/_extracted/body_3_한옥.md r261 (C2)·r284 (C3)·r582 (C6) — 요약 미등재 3문항
+  - engine/refs/_extracted/summary_3_한옥.md 블록1~6 — 6꼭지 전수, C2·C3·C6 0건
 - 신뢰도: 검증중
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-160 요약 꼭지는 문항이 아니라 화제로 묶는다 — 압축·병합·분리 세 연산
@@ -1638,13 +1640,13 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary` 꼭지 설계 · `guide/14 §2` 보강
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s10·s20·s21·s28 (압축) · s18·s25 (병합)
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s10 (척도 6문항 12열 압축) · s13 (퍼널 4문항 병합)
-  - engine/refs/corpus_20260824/_extracted/summary_2_SH청안주.md 블록8 '만족도 평가' 1블록 → gt_2_SH_최종본 s10+s11 2장 (분리)
-  - engine/refs/corpus_20260824/_extracted/summary_5_LG.md 블록12 r286~304 (15시나리오 × 6지표 1장)
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s11~s19·s22~s25 — 문항 1:1 이 14장 (반례 계열)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s10·s20·s21·s28 (압축) · s18·s25 (병합)
+  - engine/refs/_extracted/gt_2_SH_최종본.json s10 (척도 6문항 12열 압축) · s13 (퍼널 4문항 병합)
+  - engine/refs/_extracted/summary_2_SH청안주.md 블록8 '만족도 평가' 1블록 → gt_2_SH_최종본 s10+s11 2장 (분리)
+  - engine/refs/_extracted/summary_5_LG.md 블록12 r286~304 (15시나리오 × 6지표 1장)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s11~s19·s22~s25 — 문항 1:1 이 14장 (반례 계열)
 - 신뢰도: 확정
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-161 요약 헤드라인은 sub_title 자리에 들어간다 — 본문과 역할이 반대이고, 가이드 시트에 멘트 칸이 없으면 못 쓴다
@@ -1658,13 +1660,13 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `build_guide` 요약 레이아웃 · `guide-summary-text` 산출 위치 · 우리 템플릿은 멘트 칸을 둔다(R-002 — 가이드에 멘트까지 쓰는 것이 우리 방식)
 - 이력: 2026-08-24 신규 (variants 「가이드에 헤드라인을 쓰는가 — 미확정」을 시트 구조로 설명해 대체)
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s9 — top_ment='' · placeholders_by_idx.12 (BODY, top_cm 2.72, height_cm 2.0)에 헤드라인 2줄 (직접 실측)
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json 요약 20장 sub_title 20/20 · top_ment 0/20 · layout '1_master-1' vs 본문 '3_master-1'
-  - engine/refs/corpus_20260824/_extracted/summary_3_한옥.md 블록1~6 — 멘트 0줄 (패널 셀 배치형 시트)
-  - engine/refs/corpus_20260824/_extracted/summary_5_LG.md 블록7 r134~135 · summary_1_SKEE.md 블록9 r157~180 (멘트 칸 보유)
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_제작본.json 112장 top_ment 전부 빈 문자열 → gt_2_SH_최종본 신설
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s9 — top_ment='' · placeholders_by_idx.12 (BODY, top_cm 2.72, height_cm 2.0)에 헤드라인 2줄 (직접 실측)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json 요약 20장 sub_title 20/20 · top_ment 0/20 · layout '1_master-1' vs 본문 '3_master-1'
+  - engine/refs/_extracted/summary_3_한옥.md 블록1~6 — 멘트 0줄 (패널 셀 배치형 시트)
+  - engine/refs/_extracted/summary_5_LG.md 블록7 r134~135 · summary_1_SKEE.md 블록9 r157~180 (멘트 칸 보유)
+  - engine/refs/_extracted/gt_2_SH_제작본.json 112장 top_ment 전부 빈 문자열 → gt_2_SH_최종본 신설
 - 신뢰도: 조건부
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-162 헤드라인의 수준어는 자유어가 아니다 — 조사개요 장표의 등급 사다리가 정한다
@@ -1676,11 +1678,11 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary-text` 수준어 선택 · `guide-front`(조사개요 장표에 등급표를 싣는다) · `verify --mode summary` 수준어 대조(V25 후보)
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s5 등급 규칙 + 요약 s10~s29 수준어 전수 준수
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s5 표77 (TOP2 90/80/70/60 경계) + 본문 23줄·요약 5줄 일치
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s75 — NPS 17.2, 등급어휘 0 (반례이자 적용 범위)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s5 등급 규칙 + 요약 s10~s29 수준어 전수 준수
+  - engine/refs/_extracted/gt_2_SH_최종본.json s5 표77 (TOP2 90/80/70/60 경계) + 본문 23줄·요약 5줄 일치
+  - engine/refs/_extracted/gt_2_SH_최종본.json s75 — NPS 17.2, 등급어휘 0 (반례이자 적용 범위)
 - 신뢰도: 확정
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-163 요약은 정렬을 새로 하지 않는다 — 예외는 네 자리뿐이다
@@ -1696,14 +1698,14 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary` 패널 행 순서 · `build_guide.write_summary_block` · `verify` V22(신설 제안)
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s9 AUTO_SHAPE '구매의향은 30% 미만으로 바꾸는 게..\n대전동구가 비중이 높은 이유 추가 필요\n희망구매 형태 내림차순 정렬' (직접 실측)
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_제작본.json s9 categories ↔ gt_3_한옥_최종본.json s9 categories (순서 역전)
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s9 charts[0].series_names ['열2','없음/모름/기타'] (별도 계열 실측)
-  - engine/refs/corpus_20260824/_extracted/summary_1_SKEE.md 블록10~26 좌패널 18/18 사다리 순 · 블록9 r167~180 총괄 항목 선두
-  - engine/refs/corpus_20260824/_extracted/summary_2_SH청안주.md 블록10 r251~255 ↔ gt_2_SH_제작본.json s12 ↔ gt_2_SH_최종본.json s14
-  - engine/refs/corpus_20260824/_extracted/summary_3_한옥.md 블록3 r79~88 (값 내림) vs 블록4 r102~111 (구간 오름) — 규칙화하지 않는 자리
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s9 AUTO_SHAPE '구매의향은 30% 미만으로 바꾸는 게..\n대전동구가 비중이 높은 이유 추가 필요\n희망구매 형태 내림차순 정렬' (직접 실측)
+  - engine/refs/_extracted/gt_3_한옥_제작본.json s9 categories ↔ gt_3_한옥_최종본.json s9 categories (순서 역전)
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s9 charts[0].series_names ['열2','없음/모름/기타'] (별도 계열 실측)
+  - engine/refs/_extracted/summary_1_SKEE.md 블록10~26 좌패널 18/18 사다리 순 · 블록9 r167~180 총괄 항목 선두
+  - engine/refs/_extracted/summary_2_SH청안주.md 블록10 r251~255 ↔ gt_2_SH_제작본.json s12 ↔ gt_2_SH_최종본.json s14
+  - engine/refs/_extracted/summary_3_한옥.md 블록3 r79~88 (값 내림) vs 블록4 r102~111 (구간 오름) — 규칙화하지 않는 자리
 - 신뢰도: 확정
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-164 요약 패널의 기본 축은 「전체」 1열이다 — 배너 교차 조건에서 base≥30 을 뺀다 (R-145 정정)
@@ -1722,14 +1724,14 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary` 교차 판단 · `build_guide.is_transposed` · R-145 본문에 이 정정을 붙인다
 - 이력: 2026-08-24 신규 (R-145 의 근거·형태·base 세 자리 정정)
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/summary_5_LG.md 블록7 r157~165 — A10-1~5 5문항 병합, 전 행 Base (100) (R-145 ② 근거 오인)
-  - engine/refs/corpus_20260824/_extracted/summary_5_LG.md 블록8 r183 K=(23) L=(22) M=(30) N=(19) O=(6) · r187 S=(69)…W=(18)
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s9 charts[1] COLUMN_STACKED series values -31.14/-26.0/-14.43/23.71/4.71 (+- 발산형, 직접 실측)
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_제작본.json s9 base_unit_footnotes ['*Too small base(n<30)'] — 저베이스는 표시 사유
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s9 표 rows ['','(700)','(291)','(115)','(109)','(96)','(59)','(30)']
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_최종본.json s12·s13 표 — Base 행 없음 (한옥과 갈림, 1/2 사례)
+  - engine/refs/_extracted/summary_5_LG.md 블록7 r157~165 — A10-1~5 5문항 병합, 전 행 Base (100) (R-145 ② 근거 오인)
+  - engine/refs/_extracted/summary_5_LG.md 블록8 r183 K=(23) L=(22) M=(30) N=(19) O=(6) · r187 S=(69)…W=(18)
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s9 charts[1] COLUMN_STACKED series values -31.14/-26.0/-14.43/23.71/4.71 (+- 발산형, 직접 실측)
+  - engine/refs/_extracted/gt_5_LG_제작본.json s9 base_unit_footnotes ['*Too small base(n<30)'] — 저베이스는 표시 사유
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s9 표 rows ['','(700)','(291)','(115)','(109)','(96)','(59)','(30)']
+  - engine/refs/_extracted/gt_5_LG_최종본.json s12·s13 표 — Base 행 없음 (한옥과 갈림, 1/2 사례)
 - 신뢰도: 확정
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-165 배너 교차 패널의 지시어 3종은 우리 신조어다 — 코퍼스 근거로 인용하지 않는다
@@ -1743,12 +1745,12 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: R-145 ③ 에 「우리 어휘」 표기 · `guide/14` 보강 절 · 회고에서 규칙 출처를 「사용자 지시」와 「코퍼스 실측」으로 갈라 적는다
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/summary_3_한옥.md 블록2 r59~61 (본문 배너 표기 승계 + 평소 차트어)
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_최종본.json s12 표 7행×14열 — Base 행 없음 (직접 실측)
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s9 표 — Base 행 있음
-  - engine/refs/corpus_20260824/_extracted/ 4벌 가이드(gb_1_SKEE.json·gb_2_SH청안주.json·gb_3_한옥_요약.json·summary_5_LG.md) '배너 가로 누적 100% 막대' 문자열 0건
+  - engine/refs/_extracted/summary_3_한옥.md 블록2 r59~61 (본문 배너 표기 승계 + 평소 차트어)
+  - engine/refs/_extracted/gt_5_LG_최종본.json s12 표 7행×14열 — Base 행 없음 (직접 실측)
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s9 표 — Base 행 있음
+  - engine/refs/_extracted/ 4벌 가이드(gb_1_SKEE.json·gb_2_SH청안주.json·gb_3_한옥_요약.json·summary_5_LG.md) '배너 가로 누적 100% 막대' 문자열 0건
 - 신뢰도: 확정
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-166 결론 장표의 골격은 「번호·라벨 + 제목 1줄 + 내용 3~9줄」이고, 어조는 요약과 다르다 (R-126 정정)
@@ -1762,13 +1764,13 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-conclusion` · `verify --mode conclusion` V15 의 길이 상한 재조정(→ decision_queue) · `guide/14 §5`
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s30(SWOT 4분면)·s31(01/02/03 제언)
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s15 Key point 01(3줄)·02(9줄, 수치 5개 인용)
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_최종본.json s19 — sub_title 2줄(총결론) + 둥근사각형 3벌, 박스 끝줄 '→'
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s14 — 헤더 3개 + 하단 전폭 01/02
-  - engine/refs/corpus_20260824/_extracted/summary_2_SH청안주.md 블록11 r263~268 (박스 3개 지시) → gt_2_SH_최종본 s15 (박스 2개 실현)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s30(SWOT 4분면)·s31(01/02/03 제언)
+  - engine/refs/_extracted/gt_2_SH_최종본.json s15 Key point 01(3줄)·02(9줄, 수치 5개 인용)
+  - engine/refs/_extracted/gt_5_LG_최종본.json s19 — sub_title 2줄(총결론) + 둥근사각형 3벌, 박스 끝줄 '→'
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s14 — 헤더 3개 + 하단 전폭 01/02
+  - engine/refs/_extracted/summary_2_SH청안주.md 블록11 r263~268 (박스 3개 지시) → gt_2_SH_최종본 s15 (박스 2개 실현)
 - 신뢰도: 확정
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-167 추천 의향(NPS)은 등급 사다리 밖이다 — 3구간 리코드 + NPS 파생행
@@ -1780,12 +1782,12 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide/12` 결정표에 `CT-080 · NPS` 신설 · `build_body.kind_of_chart()` · `verify` 역산표
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s27 — COLUMN_STACKED_100 series ['비추천','중립','추천','[NPS]'] (직접 실측)
-  - engine/refs/corpus_20260824/_extracted/summary_1_SKEE.md 블록27 r620~628 — 【비추천】39.29·【중립】39.29·【추천】21.43 · [NPS] -17.86 · Chart type '세로 100% 막대'
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s75 — NPS 17.2, 등급어휘 없음
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s11~s26 — 다른 3점 압축 15패널의 4번째 계열은 전부 [5점 평균]
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s27 — COLUMN_STACKED_100 series ['비추천','중립','추천','[NPS]'] (직접 실측)
+  - engine/refs/_extracted/summary_1_SKEE.md 블록27 r620~628 — 【비추천】39.29·【중립】39.29·【추천】21.43 · [NPS] -17.86 · Chart type '세로 100% 막대'
+  - engine/refs/_extracted/gt_2_SH_최종본.json s75 — NPS 17.2, 등급어휘 없음
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s11~s26 — 다른 3점 압축 15패널의 4번째 계열은 전부 [5점 평균]
 - 신뢰도: 확정
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-168 제작 메모 검출은 도형 텍스트까지 센다 — R-143 「최종본 5벌 전부 0건」의 반례
@@ -1802,11 +1804,11 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `engine/tools/deck_lint.py` `PRODUCTION_MEMO` 범위 확대 · `extract_ground_truth.py` `production_memos` 수집 범위 · R-143 본문 정정
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s4·s9·s10·s11·s12·s14 text_shapes 중 AUTO_SHAPE 7건 (직접 실측, production_memo_count 는 전 장 0)
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s4·s9·s10·s11·s12·s14 text_shapes 중 AUTO_SHAPE 7건 (직접 실측, production_memo_count 는 전 장 0)
   - engine/learning/RULES.md L1347 R-143 「최종본 5벌 전부 제작 메모 0건」 — 반례
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json · gt_2_SH_최종본.json · gt_5_LG_최종본.json · gt_4_물리보안_보고서.json — 도형 검토 메모 0건 (오탐 대조군)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json · gt_2_SH_최종본.json · gt_5_LG_최종본.json · gt_4_물리보안_보고서.json — 도형 검토 메모 0건 (오탐 대조군)
 - 신뢰도: 확정
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-169 요약에서 만든 파생지표는 「표 몇 행 몇 열에 어떤 값」까지 지정한다
@@ -1819,12 +1821,12 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary` 산출 계약 · `build_guide.write_summary_block` · `verify` V23(신설 제안 — V17 이 「원표에 없는 값」을 이미 잡으므로 그 자리에 `derived` 선언을 요구한다)
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s10 표12 rows[1] = ['','','','','','','','','','','','',''] (직접 실측, 13칸 전부 공란)
-  - engine/refs/corpus_20260824/_extracted/summary_1_SKEE.md 블록9 H열 Part별 TOP2 평균 5개 (82.14/77.86/71.43/75/71.43)
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s10 표11 rows[1] ['GAP','+2.2','','+2.2','','+21.4','','+0.4','','-1.9','','-3.4','']
-  - engine/refs/corpus_20260824/_extracted/summary_1_SKEE.md r669~679 IPA 중요도 11값 합계 6.798 ↔ gt_1_SKEE_최종본 s6 '표준화 계수 합=100'
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s10 표12 rows[1] = ['','','','','','','','','','','','',''] (직접 실측, 13칸 전부 공란)
+  - engine/refs/_extracted/summary_1_SKEE.md 블록9 H열 Part별 TOP2 평균 5개 (82.14/77.86/71.43/75/71.43)
+  - engine/refs/_extracted/gt_2_SH_최종본.json s10 표11 rows[1] ['GAP','+2.2','','+2.2','','+21.4','','+0.4','','-1.9','','-3.4','']
+  - engine/refs/_extracted/summary_1_SKEE.md r669~679 IPA 중요도 11값 합계 6.798 ↔ gt_1_SKEE_최종본 s6 '표준화 계수 합=100'
 - 신뢰도: 검증중
-- 출처: 코퍼스 4사례 해부 (`engine/refs/corpus_20260824/ANALYSIS_요약가공.md`)
+- 출처: 코퍼스 4사례 해부 (`engine/refs/ANALYSIS_요약가공.md`)
 - 이력: 2026-08-24 신규
 
 ## R-PPT-154 메모는 두 종류다 — 제작팀 메모는 **자리**로, 연구원 메모는 **말투**로 찾는다 (실측 2026-08-24)
@@ -1875,13 +1877,13 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary-text` 문장 규칙 · `guide/14` 문형 사전 절 · `verify --mode summary` 줄 역할 검사(V26 후보)
 - 이력: 2026-08-24 신규 (R-130 의 열린 질문을 코퍼스 방향으로 정리 — 확정은 판단 큐)
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/part2_text_1_SKEE.md L3~132 (요약 20꼭지 67줄) · gt_1_SKEE_최종본.json s10~s29
-  - engine/refs/corpus_20260824/_extracted/part2_text_4_물리보안.md s11~s74 (127줄, 1줄 수치 42/60 · 2줄 28%)
-  - engine/refs/corpus_20260824/_extracted/part2_text_5_LG.md s9~s18 (4줄 7장, 마지막 줄 소결론) · gt_5_LG_최종본.json 원본 U+F0E8 마커
-  - engine/refs/corpus_20260824/_extracted/part2_text_2_SH.md s9~s14 · part2_text_3_한옥.md s8~s13
-  - engine/refs/corpus_20260824/ANALYSIS_요약헤드라인.md (1줄 수치 포함률 4사례 측정 · 물리보안이 5번째)
+  - engine/refs/_extracted/part2_text_1_SKEE.md L3~132 (요약 20꼭지 67줄) · gt_1_SKEE_최종본.json s10~s29
+  - engine/refs/_extracted/part2_text_4_물리보안.md s11~s74 (127줄, 1줄 수치 42/60 · 2줄 28%)
+  - engine/refs/_extracted/part2_text_5_LG.md s9~s18 (4줄 7장, 마지막 줄 소결론) · gt_5_LG_최종본.json 원본 U+F0E8 마커
+  - engine/refs/_extracted/part2_text_2_SH.md s9~s14 · part2_text_3_한옥.md s8~s13
+  - engine/refs/ANALYSIS_요약헤드라인.md (1줄 수치 포함률 4사례 측정 · 물리보안이 5번째)
 - 신뢰도: 확정(L1·L2) / 조건부(L3·L4)
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-171 요약 문장은 명사형 종결 100%이고 문두 접속부사를 쓰지 않는다 — 인과·역접은 결론이 독점한다
@@ -1893,13 +1895,13 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary-text` · `guide-conclusion` · `verify` V14/V15 · `15_한국어-문장지침` §0 표(개조식 예외 항목에 「문두 접속부사 금지」 추가)
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/part2_text_1_SKEE.md (67줄) · part2_text_2_SH.md (14줄) · part2_text_3_한옥.md (14줄) · part2_text_5_LG.md (33줄) · part2_text_4_물리보안.md (127줄)
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_최종본.json s19 텍스트 개체 틀 5 (top 2.72cm) — 총결론 2줄이 한 문장
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s15 사각형: 둥근 모서리 55 — 「…때문으로 분석됨」 · 「따라서 제도적 이용 문턱을 낮추기 위한…」
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s14 TextBox 9 「그러나 높은 요금 및 매력 부족 등이…」 · TextBox 61 「나아가 준공 후 하자보수…」
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_최종본.json s19 사각형: 둥근 모서리 1 「…낮기 때문으로 해석됨」
+  - engine/refs/_extracted/part2_text_1_SKEE.md (67줄) · part2_text_2_SH.md (14줄) · part2_text_3_한옥.md (14줄) · part2_text_5_LG.md (33줄) · part2_text_4_물리보안.md (127줄)
+  - engine/refs/_extracted/gt_5_LG_최종본.json s19 텍스트 개체 틀 5 (top 2.72cm) — 총결론 2줄이 한 문장
+  - engine/refs/_extracted/gt_2_SH_최종본.json s15 사각형: 둥근 모서리 55 — 「…때문으로 분석됨」 · 「따라서 제도적 이용 문턱을 낮추기 위한…」
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s14 TextBox 9 「그러나 높은 요금 및 매력 부족 등이…」 · TextBox 61 「나아가 준공 후 하자보수…」
+  - engine/refs/_extracted/gt_5_LG_최종본.json s19 사각형: 둥근 모서리 1 「…낮기 때문으로 해석됨」
 - 신뢰도: 확정
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-172 요약의 수치 표기는 두 갈래이고, 형태가 곧 그 줄의 역할을 지정한다 — 서술 결합 / 괄호 병기
@@ -1911,13 +1913,13 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary-text` 수치 표기 절 · `doc_hygiene`·`verify` 동일값 3층 대조(V27 후보) · R-158(자릿수)과 짝
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/part2_text_5_LG.md s9~s18 — 수치 37개 중 34개 괄호 병기
-  - engine/refs/corpus_20260824/_extracted/part2_text_1_SKEE.md s10 L2·L3 · s20 L2 · s28 L2 (괄호 병기 4줄, 전부 다항목 비교) ↔ s11·s17·s22 L1 (서술 결합)
-  - engine/refs/corpus_20260824/_extracted/gt_4_물리보안_보고서.json s76 AUTO_SHAPE 「에스원은 타 회사 대비 높은 위상을 보유하고 있음(최초상기 : 38.2% / 비보조상기 : 59.4% / 보조인지 : 88.0%)」 — 요약 괄호 0줄과 대비
-  - engine/refs/corpus_20260824/_extracted/part2_text_3_한옥.md s10 (요약 '1억 4260만 원') ↔ 한옥 본문 s29 ('1억 4265만원') ↔ 요약 도형 '14,264.8만원'
-  - engine/refs/corpus_20260824/_extracted/part2_text_2_SH.md s13 L1 ('60%미만') ↔ gt_2_SH_최종본.json s15 사각형: 둥근 모서리 55 ('59.7%')
+  - engine/refs/_extracted/part2_text_5_LG.md s9~s18 — 수치 37개 중 34개 괄호 병기
+  - engine/refs/_extracted/part2_text_1_SKEE.md s10 L2·L3 · s20 L2 · s28 L2 (괄호 병기 4줄, 전부 다항목 비교) ↔ s11·s17·s22 L1 (서술 결합)
+  - engine/refs/_extracted/gt_4_물리보안_보고서.json s76 AUTO_SHAPE 「에스원은 타 회사 대비 높은 위상을 보유하고 있음(최초상기 : 38.2% / 비보조상기 : 59.4% / 보조인지 : 88.0%)」 — 요약 괄호 0줄과 대비
+  - engine/refs/_extracted/part2_text_3_한옥.md s10 (요약 '1억 4260만 원') ↔ 한옥 본문 s29 ('1억 4265만원') ↔ 요약 도형 '14,264.8만원'
+  - engine/refs/_extracted/part2_text_2_SH.md s13 L1 ('60%미만') ↔ gt_2_SH_최종본.json s15 사각형: 둥근 모서리 55 ('59.7%')
 - 신뢰도: 확정 / ⑥ 검증중
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-173 요약 문장은 집단 층을 뺀다 — 층은 패널이 지고, 모수 격자형만 예외다
@@ -1929,13 +1931,13 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary-text` · R-145 「패널은 층, 문장은 전체값」 분업 명시 · `verify --mode summary` 문장 내 배너 어휘 검사
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/part2_text_1_SKEE.md 요약 67줄 — 층 언급 0 · body_1_SKEE.md 본문 84장 중 47장 층 줄
-  - engine/refs/corpus_20260824/_extracted/part2_text_4_물리보안.md s12·s14·s17·s25·s43 — 1줄째 모수 주어(「업종별로는」·「1개 상품 이용사업체 중」·「2개 상품 이용사업체 중」)
-  - engine/refs/corpus_20260824/_extracted/part2_text_5_LG.md s12 L2·L3 · s13 L2 — 층을 말하는 4줄(논지 자체가 집단 차이)
-  - engine/refs/corpus_20260824/_extracted/part2_text_2_SH.md 14줄 — 집단 비교 0줄 · body_2_SH청안주.md 단지별 47장 + 특성별 47장
-  - engine/refs/corpus_20260824/_extracted/part2_text_3_한옥.md 14줄 중 집단 언급 1줄 · body_3_한옥.md 19/45
+  - engine/refs/_extracted/part2_text_1_SKEE.md 요약 67줄 — 층 언급 0 · body_1_SKEE.md 본문 84장 중 47장 층 줄
+  - engine/refs/_extracted/part2_text_4_물리보안.md s12·s14·s17·s25·s43 — 1줄째 모수 주어(「업종별로는」·「1개 상품 이용사업체 중」·「2개 상품 이용사업체 중」)
+  - engine/refs/_extracted/part2_text_5_LG.md s12 L2·L3 · s13 L2 — 층을 말하는 4줄(논지 자체가 집단 차이)
+  - engine/refs/_extracted/part2_text_2_SH.md 14줄 — 집단 비교 0줄 · body_2_SH청안주.md 단지별 47장 + 특성별 47장
+  - engine/refs/_extracted/part2_text_3_한옥.md 14줄 중 집단 언급 1줄 · body_3_한옥.md 19/45
 - 신뢰도: 확정
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-174 요약은 본문 헤드라인을 복사하지 않고 다시 쓴다 — 네 방향, 그리고 재작성이 만드는 사고 세 종류
@@ -1949,14 +1951,14 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary-text` 재작성 검사 절 · `verify --mode summary` 수준어 밴드 대조(R-162 V25 후보와 통합) · 보기 문구 원문 대조 · 지표명 척도 대조(K-05 확장)
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/part2_text_4_물리보안.md s12 ↔ body 원문 s84 (완충어 제거·최상급 부착)
-  - engine/refs/corpus_20260824/_extracted/part2_text_1_SKEE.md s27 L1 (「낮음 수준임」) ↔ gt_1_SKEE_최종본.json s107 (「미흡한 수준임」) · s5 등급 밴드
-  - engine/refs/corpus_20260824/_extracted/part2_text_1_SKEE.md s21 L2 (「다소 미흡한」, 실값 50.0·59.1) ↔ 본문 s82·s85 (「보통」)
-  - engine/refs/corpus_20260824/_extracted/part2_text_3_한옥.md s13 L3 ('매력적이지 않아서') ↔ q_3_한옥.txt D2-2 보기 ('매력을 못 느껴서') ↔ 본문 s42
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s10 총괄 차트 13항목 — 만족·수준·의향 세 척도를 한 축에 얹음
-  - engine/refs/corpus_20260824/_extracted/part2_text_5_LG.md s10 L3 — A13·A12 두 문항 결합
+  - engine/refs/_extracted/part2_text_4_물리보안.md s12 ↔ body 원문 s84 (완충어 제거·최상급 부착)
+  - engine/refs/_extracted/part2_text_1_SKEE.md s27 L1 (「낮음 수준임」) ↔ gt_1_SKEE_최종본.json s107 (「미흡한 수준임」) · s5 등급 밴드
+  - engine/refs/_extracted/part2_text_1_SKEE.md s21 L2 (「다소 미흡한」, 실값 50.0·59.1) ↔ 본문 s82·s85 (「보통」)
+  - engine/refs/_extracted/part2_text_3_한옥.md s13 L3 ('매력적이지 않아서') ↔ q_3_한옥.txt D2-2 보기 ('매력을 못 느껴서') ↔ 본문 s42
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s10 총괄 차트 13항목 — 만족·수준·의향 세 척도를 한 축에 얹음
+  - engine/refs/_extracted/part2_text_5_LG.md s10 L3 — A13·A12 두 문항 결합
 - 신뢰도: 확정(방향) / 검증중(사고 세 종류)
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-175 요약 꼭지 배열의 뼈대는 설문·본문 순서이고, 재배치는 1~2건만 얹는다
@@ -1968,14 +1970,14 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary` 꼭지 순서 절 · `guide/14 §2` 보강 · `verify --mode summary` 제목-패널 문항 대조
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s10~s29 (요약 11꼭지 20장) ↔ 본문 6파트
-  - engine/refs/corpus_20260824/_extracted/q_3_한옥.txt A~D 4섹션 ↔ gt_3_한옥_최종본.json s8~s13 (재배치 4건)
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s11 — 제목 '3) 보조금인식 및 구매 시 우려점' vs 차트 C6(추가지원)
-  - engine/refs/corpus_20260824/_extracted/gt_4_물리보안_보고서.json s10·s24·s49·s68 요약 간지 4회 · 본문 D.기타 s285~s304 요약 0장
-  - engine/refs/corpus_20260824/_extracted/diff_5_LG.json — 제작본 요약 6장 중 짝이 잡힌 것 3장, s14·s15·s16 신설
-  - engine/refs/corpus_20260824/_extracted/summary_2_SH청안주.md 블록9 (서울시 장 1장 지시) ↔ gt_2_SH_최종본.json s12·s13 (무이자 장 신설)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s10~s29 (요약 11꼭지 20장) ↔ 본문 6파트
+  - engine/refs/_extracted/q_3_한옥.txt A~D 4섹션 ↔ gt_3_한옥_최종본.json s8~s13 (재배치 4건)
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s11 — 제목 '3) 보조금인식 및 구매 시 우려점' vs 차트 C6(추가지원)
+  - engine/refs/_extracted/gt_4_물리보안_보고서.json s10·s24·s49·s68 요약 간지 4회 · 본문 D.기타 s285~s304 요약 0장
+  - engine/refs/_extracted/diff_5_LG.json — 제작본 요약 6장 중 짝이 잡힌 것 3장, s14·s15·s16 신설
+  - engine/refs/_extracted/summary_2_SH청안주.md 블록9 (서울시 장 1장 지시) ↔ gt_2_SH_최종본.json s12·s13 (무이자 장 신설)
 - 신뢰도: 확정 / 임계값 검증중
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-176 요약 arc 카탈로그 — 꼭지를 묶는 축은 조사 설계가 이미 갈라 놓은 것을 따른다 (5유형, 전부 검증중)
@@ -1988,14 +1990,14 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary` 꼭지 순서 · `guide/14` arc 카탈로그 표 · `guide/10` 목적 매핑표와 짝
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s10~s31 (여정형) · part2_text_1_SKEE.md 3~132행
-  - engine/refs/corpus_20260824/_extracted/q_3_한옥.txt A.인식 / B.구매 / C.거주 / D.방문 → gt_3_한옥_최종본.json s8~s13 (섹션 승계형)
-  - engine/refs/corpus_20260824/_extracted/gt_4_물리보안_보고서.json s11~s74 — 요약 간지 4회 · B부 4산업×6슬롯 · C부 3상품×6슬롯 (모수 격자형)
-  - engine/refs/corpus_20260824/_extracted/part2_text_2_SH.md s12·s13 (퍼널형, 3패널·2줄 헤드라인 동일 구조)
-  - engine/refs/corpus_20260824/_extracted/part2_text_5_LG.md s9~s18 (개입 전후형, 15시나리오 제시 전후)
-  - engine/refs/corpus_20260824/_extracted/part2_text_2_SH.md s9 (표본 구조 첫 꼭지) ↔ gt_2_SH_최종본.json s15 결론 인용 0회
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s10~s31 (여정형) · part2_text_1_SKEE.md 3~132행
+  - engine/refs/_extracted/q_3_한옥.txt A.인식 / B.구매 / C.거주 / D.방문 → gt_3_한옥_최종본.json s8~s13 (섹션 승계형)
+  - engine/refs/_extracted/gt_4_물리보안_보고서.json s11~s74 — 요약 간지 4회 · B부 4산업×6슬롯 · C부 3상품×6슬롯 (모수 격자형)
+  - engine/refs/_extracted/part2_text_2_SH.md s12·s13 (퍼널형, 3패널·2줄 헤드라인 동일 구조)
+  - engine/refs/_extracted/part2_text_5_LG.md s9~s18 (개입 전후형, 15시나리오 제시 전후)
+  - engine/refs/_extracted/part2_text_2_SH.md s9 (표본 구조 첫 꼭지) ↔ gt_2_SH_최종본.json s15 결론 인용 0회
 - 신뢰도: 검증중 / 첫 꼭지 규칙 확정
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-177 요약은 제언을 담지 않는다 — 평가에서 행동으로 넘어가는 경계가 슬라이드 경계와 일치한다
@@ -2007,13 +2009,13 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary-text` · `guide/14` 보강 절 · `verify --mode summary` 행동어 검사(위치 조건 포함)
 - 이력: 2026-08-24 신규 (guide/14 2026-08-23 보강 문장을 코퍼스 근거로 승격)
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/part2_text_3_한옥.md (0/14) · part2_text_4_물리보안.md (0/127) · part2_text_5_LG.md (0/33)
-  - engine/refs/corpus_20260824/_extracted/part2_text_2_SH.md s14 L3 — 요약 유일 함의 줄
-  - engine/refs/corpus_20260824/_extracted/part2_text_1_SKEE.md s28 L3 · s29 L4 — 마지막 두 꼭지 2줄
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_최종본.json s19 — '출시하는 것이 효과적' · '시장에 진입해야 함'이 결론에서 처음
+  - engine/refs/_extracted/part2_text_3_한옥.md (0/14) · part2_text_4_물리보안.md (0/127) · part2_text_5_LG.md (0/33)
+  - engine/refs/_extracted/part2_text_2_SH.md s14 L3 — 요약 유일 함의 줄
+  - engine/refs/_extracted/part2_text_1_SKEE.md s28 L3 · s29 L4 — 마지막 두 꼭지 2줄
+  - engine/refs/_extracted/gt_5_LG_최종본.json s19 — '출시하는 것이 효과적' · '시장에 진입해야 함'이 결론에서 처음
   - projects/…/02_비상주/1_제작가이드/work/variants/비교판정_보고서_fluent.md (A vs A2, 요약 4·5 제언 혼입 판정)
 - 신뢰도: 확정
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-178 결론 형식은 5종이고, 「결론 슬라이드에 표가 안 들어간다」는 4/5에서만 참이다 (R-075·R-166 확장)
@@ -2025,13 +2027,13 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-conclusion` 형식 선택 · `guide/14 §5` 카탈로그 표 교체 · `deck_lint` 결론 장 표·차트 경고를 fatal → info
 - 이력: 2026-08-24 신규 (R-075 「관찰된 3종」 · guide/14 §5 「표가 안 들어간다」 정정)
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s30·s31 — 차트 0·표 0
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s15 — TextBox 71/59 'Key point 01'·'Key point 02' + 띠 헤드라인 65/53 + 둥근 모서리 67(3줄)·55(9줄)
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s14 — Freeform 55 '구매 및 거주'·'관광' + 직사각형 67/56/81 + 타원 82/88/91
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_최종본.json s19 — 텍스트 개체 틀 5(총결론 2줄, top 2.72cm) + 둥근 위쪽 모서리 2/28/32 + 둥근 모서리 1/29/33
-  - engine/refs/corpus_20260824/_extracted/gt_4_물리보안_보고서.json s76 tables 2 · s77 charts ['BAR_STACKED_100','DOUGHNUT','BAR_STACKED_100','BAR_STACKED_100'] · s78 tables 1 (직접 실측)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s30·s31 — 차트 0·표 0
+  - engine/refs/_extracted/gt_2_SH_최종본.json s15 — TextBox 71/59 'Key point 01'·'Key point 02' + 띠 헤드라인 65/53 + 둥근 모서리 67(3줄)·55(9줄)
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s14 — Freeform 55 '구매 및 거주'·'관광' + 직사각형 67/56/81 + 타원 82/88/91
+  - engine/refs/_extracted/gt_5_LG_최종본.json s19 — 텍스트 개체 틀 5(총결론 2줄, top 2.72cm) + 둥근 위쪽 모서리 2/28/32 + 둥근 모서리 1/29/33
+  - engine/refs/_extracted/gt_4_물리보안_보고서.json s76 tables 2 · s77 charts ['BAR_STACKED_100','DOUGHNUT','BAR_STACKED_100','BAR_STACKED_100'] · s78 tables 1 (직접 실측)
 - 신뢰도: 검증중(형식별) / 확정(표 금지 강등)
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-179 결론의 기여는 재배열이 아니라 결합이다 — 요약이 갈라 놓은 두 값을 처음 맞붙이고 이름을 붙인다
@@ -2043,14 +2045,14 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-conclusion` 설계 원칙 · `conclusion_map.items[].combines[]`(어느 요약 줄 둘을 붙였는가) 신설 제안
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_4_물리보안_보고서.json s78 — '실제이용과 지불가능 금액 간 GAP이 존재함' + 'Slim 요금제 개발 필요' (직접 실측)
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s15 둥근 모서리 55 — '…무이자 지원 사업의 인지도는 84.3%인 반면 서울시 이자지원 사업의 인지도는 59.7%로'
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s14 TextBox 61 — '초기 구매 의향은 약 28%…보조금 지원 이후 43%로 상승함'
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_최종본.json s19 둥근 모서리 1 — "'기능 명확성' → '신뢰' → '수용'"
-  - engine/refs/corpus_20260824/_extracted/part2_text_2_SH.md s10 L1·L2·L3 ↔ gt_2_SH_최종본.json s15 KP01/KP02 (줄 단위 분배)
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s30 — '예산 대비 20~30% 높은 견적'(덱 126장 중 단독)
+  - engine/refs/_extracted/gt_4_물리보안_보고서.json s78 — '실제이용과 지불가능 금액 간 GAP이 존재함' + 'Slim 요금제 개발 필요' (직접 실측)
+  - engine/refs/_extracted/gt_2_SH_최종본.json s15 둥근 모서리 55 — '…무이자 지원 사업의 인지도는 84.3%인 반면 서울시 이자지원 사업의 인지도는 59.7%로'
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s14 TextBox 61 — '초기 구매 의향은 약 28%…보조금 지원 이후 43%로 상승함'
+  - engine/refs/_extracted/gt_5_LG_최종본.json s19 둥근 모서리 1 — "'기능 명확성' → '신뢰' → '수용'"
+  - engine/refs/_extracted/part2_text_2_SH.md s10 L1·L2·L3 ↔ gt_2_SH_최종본.json s15 KP01/KP02 (줄 단위 분배)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s30 — '예산 대비 20~30% 높은 견적'(덱 126장 중 단독)
 - 신뢰도: 확정
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-180 결론은 요약을 되감는 작업이 아니라 덱 전체를 다시 뒤지는 작업이다 — R-078 을 사후 제약에서 작성 순서 규칙으로 뒤집는다
@@ -2063,14 +2065,14 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary` `for_conclusion` 신설 · `guide-conclusion` 근거 조달 절 · `verify --mode conclusion` 수치 3종 판정(덱 전수 문자열 역추적) · `guide/14 §5` ★절 교체
 - 이력: 2026-08-24 신규 (R-078 의 방향 전환 · R-166 반례 탐색의 「준수율 2/4」를 5사례로 확장)
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s15 — 78.3%·41.4%·59.7% (요약 문장에 없던 값)
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s14 TextBox 61 — '약 28%'·'43%' (결론 신규) · TextBox 9 '사업지는 주변에 많은 문화시설을 보유하고 있음' (조사 밖 전제)
-  - engine/refs/corpus_20260824/_extracted/gt_4_물리보안_보고서.json s76 — 38.2/59.4/88.0 · '90%이상' · '300명 이상' (요약 미등장)
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_최종본.json s19 — 수치 4개 전부 요약 s14 L1 재인용 (유일한 '안 여는' 사례) · 둥근 모서리 33 '다만 여전히 가격 부담…'
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s30 O/T 8항목 ↔ 요약 s10~s29 0회 · 본문 정성 15장(s36·s40·s48·s52·s56·s60·s69·s77·s78·s89·s93·s100·s108·s120·s121)
+  - engine/refs/_extracted/gt_2_SH_최종본.json s15 — 78.3%·41.4%·59.7% (요약 문장에 없던 값)
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s14 TextBox 61 — '약 28%'·'43%' (결론 신규) · TextBox 9 '사업지는 주변에 많은 문화시설을 보유하고 있음' (조사 밖 전제)
+  - engine/refs/_extracted/gt_4_물리보안_보고서.json s76 — 38.2/59.4/88.0 · '90%이상' · '300명 이상' (요약 미등장)
+  - engine/refs/_extracted/gt_5_LG_최종본.json s19 — 수치 4개 전부 요약 s14 L1 재인용 (유일한 '안 여는' 사례) · 둥근 모서리 33 '다만 여전히 가격 부담…'
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s30 O/T 8항목 ↔ 요약 s10~s29 0회 · 본문 정성 15장(s36·s40·s48·s52·s56·s60·s69·s77·s78·s89·s93·s100·s108·s120·s121)
   - engine/learning/RULES.md R-078 (사후 제약 형태) — 정정 대상
 - 신뢰도: 확정
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-181 제언 문형은 「조치 명사구 + 강도 어미」이고 수단은 괄호로 격리한다 — 명령형·주체·기한·정량 목표는 쓰지 않는다
@@ -2082,14 +2084,14 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-conclusion` 제언 문형 절 · `guide/14 §5` 제언 표 · `verify --mode conclusion` 명령형·주체·기한 검사
 - 이력: 2026-08-24 신규 (R-126 「→ 제언」 문형 정정 · R-166 ② 의 화살표 진술 범위 축소)
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s31 — 9줄 전부 동작명사 종결, 괄호 예시 6줄
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s14 TextBox 61 — '지자체에 적정 보조금 지원과 함께 … 필수적으로 요구됨' (코퍼스 유일 주체 명시)
-  - engine/refs/corpus_20260824/_extracted/gt_2_SH_최종본.json s15 — '필요함'2 · '필요가 있음'3 · '것으로 보임'1
-  - engine/refs/corpus_20260824/_extracted/gt_4_물리보안_보고서.json s76~s78 — '~을 위해 ~이 필요함' 4회 · 헤드라인 바 체언 '~ 필요' 3회 · '중요성이 대두됨' 1회
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_최종본.json s19 둥근 모서리 33 — '…시장에 진입해야 함' (코퍼스 유일 당위) · 둥근 모서리 1 개념 연쇄 화살표
-  - engine/refs/corpus_20260824/_extracted/gt_5_LG_최종본.json raw U+F0E8 — 요약 7장 + 결론 3박스 (제언 마커 아님)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s31 — 9줄 전부 동작명사 종결, 괄호 예시 6줄
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s14 TextBox 61 — '지자체에 적정 보조금 지원과 함께 … 필수적으로 요구됨' (코퍼스 유일 주체 명시)
+  - engine/refs/_extracted/gt_2_SH_최종본.json s15 — '필요함'2 · '필요가 있음'3 · '것으로 보임'1
+  - engine/refs/_extracted/gt_4_물리보안_보고서.json s76~s78 — '~을 위해 ~이 필요함' 4회 · 헤드라인 바 체언 '~ 필요' 3회 · '중요성이 대두됨' 1회
+  - engine/refs/_extracted/gt_5_LG_최종본.json s19 둥근 모서리 33 — '…시장에 진입해야 함' (코퍼스 유일 당위) · 둥근 모서리 1 개념 연쇄 화살표
+  - engine/refs/_extracted/gt_5_LG_최종본.json raw U+F0E8 — 요약 7장 + 결론 3박스 (제언 마커 아님)
 - 신뢰도: 확정
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-182 저베이스·산출 기준은 결론까지 따라간다 — 표기가 아니라 문장 선별로 푼다 (R-128·R-156 확장)
@@ -2101,12 +2103,12 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-conclusion` 근거 조달 절 · `verify --mode conclusion` evidence 좌표의 base 조회 · `rules.small_base_warning()` 을 결론 evidence 까지 확장
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_4_물리보안_보고서.json s76 TEXT_BOX ' 중기업 및 대기업의 물리보안 침투율은 90%이상…' · FREEFORM '종업원 수 300명 이상의 대기업…' (직접 실측)
-  - engine/refs/corpus_20260824/_extracted/gt_4_물리보안_보고서.json s8 — '대기업은 실제 281샘플이 조사되었으나 9샘플로 분석됨'
-  - engine/refs/corpus_20260824/_extracted/gt_4_물리보안_보고서.json s76·s77·s78 — Base 표기 0/3 (요약 61/61 · 본문 222/222 와 대비)
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s5 — n<30 유보 문구 ↔ part2_text_1_SKEE.md 67줄 0회
+  - engine/refs/_extracted/gt_4_물리보안_보고서.json s76 TEXT_BOX ' 중기업 및 대기업의 물리보안 침투율은 90%이상…' · FREEFORM '종업원 수 300명 이상의 대기업…' (직접 실측)
+  - engine/refs/_extracted/gt_4_물리보안_보고서.json s8 — '대기업은 실제 281샘플이 조사되었으나 9샘플로 분석됨'
+  - engine/refs/_extracted/gt_4_물리보안_보고서.json s76·s77·s78 — Base 표기 0/3 (요약 61/61 · 본문 222/222 와 대비)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s5 — n<30 유보 문구 ↔ part2_text_1_SKEE.md 67줄 0회
 - 신뢰도: 검증중
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-183 요약이 떨어뜨린 항목은 우연이 아닐 수 있다 — 총괄 항목 집합과 헤드라인 패널 커버리지를 검사한다
@@ -2118,13 +2120,13 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `guide-summary` 산출 계약(`dropped`·`coverage`) · `verify --mode summary` V28 후보 · `guide-summary-reviewer` 렌즈 추가
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s10 총괄 차트 13항목 — 14.3%(공사비 견적)·57.1%(분쟁 해결) 제외 ↔ part2_text_1_SKEE.md s10 L3
-  - engine/refs/corpus_20260824/_extracted/gt_1_SKEE_최종본.json s29 IPA 11항목 ↔ s30 W-2 · s31 02 (견적·가격)
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s8~s13 패널 24개 ↔ part2_text_3_한옥.md 14줄 (미커버 A3·A4·B5)
-  - engine/refs/corpus_20260824/_extracted/gt_3_한옥_최종본.json s11 — 제목 '3) 보조금인식 및 구매 시 우려점' vs 차트 C6
-  - engine/refs/corpus_20260824/_extracted/gt_4_물리보안_보고서.json — KBF 8장·이용목적 8장 요약 탈락 (편향 아님, 대조군)
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s10 총괄 차트 13항목 — 14.3%(공사비 견적)·57.1%(분쟁 해결) 제외 ↔ part2_text_1_SKEE.md s10 L3
+  - engine/refs/_extracted/gt_1_SKEE_최종본.json s29 IPA 11항목 ↔ s30 W-2 · s31 02 (견적·가격)
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s8~s13 패널 24개 ↔ part2_text_3_한옥.md 14줄 (미커버 A3·A4·B5)
+  - engine/refs/_extracted/gt_3_한옥_최종본.json s11 — 제목 '3) 보조금인식 및 구매 시 우려점' vs 차트 C6
+  - engine/refs/_extracted/gt_4_물리보안_보고서.json — KBF 8장·이용목적 8장 요약 탈락 (편향 아님, 대조군)
 - 신뢰도: 검증중
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-184 문장 위생 검사를 요약·결론 문장까지 넓힌다 — 조사 오류 · 따옴표 혼용 · 공백 · 복제 오타
@@ -2136,14 +2138,14 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 적용: `engine/tools/doc_hygiene.py` 검사 5종 추가 · `deck_lint` 최종본 대상 · `15_한국어-문장지침` K 표에 등재
 - 이력: 2026-08-24 신규
 - 근거 좌표:
-  - engine/refs/corpus_20260824/_extracted/part2_text_3_한옥.md s13 L1 ('약 83%으로') · part2_text_2_SH.md s12 L1 ('84.3%으로')
-  - engine/refs/corpus_20260824/_extracted/part2_text_1_SKEE.md s11 L2·L3 — 직선/곡선 따옴표 혼용 (‘소통 원활’ / '프로젝트 총비용…')
-  - engine/refs/corpus_20260824/_extracted/gt_4_물리보안_보고서.json s77 FREEFORM '2가지 물리모안 상품 이용 사업체'·'3가지 물리모안 상품 이용 사업체' (직접 실측)
-  - engine/refs/corpus_20260824/_extracted/part2_text_4_물리보안.md s25·s31·s37·s43 — 동일 문장 4회 (복제 위험 지표)
-  - engine/refs/corpus_20260824/_extracted/part2_text_3_한옥.md s11 L2 (U+302E) ↔ 같은 덱 본문 6장 U+00B7
-  - engine/refs/corpus_20260824/_extracted/part2_text_1_SKEE.md s29 L1 ('하자 발생  대응') · s26 L2 ('사공 관리')
+  - engine/refs/_extracted/part2_text_3_한옥.md s13 L1 ('약 83%으로') · part2_text_2_SH.md s12 L1 ('84.3%으로')
+  - engine/refs/_extracted/part2_text_1_SKEE.md s11 L2·L3 — 직선/곡선 따옴표 혼용 (‘소통 원활’ / '프로젝트 총비용…')
+  - engine/refs/_extracted/gt_4_물리보안_보고서.json s77 FREEFORM '2가지 물리모안 상품 이용 사업체'·'3가지 물리모안 상품 이용 사업체' (직접 실측)
+  - engine/refs/_extracted/part2_text_4_물리보안.md s25·s31·s37·s43 — 동일 문장 4회 (복제 위험 지표)
+  - engine/refs/_extracted/part2_text_3_한옥.md s11 L2 (U+302E) ↔ 같은 덱 본문 6장 U+00B7
+  - engine/refs/_extracted/part2_text_1_SKEE.md s29 L1 ('하자 발생  대응') · s26 L2 ('사공 관리')
 - 신뢰도: 확정 / ④ 검증중
-- 출처: 요약·결론 구성 심층 연구 (`engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`)
+- 출처: 요약·결론 구성 심층 연구 (`engine/refs/ANALYSIS_요약결론구성.md`)
 - 이력: 2026-08-24 신규
 
 ## R-185 표를 해석하기 전에 **누가 그 문항을 봤는지**부터 확인한다 (사용자 지시 2026-08-24, 즉시 적용)
@@ -2313,3 +2315,384 @@ R-109(가로 겹침막대 = clustered + overlap 100)가 여기서 독립 확인�
 - 종전 상태: 본문 멘트가 입력 목록에는 있었으나 **읽는 순서가 규정돼 있지 않았고**, 에이전트 정의의 출발점이 「통계표 전수 스캔」이었다.
 - 적용: `.claude/agents/guide-summary.md`(받는 것·읽는 순서·description) · `guide/14_요약결론-작성규칙.md`
 - 이력: 2026-08-29 신규
+
+## R-202 제목과 불릿은 호응해야 한다 — 다만 제목이 질문형일 필요는 없다 (사용자 지시 2026-08-29 · 정정 2026-09-01)
+- 분류: guide / 요약
+- 규칙: **형식은 명사구가 기본이다.** 하우스 실측이 그렇다(「홈로봇 기존 인식」·「시나리오 평가」·「관리 업무 평가」). 제목을 질문문으로 바꾸지 않는다 — **우선순위는 R-121·R-204 > R-202** 이고, 호응을 맞추는 방향은 언제나 꼭지를 좁히는 쪽이다.
+  **지켜야 하는 것은 형식이 아니라 범위의 호응이다.** 제목이 세운 범위 안에 불릿이 전부 들어오고, 그 범위가 불릿을 전부 덮어야 한다.
+  ① 범위 밖에 있는 불릿은 빼거나, 제목의 범위를 그 내용까지 넓힌다(넓히면 R-204 로 되돌아가 꼭지를 쪼갤지 본다). ② 제목이 세웠는데 답이 없는 범위가 있으면 그것이 빠진 불릿이다. ③ 불릿 순서는 제목이 열거한 순서를 따르고 패널 자리도 그 순서다. ④ 답할 수 없는 것을 제목이 약속하지 않는다 — 축을 뺐으면 제목에서도 뺀다.
+- 실측 결손 (비상주 요약 2, 2026-08-29): 제목 「현 관리 서비스 만족도와 어려움」인데 첫 불릿이 「위탁 서비스 1순위는 시설·설비 35.3%」(중요도)였다 — 제목이 세운 범위 밖이다. 해법은 그 불릿을 빼거나 제목을 「관리 업무 평가」처럼 중요도까지 덮는 상위 개념어로 바꾸는 것 둘 중 하나다.
+- 자기검사 (물음표 검사를 대신한다 · 2026-09-01): ① **제목이 세운 범위 밖에 있는 줄이 있는가** ② **제목이 약속한 축이 장표에 있는가**(「건물 규모별」이라 해 놓고 연면적 표가 없으면 약속 위반). 제목이 명사구라 물음표를 붙여 읽는 검사는 성립하지 않는다.
+- 왜 정정했나 (사용자 확인 2026-09-01 「제목은 질문이 아닐 수도 있어」): 원 카드가 「제목 = 질문」을 형식 요구로 읽히게 적었고, 그 결과 R-121·R-204(2~3어절 명사구)와 정면으로 부딪혔다. 산출물은 명사구를 택했으므로 물음표 자기검사가 작동하지 않는 상태로 남아 있었다.
+- R-199·R-200 과의 관계: R-199 는 꼭지 **안**의 논리(So what/Why so), R-200 은 줄 사이 **분업**(판단은 첫 줄에만), R-202 는 제목과 줄 사이의 **호응**이다.
+- 적용: guide-summary(꼭지 설계) · guide-summary-text · guide-summary-reviewer 심사 렌즈 · `guide/14_요약결론-작성규칙.md`
+- 이력: 2026-08-29 신규
+
+## R-203 민토 피라미드의 수평 논리를 적용한다 — 같은 층은 한 가지 논증 방식 (웹 조사 반영 2026-08-29)
+- 분류: guide / 요약·결론
+- 규칙: ① **수평 논리** — 한 꼭지의 불릿들(같은 층)은 **귀납**(같은 종류의 사실 여럿 → 판단) 아니면 **연역**(전제→전제→결론) 중 하나로 일관돼야 하고 섞지 않는다. 귀납이면 모으는 사실이 **같은 종류·같은 모수**여야 한다. ② **정렬 기준을 하나 정한다** — 시간순·구조순·중요도순 중 하나. 무작위 나열 금지(「전제가 앞」은 연역 묶음일 때의 기준이다). ③ 한 판단을 받치는 근거는 **3개 안팎** — 다섯을 넘으면 MECE 가 아니거나 층이 하나 더 필요하다는 신호다.
+- 실측 결손 (비상주 요약 2, 사용자 지적 「리모델링 공사 진행 시 어려운 부분이 왜 갑자기 튀어나와」): 「중요도·만족도·어려움」 귀납 묶음에 다른 문항·다른 모수(286명)의 공사 애로가 끼어 있었다. 종류가 다른 사실을 귀납 묶음에 넣은 것이다.
+- 들이지 않은 것: 맥킨지의 **액션 타이틀**(장표 제목 자체를 판단문으로). 우리 하우스는 제목=질문 / 헤드라인=답 분업이고 LG·SKEE 실측이 그렇다(R-202). 「제목만 이어 읽어도 이야기가 된다」는 정신은 헤드라인 1→N story_check 가 대신 만족시킨다.
+- 보류: SCQA(상황→갈등→질문→답)는 결론 층 순서 점검의 잣대로만 쓰고 도입 문단을 새로 만들지 않는다.
+- 출처: thinkinsights.net · deckary.com · winningpresentations.com · managementconsulted.com · modelthinkers.com · antoinebuteau.com
+- 이력: 2026-08-29 신규
+
+## R-204 제목이 길어지면 제목을 늘리지 말고 꼭지 범위를 줄인다 (사용자 지적 2026-08-29, 즉시 적용)
+- 분류: guide / 요약
+- 규칙: 꼭지 제목은 **2~3어절 · 12자 안팎**(R-121·R-143·R-196). 가운뎃점으로 두 개념을 잇지 않고 「A와 B」로 두 주제를 붙이는 것도 피한다. **제목이 길어진다는 것은 한 꼭지에 너무 많은 것을 담았다는 신호다** — 제목을 늘려 맞추지 말고 ① 꼭지를 쪼개거나 ② 곁가지 불릿·패널을 빼거나 ③ 여러 요소를 아우르는 **상위 한 단어**를 찾는다(나열이 아니라 개념으로 묶는다).
+- 배경: R-202(제목이 묻지 않은 것은 불릿에 넣지 않는다 — 넣어야 하면 제목을 고친다)를 **제목을 늘리는 쪽**으로 적용하면 「관리 업무의 중요도·어려움과 관리 방식별 만족도」(23자) 같은 제목이 나온다. 실측 2026-08-29 재설계 초안 7꼭지 중 4개가 21자를 넘었다. LG 실측은 「홈로봇 기존 인식」·「시나리오 평가」다.
+- 우선순위: **R-204 > R-202**. 호응을 맞추는 방향은 언제나 「꼭지를 좁히기」이지 「제목을 늘리기」가 아니다. 다만 짧아진 제목이 던지는 질문에 불릿이 답해야 한다는 호응 자체는 그대로다 — 상위 개념어로 묶었다면 그 개념 안에 불릿이 전부 들어오는지 확인하고, 못 들어오는 불릿은 이 꼭지 것이 아니다.
+- 이력: 2026-08-29 신규
+
+## R-205 요약 헤드라인의 상한은 40자가 아니라 물리 한계다 — R-130 폐기 (코퍼스 실측 2026-08-30)
+- 분류: guide / 요약
+- 규칙: 헤드라인 길이는 **렌더 한 줄이 담는 만큼**(74자)을 상한으로 본다. 「수치 없는 판단문 ≤40자」(R-130)는 폐기한다. 코퍼스 5사례 실측 평균은 51.6~74.6자이고 최장은 149자였으며, **5/5 사례가 첫 줄에 대표 수치를 두었다.**
+- 배경: R-130 의 근거는 LG 가이드 1건뿐이었고, 그 문장조차 최종본에서는 수치 4줄로 교체되어 있었다. 규칙이 코퍼스가 아니라 중간 산출물 하나에서 나온 자리다.
+- 함께 보기: 길이보다 **가독이 먼저다**(R-198). 74자를 넘으면 렌더에서 두 줄이 되므로 경고하되 막지 않는다.
+- 이력: 2026-08-30 신규 (verify.py `HEADLINE_MAX` 주석의 참조를 뒤늦게 등재)
+
+## R-206 요약은 표를 옮기지 않고 읽어 준다 — So what 2~3줄 (사용자 지시 2026-08-31, 즉시 적용)
+- 분류: guide / 요약
+- 규칙: 요약 장표의 글은 **그 장표의 표들이 함께 무엇을 뜻하는지**를 2~3줄로 적는다. 「A가 68.2%로 가장 높음」처럼 한 표의 1위 값을 옮긴 줄은 요약이 아니다 — 읽는 이가 스스로 해석해야 하는 문장이기 때문이다. 수치는 판단을 떠받치는 자리에만 붙인다.
+- 쓰는 순서: ① 이 꼭지의 표들을 **겹쳐 놓고** 무엇이 보이는지 찾는다 → ② 그 발견을 한 문장(헤드라인)으로 세운다 → ③ 그것을 떠받치는 두 번째 판단을 쓴다 → ④ `➔` 로 의뢰인에게 무엇을 뜻하는지 닫는다.
+- 격추 대상: 표 하나당 한 줄씩 배열한 글(표 수 = 줄 수는 나열의 신호), 「1위는 A, 2위는 B」 문형, 두 표를 이어 붙였을 뿐 관계를 말하지 않은 줄.
+- 실측 사례(비상주 2026-08-31): 표32(이미 맡긴 업무)와 표46(추가로 맡길 업무)을 따로 나열하던 요약을 겹쳐 읽으니 **위탁의 경계선**이 드러났다 — 청소·보안·설비는 이미 넘겼고 추가 수요는 정확히 그 바깥(임대차·자산·수납)에 있다. 같은 표로 결론이 바뀌었다.
+- 함께 보기: R-199(피라미드 So what/Why so) · R-200(세 줄은 걸음) · R-202(제목과 불릿의 호응).
+- 이력: 2026-08-31 신규
+
+## R-207 결론의 기본은 수치 없는 판단이되, 판단을 세우는 수치는 쓴다 (사용자 지시 2026-08-31 · 완화 2026-09-01)
+- 분류: guide / 결론
+- 규칙: 결론 박스의 글은 **요약의 So what 들을 묶어 한 층 위의 So what** 을 세우는 자리다. 그러므로 수치는 **판단을 세울 때만** 쓴다.
+  **쓰지 않는다 (기본)** — ① 근거를 다시 늘어놓는 나열 ② 요약이 같은 자리에서 이미 쓴 값의 재인용 ③ 박스 제목. 이 셋은 같은 근거를 세 번 읽히는 것이다.
+  **쓴다 (두 자리)**
+  ① **결정적 수치 1~2개** — 그 수치가 **판단의 수위를 정할 때**다. 「절반 아래로 내려감」과 「46.8%로 내려감」이 서로 다른 결정을 부른다면 수치를 쓴다.
+  ② **결론이 처음 맞붙이는 두 값**(R-179) — 요약이 따로 갈라 놓은 값을 결론이 처음 나란히 두어 대비를 만드는 자리다. 그 대비가 곧 판단이므로 수치 없이는 문장이 성립하지 않는다.
+  **쓰면 지킬 것** — R-180 의 수치 3종 검사를 통과해야 한다: ㉠ 요약에 있는 값 ㉡ 요약엔 없어도 덱(본문·차트·통계표)에 있는 값 ㉢ **덱 어디에도 없는 값**은 버리거나 `derived{formula}` 로 산출식을 남긴다(R-169 규격). `evidence` 에 좌표를 등재하고 V18 이 대조한다.
+- 왜 완화했나 (사용자 확인 2026-09-01 「결론에 수치 쓸 때도 있긴 해」): 절대 금지는 코퍼스 5사례와 어긋난다 — LG s19 는 박스마다 수치를 열거하고(전부 요약 재인용), SH s15 Key point 02 는 9줄에 5개를 인용하며, 한옥 결론 수치 2개는 전부 신규다. 다만 SKEE s30 은 정량 인용 1건뿐이어서 「결정적 수치 1~2개」라는 취지는 실측에 부합한다.
+- 부작용 실측 (비상주 2026-09-01): 절대 금지를 적용한 판의 결론이 「가장 적게 떠안고 가장 넓은 범위를 원하며 가장 많이 낼 뜻이 있는데」처럼 **최상급 형용사 연쇄**가 되었다. 읽는 사람이 그 판단의 크기를 가늠할 수 없다.
+- 함께 보기: R-126(판단 + 제언) · R-179(결론의 기여는 결합) · R-180(수치 3종 검사) · R-078(근거 사슬).
+- 이력: 2026-08-31 신규 · 2026-09-01 절대 금지 → 조건부 (사용자 확인)
+
+## R-208 요약은 꼭지마다 한 명이 쓰고, 총괄 한 명이 취합해 결론까지 쓴다 (사용자 제안 2026-08-31, 즉시 적용)
+- 분류: guide / 오케스트레이션
+- 규칙: 요약 문장은 **꼭지당 담당 하나**(`guide-summary-slide`)가 쓴다. 한 담당이 7꼭지를 몰아 쓰면 표를 깊이 읽을 여유가 없어 1위 값만 옮기게 된다(R-206 위반의 구조적 원인). 총괄(`guide-summary`)은 꼭지를 나누고 표를 배정하며, 돌아온 So what 을 이어 서사를 만들고 **결론 및 제언을 자기 손으로 쓴다.**
+- 왜 총괄이 결론을 쓰는가: 결론은 꼭지 사이를 넘나드는 판단이라 한 꼭지만 본 담당은 세울 수 없다. 전 꼭지를 읽은 사람만 「그래서 무엇을 하나」에 답할 수 있다.
+- 폐지: `guide-summary-text`(전 꼭지 문장 일괄) → `guide-summary-slide` 로 대체. `guide-conclusion`(결론 전담) → 총괄이 겸한다.
+- 이력: 2026-08-31 신규
+
+## R-209 base 조건이 보기를 걸러 내는 문항은, 그 순위를 발견으로 제시하지 않는다 (구조안 심사 2026-09-01, 즉시 적용)
+- 분류: guide / 요약
+- 규칙: 파이핑·분기 문항의 표를 쓰기 전에 **문항 앞머리를 읽는다.** 조건이 응답자만 거르는 것이 아니라 **보기 자체를 걸러 내는** 문항이면, 그 표의 순위는 발견이 아니라 설계의 그림자다.
+- 실측 (비상주 C1·표46): 문항 앞머리가 「현재는 귀 건물에서 직접 또는 내부 조직에서 운영하고 있지만」이라 **이미 위탁한 업무는 보기에서 기계적으로 빠진다.** 일부 위탁 건물은 미화 86.4%·보안 67.2%·시설 59.1%를 이미 내보냈으므로 남은 후보가 자산관리밖에 없다. 표46 의 미화 1.5%는 「수요가 없다」가 아니라 「물어볼 대상이 아니다」다. 설계안 셋이 모두 이 위에 「다음은 자산관리다」를 세웠다.
+- 고치는 법: 같은 판단을 **모수 전체(n=500)의 독립 표**로 다시 세운다. 비상주에서는 표86(도입 희망 단계 — 2단계 42.2 + 3단계 31.0)이 그 자리였다. 조건부 표는 한계를 문장에 드러내며 보조 근거로만 내린다.
+- 함께 보기: R-185(모수 규율) · R-186(자·尺).
+- 이력: 2026-09-01 신규
+
+## R-210 직접 조립한 Summary 는 넣고 뺀 지표가 곧 결론이다 (구조안 심사 2026-09-01, 즉시 적용)
+- 분류: guide / 요약
+- 규칙: 척도 지표를 골라 Summary 표를 직접 만들 때, **어느 지표를 넣고 뺐는지가 「최하위」를 바꾼다.** 「N개 중 가장 낮음」이라 쓸 때는 그 N 을 문장이나 패널 지시에 명시한다.
+- 실측 (비상주 표9001): 다섯 지표로 좁히면 최하위가 신뢰도·차별성 75.8% 이지만, 여덟 지표로 조립하면 **추천 의향 64.4%**(표84)가 최하위다. 설계안 둘이 「75.8%가 최하위」라 적었는데 **같은 장표의 자기 패널에 64.4%와 66.2%가 함께 실려 있어** 패널이 불릿을 반증했다.
+- 격추 대상: 헤드라인이 「가장 낮음/가장 높음」을 말하는데 그 범위를 밝히지 않은 줄. 같은 장표의 패널이 그 문장을 반증하는 구조.
+- 이력: 2026-09-01 신규
+
+## R-211 집단별 지표 차이를 그 집단이 되게 한 원인으로 읽지 않는다 (구조안 심사 2026-09-01, 즉시 적용)
+- 분류: guide / 요약
+- 규칙: 관리 방식·이용 여부처럼 **응답자가 스스로 고른 집단**의 지표 차이는 그 선택의 **효과가 아니라 자기선택의 결과**일 수 있다. 요약이 이 인과를 흘리면 잘못된 영업 논리가 결론에서 자동으로 나온다.
+- 실측 (비상주 표19): 「전체 외부 위탁(n=102)이 일곱 업무 만족도 모두 1위(81.4~92.2)」를 위탁의 효과로 읽으면 「전면 위탁으로 갈아타게 하면 만족도가 오른다」가 된다. 그러나 이미 만족스럽게 위탁 중인 건물이 그 방식을 유지한 결과일 수 있고, 값이 큰 쪽(업무시설)일수록 만족이 낮다는 사실이 자기선택 쪽을 뒷받침한다.
+- 쓰는 법: 그 표를 「방식의 효과」가 아니라 **「어느 집단에 여백이 남았는가」의 지도**로 쓴다. 인과를 말해야 한다면 문형을 「A 집단은 B 임」(상태)으로 두고 「A 하면 B 가 됨」(변화)으로 쓰지 않는다.
+- 이력: 2026-09-01 신규
+
+## R-212 척도 문항은 TOP2 만 말하지 않는다 — 「보통」과 「매우」를 함께 본다 (구조안 심사 2026-09-01, 즉시 적용)
+- 분류: guide / 요약
+- 규칙: 「TOP2 가 A%에서 B%로 내려감」만 쓰면 **남은 쪽의 정체와 긍정의 깊이**가 숨는다. 척도 지표를 요약에 실을 때 ① 【SoSo】가 두꺼운지 ② 최상위(「매우 ~」)가 비어 있지 않은지를 함께 확인한다.
+- 실측 (비상주): 표79 제시가 후 TOP2 46.8% 옆에 **【SoSo】 37.4%**가 서 있고, 그 46.8% 안에서 「매우 이용 의향이 있다」는 1.0% 뿐이다. 실제 구매에서 「보통」은 미구매다. 전 지표에서 최상위층이 비어 있다 — 매우 매력적 1.8 · 매우 이용 의향 0.6 · 매우 추천 1.4 · 매우 이해 3.6 · 매우 신뢰 4.2.
+- 함의: 「좋다고는 하나 내 돈으로 쓰겠다고도 남에게 권하겠다고도 하지 않는다」가 진짜 So what 이고, 「열성 지지층이 없으니 입소문에 기대는 출시 계획을 세우지 말라」는 제언의 유일한 근거다.
+- 이력: 2026-09-01 신규
+
+## R-213 요약은 본문 배너 축을 반드시 한 번 이상 쓴다 (구조안 심사 2026-09-01, 즉시 적용)
+- 분류: guide / 요약
+- 규칙: 본문에 싣는 배너 군(비상주에서는 용도·권역·관리 운영 방식)은 독자가 되짚을 수 있는 축이다. 요약이 **전체 값만으로 일곱 꼭지를 채우면 조사항목 중 「응답자 및 빌딩 기본 정보(용도·규모)」가 통째로 미답**이 된다(R-119 전수성 위반).
+- 실측 (비상주): 설계안 셋이 모두 용도 배너를 한 번도 쓰지 않았다. 그런데 용도가 이 조사에서 가장 크게 갈리는 축이었다 — 업무시설(n=136)은 직접 관리 16.2%(최저)·3단계 희망 39.7%(최고)·지불 용의 34.01만원(최고)인데 **관리 업무 만족도는 일곱 중 다섯에서 최하위**다. 「가장 많이 맡기고 가장 많이 낼 뜻이 있는 용도가 현 관리에 가장 불만족」이 그 조사의 가장 값어치 있는 세그먼트 발견이었다.
+- 함께 볼 것: 한 배너군이 단조가 아니라고 그 축을 통째로 버리지 않는다. 비상주 연면적은 관리 방식(표31)에서는 단조가 아니지만 **구매 쪽 표에서는 단조**다 — 제시가 후 의향 400평 미만 40.0 → 800평 이상 57.7, 지불 용의 22.84 → 38.32만원.
+- 이력: 2026-09-01 신규
+
+## R-214 요약·결론은 의뢰인 자리에서 한 번 더 심사한다 (사용자 지시 2026-09-01, 즉시 적용)
+- 분류: guide / 요약 · 오케스트레이션
+- 규칙: 확정 전에 `guide-client-review`(의뢰인 렌즈)를 돌리고 **통과 판정을 받을 때까지 고친다.** 기계 게이트(좌표·길이·형식)와 장인 검토(`guide-summary-reviewer`, 방법론·규칙)가 못 보는 자리가 있다 — 「이 보고서를 읽고 내가 무엇을 정할 수 있는가」다.
+- 의뢰인이 던지는 여섯 물음: ① 그래서 뭘 하면 되나(결정 가능성) ② 이거 이미 아는 거 아닌가(값어치) ③ 이 숫자 믿어도 되나(근거 체력) ④ 첫 줄부터 읽히나(읽는 값) ⑤ 우리가 물어본 것에 답했나(전수성) ⑥ 이야기가 되나(흐름).
+- 실측 (비상주 2026-09-01): 이 심사가 기계 게이트를 전부 통과한 판에서 심각도 「높음」 여섯 건을 잡았다 — 표19 와 어긋나는 사실오류, 퍼널에서 가장 큰 계단을 뺀 하강 곡선, 가격 근거 부재로 조사항목 7 사실상 미답, 분모 바꿔치기, 문장이 짚지 않는 패널 다섯, 컨셉 부정 피드백 전면 부재.
+- 의뢰인의 말: 「방법론상 자가 다르다는 이유로 뺀 표들이 하필 사업 결정에 가장 직접 쓰이는 표들입니다. **빼는 것으로 지키면 규칙은 지켜지고 보고서는 쓸모를 잃습니다.**」 → 자가 다르면 각주로 밝히고 나란히 보여준다.
+- 이력: 2026-09-01 신규
+
+## R-215 요약·결론은 **조사 목적 장표의 이슈**를 먼저 읽고, 그 이슈를 지우는 방향으로 쓴다 (사용자 지시 2026-09-01, 즉시 적용)
+- 분류: guide / 요약·결론
+- 규칙: 요약을 설계하기 전에 **Part Ⅰ 「1. 조사 목적」 장표**를 읽는다. 그 장표는 조사항목을 ISSUE 상자로 늘어놓고 아래에 조사명을 놓는 구조다. 의뢰인이 물은 것이 그 상자들이므로, ① **꼭지 묶음을 조사목적 문장의 마디로 세우고** ② **헤드라인이 이슈의 물음에 답하게 쓰고** ③ **그 답을 떠받치는 표를 고른다.** 설문 문항 순서는 응답자 편의로 정해진 것이라 논리 순서가 아니다 — 문항 묶음으로 꼭지를 세우면 이슈가 조용히 빠진다.
+- **꼭지 수를 이슈 수에 맞추지 않는다.** 한 이슈를 두 꼭지가 나눠 답해도 되고 한 꼭지가 두 이슈에 답해도 된다(사용자 확인 2026-09-01: 「딱 이렇게 7개로 안 나뉘어도 돼」). 맞춰야 하는 것은 개수가 아니라 **답의 유무와 강도**다.
+- **표가 붙어 있다고 답이 된 것이 아니다.** 이슈에 해당하는 표를 패널에 실었어도 헤드라인이 그 물음에 답하지 않으면 미답이다. 실측(비상주 r32): 이슈 7 「서비스 이용 時 적정 가격 수준」에 표78·79·81 이 다 실려 있었는데 헤드라인은 「막는 것은 값만이 아님」이라 **얼마가 적정한지에 답하지 않았다.** 「낼 뜻은 평균 28.99만원이나 25만원에 못 미치는 곳이 55.6%여서, 값을 하나로 놓을 수 없음」으로 고쳐 이슈를 지웠다.
+- **조사목적 문장의 마디가 곧 요약의 묶음이다.** 비상주 조사목적은 「現 건물관리 방식과 Pain Point 를 파악하고, 예정 신상품의 컨셉 이해도와 적정 가격 수준을 측정한다」 두 마디다. 요약을 Ⅰ 현황 다섯 꼭지 · Ⅱ 신상품 세 꼭지로 세우자 「의뢰인이 물은 두 가지」가 제목만 읽어도 보였다. 종전 일곱 꼭지는 배열만 그렇고 제목에 드러나지 않았다.
+- 검사: `check_issue_coverage.py` — 이슈마다 답하는 꼭지·결론 박스·근거표·**헤드라인**을 모아 빈자리를 보인다. 빌드 스크립트의 한 단계로 돌린다. 다만 「헤드라인이 그 물음에 답하는가」는 기계가 판정하지 못하므로 사람이 읽는다.
+- 함께 보기: R-201(요약 설계는 목적 → 본문 헤더 → 꼭지 논리 → 표 선정 순서) — R-215 는 그 첫 단계를 **조사 목적 장표의 이슈 상자**로 못 박은 것이다. R-202(제목은 질문이고 불릿은 답) · R-206(표를 옮기지 않고 읽어 준다).
+- 이력: 2026-09-01 신규 (비상주 v6 재설계 실측 — 일곱 꼭지를 여덟 꼭지 두 묶음으로 다시 세웠다)
+
+## R-216 요약이 쓰는 Summary 표는 본문 원표와 번호가 달라 「안 쓰인 장표」로 보인다 (사용자 지적 2026-09-01, 즉시 적용)
+- 분류: guide / 목차
+- 규칙: 연구부 확인 시트의 「요약·결론」 열은 **표 번호 일치**로 붙는다. 그런데 매트릭스 척도 문항은 요약이 **요약표**(A8 TOP2 Summary = 표19)를 쓰고 본문은 **항목별 원표**(표21~27)를 실으므로 번호가 어긋나, 본문 일곱 장이 전부 「요약에 안 쓰인 장표」로 보인다. `build_guide.part2_usage` 가 같은 문항의 요약표와 항목별 원표를 이어 준다.
+- 실측 (비상주 r29): 만족도 일곱 장(P17~P23)만 열이 비어 있었다. 고치자 요약·결론에 쓰인 장표가 25장에서 32장으로 늘었다.
+- 매트릭스 척도를 쓰는 조사마다 재발한다.
+- 이력: 2026-09-01 신규
+
+## R-217 요약 패널이 **절단선 밖 배너군**을 지정하면 조용히 전체 열만 남는다 (실측 2026-09-01, 즉시 적용)
+- 분류: guide / 요약
+- 규칙: 배너 절단선 밖(`in_report=false`) 배너군은 본문 슬라이드 그리드에 없다. 요약 패널이 그 축을 쓰려면 **`표{n}` 으로 참조**해야 원표에서 다시 뽑는다. `P{n}` 으로 참조하면 `select_panel_columns` 가 열을 하나도 찾지 못하고 **전체 열 한 줄만** 남긴다.
+- 왜 위험한가: **틀린 값이 아니라 없는 값**이라 전체 검수도 요약 게이트도 칸 대조도 전부 통과한다. 목차의 패널 제목은 「연면적별 …」로 남아 있어 읽는 이도, 심사자도 그 축이 그려진 줄로 믿는다. 실제로 의뢰인 관점 심사가 「그림은 연면적으로 갈라져 있는데 글이 말하지 않는다」고 지적했는데 **그림에도 없었다.**
+- 실측 (비상주 r26): 꼭지 7 의 P63·P64 가 「건물 연면적」을 지정했으나 두 패널이 「전체」 한 줄로 렌더됐다. 표78·표79 참조로 바꾸자 네 집단이 실렸고 칸 대조가 203칸에서 317칸으로 늘었다.
+- 검사: `build_guide.py` 가 선별 후 열이 하나뿐이면 경고한다(2026-09-01 신설).
+- 이력: 2026-09-01 신규
+
+## R-218 빌드 명령은 파일로 고정한다 — 손으로 다시 조립하면 플래그를 잃는다 (사용자 발견 2026-09-01, 즉시 적용)
+- 분류: guide / 파이프라인
+- 규칙: 조사마다 `work/build.sh` 를 두고 **맵 생성 → 목차 병합 → 빌드 → 전체 검수 → 요약·결론 게이트 → 패널 칸 대조 → 이슈 대조 → 표기 규약 확인**을 한 번에 돌린다. 세션마다 명령을 손으로 다시 쓰지 않는다.
+- 실측 (비상주 r24~r29): 설문지·챕터 간지 옵션을 새로 붙이며 명령을 다시 쓰는 사이 `--dash-empty` 가 떨어져 나가, **여섯 판이 빈 칸을 `-` 로 메우지 않은 채 나갔다**(r23 은 1,570개, r24~r29 는 0개). 값이 틀린 것이 아니라 표기 규약이라 검수·게이트가 전부 통과했고, 사용자가 실물을 보고 발견했다.
+- 마지막 단계에 **표기 규약 개수를 세어 0이면 경고**한다(대시·별표 등). 「전 판에 있었는데 이번에 없는 것」을 보는 검사가 파이프라인에 없다는 것이 이 사고의 뿌리다.
+- 함께 보기: R-192(빈 칸은 `-` 로 메운다) · R-188(저베이스 별표 제거) — 둘 다 같은 종류의 「표기 규약」이라 같은 사고에 노출된다.
+- 이력: 2026-09-01 신규
+
+## R-219 요약 꼭지에 표를 묶는 기준은 셋뿐이고, 기본값은 묶지 않는 것이다 (사용자 지적 2026-09-01, 즉시 적용)
+- 분류: guide / 요약결론
+- 규칙: 「어떤 표를 하나로 묶고 어떤 표는 따로 두는가」의 기준을 세운다. R-160 이 세 연산(압축·병합·분리)을 이름 붙이고도 **무엇이 그 선택을 정하는지는 미해결로 남겨 둔 자리**를 메운다.
+  **묶는다 — 아래 셋 중 하나에 해당할 때만.**
+  ① **같은 대상의 다른 면** — 한 대상을 서로 다른 축으로 잰 표들이다(중요도·만족도·어려움). 민토의 귀납 묶음이고, 모으는 사실이 같은 종류·같은 모수여야 한다.
+  ② **전제와 결과** — 앞 표를 보지 않으면 뒤 표를 읽을 수 없는 관계다. 연역 묶음이고, 배치 순서가 곧 논증 순서다(R-199).
+  ③ **같은 자를 댄 두 지점** — 갭이 논지인 묶음이다. 전반 대 개별(R-074) · 제시 전 대 후 · 집단 A 대 B · 올해 대 작년.
+  **묶지 않는다.**
+  ㉠ 모수가 다르고 자도 다른데 각주로도 맞출 수 없는 표(R-186) ㉡ 같은 면을 두 번 재는 표(같은 지표를 배너만 바꿔 두 번 싣는 것) ㉢ 그 표를 빼도 헤드라인이 서는 표 — 본문에 두면 된다(R-159) ㉣ 논증 방식을 섞는 표 — 귀납 묶음에 연역 표를 끼우지 않는다(R-203).
+  **기본값은 묶지 않는 것이다.** 코퍼스 실측에서 요약 20장 중 14장이 문항 1개 = 장 1개다. 세 연산은 필요할 때 쓰는 도구이지 기본 동작이 아니다.
+  **개수가 진단 지표다.** 패널 3~5 · 불릿 2~3 이 정상 범위이고(R-203 ④), 패널이 여섯을 넘거나 제목이 3어절을 넘으면 **그 꼭지에 So what 이 둘이라는 신호**이므로 쪼갠다(R-204).
+- 실측 (비상주 2026-09-01): 확정본 요약 4 가 선택 고려 요소·업체 선정 이유·인지 경로·의뢰 업체 선정 방식 네 표를 한 꼭지에 담았고, 부제가 네 항목 나열이 되었으며, 첫 불릿에 두 문장이 뭉쳐 세 줄 구조가 무너졌다. ①~③ 어디에도 해당하지 않는 묶음이었다 — 「업체를 고르는 기준」(①)과 「업체를 만나는 경로」(전혀 다른 대상)를 한 꼭지에 넣은 것이다.
+- 왜 기준이 없으면 안 되는가: 기준이 없으면 설계가 **설문지 순서를 그대로 따라간다.** 비상주 요약 일곱 꼭지의 배열이 A7·A8 → B1 → B2·B3·B4 → 선택 기준 → 컨셉 → 도입 범위 → 가격으로 설문 순서와 같았고, 그 결과 요약이 본문의 축약본이 되었다. R-175(뼈대는 설문·본문 순서)는 **배열**의 기본값이지 **묶음**의 기준이 아니다.
+- 신뢰도: 확정 (사용자 지적 + 코퍼스 반례 계열)
+- 적용: `guide-summary` 꼭지 설계 · `guide-summary-reviewer` 심사 렌즈 · `guide/14 §17`
+- 함께 보기: R-160(세 연산) · R-203(수평 논리) · R-204(제목 길이는 진단 지표) · R-199(피라미드)
+- 이력: 2026-09-01 신규 (R-160 의 decision_queue 항목을 닫는다)
+
+## R-220 교차분석을 거는 조건과 걸지 않는 조건은 코퍼스가 이미 정해 두었다 (코퍼스 실측 등재 2026-09-01, 즉시 적용)
+- 분류: guide / 요약결론
+- 규칙: `refs/ANALYSIS_요약가공.md` §2 의 발동 조건을 규칙으로 올린다. 지금까지 어느 규칙 카드에도 등재되지 않아 설계가 교차분석을 감으로 걸어 왔다.
+  **건다 — 넷을 모두 만족할 때.**
+  ① 의뢰인이 그 교차를 물었다 — ToKnowList·RFP·표본 쿼터에 그 축이 있다.
+  ② 그 꼭지 헤드라인의 논지가 집단 차이다 — 헤드라인이 집단을 주어로 쓰는 바로 그 자리다.
+  ③ 집단 base ≥ 30 이다.
+  ④ 지표가 열 하나당 숫자 하나로 압축되어 있다(TOP2·선호율·척도 5보기).
+  **걸지 않는다 — 하나라도 걸리면.**
+  ㉠ 집단 base 가 30 미만이다 ㉡ 본문이 이미 집단 비교를 전담한다(본문이 문항마다 집단별 쌍을 찍어 내면 요약은 전체 값만 싣는다) ㉢ 꼭지 논지가 규모·구조·순위·시계열이다 ㉣ 그 패널의 둘째 축이 이미 있다(항목 병합·연도에 축을 쓰면 배너는 못 쓴다) ㉤ **배너 차이가 커 보인다는 이유만으로는 걸지 않는다.**
+  **형태**: 전치해 싣는다 — 카테고리 = 전체 + 선별한 집단, 계열 = 보기, 집단마다 Base (n)과 요약지표 텍스트.
+  **문장과 패널의 분업**: 패널은 층을 지고 **문장은 전체 값으로 쓴다.** 코퍼스 4사례에서 요약 문장이 집단을 주어로 삼은 비율이 0/67 · 1/14 · 0/14 · 4/33 이다. 모수 격자형 서사(모집단 절단면이 곧 꼭지)만 예외이고, 그때는 모수가 반드시 주어에 온다.
+- 근거: `refs/ANALYSIS_요약가공.md` §2 · §4-1(요약 패널의 기본 축은 「전체」 1열이고 배너 교차는 예외이며 3%다) · §8(R-145 ②의 근거는 오인 — 인용한 LG 패널은 배너 교차가 아니라 매트릭스 병합 패널이다)
+- 신뢰도: 확정 (코퍼스 4사례)
+- 적용: `guide-summary` 패널 설계 · `guide/19 §5` · R-145 의 발동 조건을 이 카드가 대신한다
+- 함께 보기: R-145(전치 교차표 형식) · R-164(기본 축은 전체 1열) · R-173(요약 문장은 집단 층을 뺀다) · R-213(배너 축을 한 번은 쓴다)
+- 이력: 2026-09-01 신규 (코퍼스 §2 가 2026-08-24 이래 미등재였던 것을 등재)
+
+## R-221 본문 멘트는 So what 의 재료가 아니라 「어디가 갈리는가」의 지도다 (사용자 제안 2026-09-01, 즉시 적용)
+- 분류: guide / 요약결론
+- 규칙: 요약 설계는 표가 아니라 본문 멘트에서 출발한다(R-201). 다만 **멘트를 무엇으로 쓰는지**를 가른다.
+  **멘트를 판단의 재료로 쓰지 않는다.** 본문 멘트는 R-061·R-062 규약에 따라 「1행 전체 값 · 2행 배너 튀는 값」을 옮기는 낭독문이고, 해석은 의도적으로 배제되어 있다(R-194 · R-002). 멘트를 요약의 재료로 삼으면 요약이 **낭독의 낭독**이 되어 1위 값 나열이 반복된다.
+  **멘트를 지도로 쓴다.** 멘트의 배너 줄(「~별로 보면 X 가 상대적으로 높음/낮음」)은 **이미 유의차 스크리닝을 통과한 교차분석 결과**다. 이것을 전수로 긁어 **축 × 집단 × 문항 지도**를 먼저 만든다. 그 지도에서 **한 집단이 여러 문항에 걸쳐 반복해서 튀는 자리**를 찾으면 그것이 세그먼트 인사이트의 출발점이다.
+  **지도에서 가설이 서면 표로 내려간다.** 그 집단이 정말 그런지 원표를 열어 확인하고, 필요하면 교차분석을 새로 건다(R-220 의 조건을 만족할 때). 전수 스캔이 아니라 **표적 검증**이다.
+- 실측 (비상주 2026-09-01): 본문 멘트 283줄 가운데 역접·대비 구문을 가진 줄이 **1줄**이다(그마저 결론 장표의 것). 멘트가 판단을 담지 않는다는 증거다. 반면 배너 유의차 줄은 **52줄**이고 축은 권역 38 · 용도 21 · 관리 방식 15 로 갈린다. 집단으로 보면 서북권 16 · 도심권 14 · 종교시설 7 · 교육연구시설 6 · 업무시설 4 다.
+  그런데 **확정본 요약 일곱 꼭지가 쓴 배너 축은 용도 3 · 연면적 2 · 관리 방식 1 이고 권역은 0회다.** 본문이 38회 짚은 축을 요약이 통째로 버렸다. 지도를 만들지 않으면 이 결손이 보이지 않는다.
+- 신뢰도: 확정 (1사례 전수 실측 · 사용자 제안)
+- 적용: `guide-summary` 읽는 순서 2단계 · `guide/14 §7`(R-201 절) 보강 · 지도 산출을 `work/축지도.json` 으로 남긴다
+- 함께 보기: R-201(설계 순서) · R-213(배너 축을 한 번은 쓴다) · R-220(교차 발동 조건) · R-073(예상과 다른 것)
+- 이력: 2026-09-01 신규
+
+## R-222 판단문에는 근거 셀을 요구하지 않는다 — 계약이 나열을 보상하던 자리다 (실측 2026-09-01, 즉시 적용)
+- 분류: guide / 요약결론
+- 규칙: 요약 claims 의 검증 계약을 **줄의 성격에 따라 둘로 가른다.**
+  ① **수치를 쓴 줄** — 지금대로 `evidence` 에 셀 좌표를 등재하고 원표와 대조한다(변경 없음).
+  ② **수치가 없는 판단문** — 좌표를 요구하지 않는다. 대신 **그 판단을 받칠 패널이 그 꼭지에 있는가**만 본다. 소결론(`➔`)이 이미 면제였던 것과 같은 이유다.
+  판단은 표들 **사이**에서 나오므로 어느 셀에도 없다. 「가장 중요한데 만족은 가장 낮음」에 좌표를 달 수는 없다.
+- 왜 고쳐야 했나: 헤드라인에도 좌표를 요구하면 **판단문이 게이트를 못 넘는다.** 넘기려면 문장이 수치를 끌어안아야 하고, 그러면 판단문이 사실문으로 되돌아간다. R-206(요약은 표를 옮기지 않고 읽어 준다)이 요구하는 것과 계약이 보상하는 것이 **정반대**였다. 규칙을 몇 장 더 얹어도 이 구조에서는 고쳐지지 않는다.
+- 실측 (비상주 2026-09-01): 확정본 요약 헤드라인 일곱 줄이 전부 수치를 안고 있다. 「중요한데 만족이 얇은 자리가 시설·설비 73.6%와 임대료 수납 74.4% 둘이고…」처럼 판단으로 출발했다가 수치 둘을 끌어안고 끝난다. 정확히 이 압력의 산물이다.
+- 남는 방어: 판단이 근거 없이 서는 것은 `guide-summary-reviewer`(피라미드 렌즈 4-b ②「그 줄을 지우면 헤드라인이 무너지는가」)와 `guide-adversary` 가 막는다. 기계 게이트가 못 보는 것을 기계에 맡기려 했던 것이 원인이다.
+- 신뢰도: 확정 (구조 진단 + 1사례 전수)
+- 적용: `tools/verify.py` V14 claims 블록 · `guide-summary-slide` 산출 계약 · `guide/14 §19`
+- 함께 보기: R-206(표를 옮기지 않는다) · R-205(헤드라인에 수치 허용) · R-199(피라미드)
+- 이력: 2026-09-01 신규
+
+## R-223 규칙은 등재로 끝나지 않는다 — 배달 경로를 함께 확인한다 (실측 2026-09-01, 즉시 적용)
+- 분류: 운영 / 프로세스
+- 규칙: `RULES.md` 에 카드를 올린 뒤 **그 규칙이 담당에게 실제로 도달하는지**를 세 갈래로 확인한다. 등재는 배달이 아니다.
+  ① **팩** — `python engine/tools/make_packs.py` 를 다시 돌리고 카드 수가 늘었는지 본다. 카드 헤더 형식(`### R-NNN · 제목` / `## R-NNN 제목`)과 `- 분류:` 태그가 파서·`PACK_MAP` 과 맞아야 한다.
+  ② **참조 경로** — 에이전트 정의가 「먼저 읽는다」고 지시한 파일이 실제로 존재하는지 연다.
+  ③ **에이전트 정의·지식 문서** — 새 규칙이 기존 규칙을 폐기·정정하면 그 자리를 `grep` 으로 찾아 함께 고친다. 폐기 카드는 지우지 말고 제목에 `【폐기 — R-NNN 으로 대체】`를 달아 남긴다(사유를 함께 보여야 규칙이 되살아나지 않는다).
+- 실측 (2026-09-01, 요약·결론 품질 조사에서 드러남): 세 갈래가 **동시에** 끊겨 있었다.
+  ㉠ `make_packs.py` 파서가 `### R-NNN · ` 형식만 인식해 **228장 중 97장이 어느 팩에도 안 실렸다.** 요약결론 팩은 13장뿐이었고, 코퍼스 5사례 해부로 만든 R-155~R-186 과 사용자 지시 R-197~R-215 가 전부 빠져 있었다.
+  ㉡ 요약 담당 3종이 「규칙보다 먼저 읽는다」고 지시받은 `engine/refs/corpus_20260824/ANALYSIS_요약결론구성.md`(81KB)는 **없는 경로**였다. 실제 파일은 `engine/refs/ANALYSIS_요약결론구성.md` 다.
+  ㉢ 폐기된 R-130 이 에이전트 정의 3곳·지식 문서 3곳에 살아 있어, 검토관이 **폐기된 기준으로 심사**하고 있었다. 같은 SKILL.md 안에서 224행과 264행이 정반대를 지시했다.
+  결과: 「요약이 표를 옮겨 적는다」는 증상의 원인이 규칙 부재가 아니라 **배달 실패**였다. 규칙을 더 얹는 대응은 증상을 악화시킬 뿐이었다.
+- 신뢰도: 확정 (3중 결손 동시 실측)
+- 적용: `/회고` 스킬의 등재 절차 · 규칙 추가 PR 의 자기점검
+- 이력: 2026-09-01 신규
+
+## R-224 「그래프 상단 Text」로 얹는 지표를 독립 그래프로 그리지 않는다 (사용자 지시 2026-09-01, 즉시 적용)
+- 분류: guide / 요약 · 그래프
+- 규칙: 평균(`[N점 평균]`·`[평균 : 만원]`·`[NPS]`)은 **차트에서 빼서 그래프 위에 텍스트로 얹는** 지표다. 그것을 자기 혼자 카테고리가 되는 별도 패널로 작도하면 같은 지표를 두 번 그리게 되고, 독자는 그 평균이 어느 그래프에 딸린 것인지 알 수 없다. 평균은 **그 값을 낳은 TOP2 차트 위에** 얹는다.
+- 사용자의 말: 「차트(=그래프)에서 평균은 텍스트로 보통 빼거든. 그래프 상단 text라고 표시하라고 하는 이유가 그런 거지」 · 「그래프 상단 text라고 한 것을 별도의 그래프로 하면 안 돼」
+- 실측 (비상주 r46 요약 3): 좌 패널이 표20(A8 Mean Summary)을 「관리 업무 항목별 만족도 5점 평균」이라는 이름으로 **세로묶음막대 단독 작도**했다. 같은 장의 상 패널이 표19(TOP2)를 따로 그려, 한 장에서 같은 일곱 업무를 두 번 그렸다. → 표19 를 세로막대로 세우고 표20 의 평균을 `그래프 상단 Text` 로 얹어 한 패널로 합쳤다.
+- 코퍼스: SKEE s20·s21·s28 이 그 형식이고(TOP2 세로막대 + 5점 평균 텍스트), 평균 단독 차트는 358개 중 **0건**이다.
+- 검사: `verify --mode summary` V20 / SC-001 (fatal). 지시어에 `상단 표`·`그래프 상단 Text` 가 있으면 얹는 것이므로 위반이 아니다.
+- 이력: 2026-09-01 신규
+
+## R-225 하우스는 TOP2 를 쓰고 TOP1 을 쓰지 않는다 — 최상위 단독 차트를 만들지 않는다 (사용자 지시 2026-09-01 · R-212 개정)
+- 분류: guide / 요약
+- 규칙: 척도의 최상위 한 보기(「매우 ~」)만 뽑아 **별도 차트로 그리지 않는다.** 최상위의 얇음을 보이려면 보기 분포(100% 세로누적 · +−세로누적)를 세워 그 칸의 길이로 읽게 한다.
+- 사용자의 말: 「TOP2 만 쓰고 TOP1은 사용 안 합니다」 · 「신상품 평가 지표 최상위(매우) 응답률 — 이건 빼도 돼」
+- 코퍼스: 「매우 ~」 한 보기만 뽑아 그린 사례는 요약 차트 358개 중 **0건**이다(19 §7-2).
+- R-212 와의 관계: R-212 는 「최상위가 비어 있지 않은지 **함께 본다**」였는데, 그것이 **장표로 세우는** 것까지 허용하는 것으로 읽혀 표9003(최상위 응답률 Summary) 단독 패널이 생겼다. 확인은 설계자가 하되 **장표에 최상위 단독 차트를 만들지 않는다**로 좁힌다. 같은 So what 은 지표 사슬(태도 → 행동 의향)과 5점 평균으로 세울 수 있다.
+- 검사: `verify --mode summary` V20 / SC-002 (fatal) — `summary_kind: top1` 이거나 주제에 「최상위·TOP1·매우 응답률」이 있으면 잡는다.
+- 이력: 2026-09-01 신규 (R-212 개정)
+
+## R-226 요약·결론 장표에는 문항 회색 줄을 두지 않는다 (사용자 지시 2026-09-01, 즉시 적용)
+- 분류: guide / 요약 · 블록포맷
+- 규칙: 요약 패널의 제목 아래에 `D7-1. 이 서비스에서 가장 매력적으로…` 같은 **문항 전문 줄을 만들지 않는다.** 요약은 표를 여러 장 모으는 자리라 문항이 패널마다 붙으면 그림보다 글이 많아지고, 어느 문항인지는 근거 표기(`* 근거: …`)와 패널 제목이 이미 말한다.
+- 사용자의 말: 「요약결론엔 q.문항 회색글씨 다 빼줘」
+- 코퍼스: LG 요약 블록은 애초에 **제목 자리에 문항을 적어** 줄을 하나만 쓴다(r139·r159). 제목 줄과 문항 줄을 따로 둔 것은 우리 구현이 만든 것이다.
+- 구현: `build_guide.write_panel` · `write_panel_transposed` 의 `no_question` — 문항 줄을 만들지 않고 제목이 `panel_row`(굵게·아래 굵은 선)를 차지한다. 본문 블록은 그대로다.
+- 이력: 2026-09-01 신규
+
+## R-227 차트 지시어에 표가 이미 말하는 것을 다시 적지 않는다 (사용자 지시 2026-09-01 · R-145 개정)
+- 분류: guide / 지시어 · 표기 · 요약
+- 규칙: 배너 차트 지시어는 `배너 : 가로 누적 100% 막대 그래프` 로 끝낸다. **`(행 = 건물 연면적 · 용도 집단, 각 행 Base 100%)` 같은 괄호 부연을 붙이지 않는다** — 배너군 이름과 집단은 표 안에 군 이름 행·집단 행으로 이미 서 있고 행마다 `Base for %` 칸이 붙는다. 누적인지 묶음인지는 지시어 본문이 이미 가른다.
+- 사용자의 말: 「배너에 쓸 데 없는 거 지우기 — (행 = 건물 연면적 · 용도 집단, 각 행 Base 100%) · [평균] 열은 막대에서 제외하고 우측 텍스트로」
+- 예외 하나: **전치 패널의 평균 열**은 행수식어 칸을 쓸 수 없으므로 지시어에 남긴다. 다만 설명이 아니라 하우스 통용 어휘 한 마디로 적는다 — `· [평균] 은 그래프 상단 Text`.
+- R-145 와의 관계: R-145 는 「제작팀이 행 방향으로 쌓아도 각 행이 100% 가 되도록 표기에 못박는다」였다. 그 목적은 지시어 본문(`누적 100%`)이 이미 달성하므로 부연을 걷어낸다.
+- 이력: 2026-09-01 신규 (R-145 개정)
+
+## R-228 인사이트를 별도 줄로 붙이지 않는다 — 요약 문장 자체가 인사이트다 (사용자 지시 2026-09-02 · 개정)
+- 분류: guide / 요약결론
+- 규칙: 요약 멘트 아래에 `★` 같은 표지를 단 **해석 전용 줄을 만들지 않는다.** 요약의 세 줄이 이미 인사이트여야 한다.
+- 사용자의 말: 「이거 인사이트로 본 거 같은데 이건 인사이트가 아냐. 이 줄 다 빼주고」 · 「**인사이트 줄 자체를 그냥 빼. 애초에 요약 문장 자체가 인사이트인 거야**」 · 「현재 인사이트 문장 자체가 너무 오바스러워. 기존의 요약 문장에서 수정하는 게 나을 듯해」
+- 왜 뒤집혔나 (하루 만에): 2026-09-01 판은 제작팀 요청(「멘트 아래 인사이트 한 줄」)을 **줄을 하나 더 붙이는 것**으로 옮겼다. 그러자 사실 세 줄이 그대로 남은 채 네 번째 줄에 비유가 얹혔고(「맡기는 일이 늘어나는 방아쇠는 건물의 크기가 아니라 드나드는 사람의 수이며…」), 장표에서는 과장으로 읽혔다. **요구는 「줄을 더하라」가 아니라 「지금 줄이 인사이트가 되게 하라」였다.**
+- 함께 볼 것: R-232(수치를 덜어 판단이 드러나게 한다) · R-233(헤드라인 되풀이 금지). 셋이 한 묶음이다 — 수치를 덜고 되풀이를 지우면 남는 문장이 곧 인사이트다.
+- 이력: 2026-09-01 신규 → **2026-09-02 개정(별도 줄 폐지)**
+
+## R-229 결론은 「박스 N + 총론」이고, 총론이 최종 제언을 진다 (사용자 지시 2026-09-01, 즉시 적용)
+- 분류: guide / 결론
+- 규칙: 결론 장표는 **번호 박스 2~3개 + 번호 없는 총론 박스 하나**로 세운다. 번호 박스는 각각 조사 목적의 한 마디에 답하고, 총론은 그 박스들을 합쳐 **최종 제언 하나**로 닫는다.
+- 사용자의 말: 「결론 및 제언은 너무 요약 같은 느낌이야. 한국어 인사이트스럽게 써 주고 굳이 쓸데없는 내용을 없애고 요약들을 합쳐서 So what · Why so 를 합쳐 줘. 1. 결론 / 2. 결론 / 총론 이런 구조로 가야 해. 총론은 1·2 결론을 합쳐서 그래서 최종 제언인 거야」
+- 코퍼스: LG 실측 지시어가 `제목 - 내용 형태의 박스 3개 -> 총결론 박스 하나 구성 부탁드립니다.` 이고, 한옥도 「상단 제목-내용 박스 2~3 + 하단 전폭 총결론」이다(R-166 레이아웃 5종 중 둘).
+- 문장 규율: 줄마다 **판단을 앞에 세우고 근거를 뒤에** 붙인다. 「무엇이 그렇다」로 시작하면 요약을 다시 읽히는 것이다(R-200 이 요약 안에서 금지한 재진술이 결론에서 되풀이되던 자리).
+- 구현: `conclusion_map.json` 의 `overall` · `build_guide` 의 `RE_PII_HEAD` 가 **번호 없는 머리**를 총론으로 읽는다.
+- 이력: 2026-09-01 신규
+
+
+## R-232 요약 문장의 수치는 금액과 판단의 수위를 정하는 값만 남긴다 (사용자 지시 2026-09-02, 즉시 적용)
+- 분류: guide / 요약 · 표기
+- 규칙: 순위·비교는 **수치 없이** 말한다 — 「~이 가장 높고, ~순으로 높음」. 값은 그 옆의 표와 그래프가 이미 보여주므로 문장이 되풀이할 까닭이 없다.
+- 사용자의 말: 「요약에서 퍼센티지 웬만하면 적지 말고 ~이 가장 높고, ~순으로 높다. 이런 식으로 읽기 쉽게 하자」
+- **남기는 것 둘** — ① **금액**(「월 평균 31.39만원」·「평균 28.99만원」)처럼 대체할 말이 없는 값 ② **판단의 수위를 정하는 값**(그 수치가 없으면 문장이 성립하지 않는 자리 — R-207 과 같은 기준).
+- **모수도 숫자로 쓰지 않는다** (사용자 2026-09-02 「일부 위탁 198곳이 맡긴 업무 → 일부 위탁의 경우. 198곳 안 중요하잖아」). 모수는 패널마다 `Base/Unit` 칸에 이미 있다. 다만 **모수가 다른 두 값을 한 문장에서 맞붙일 때는 말로 구분한다** — 「중요도는 전체 기준, 위탁률은 일부 위탁의 경우」(R-186 의 요구는 숫자가 아니라 구분이다).
+- 지킬 것: 문장에서 수치를 빼도 `claims[].evidence` 의 **근거 좌표는 그대로 둔다.** 검증(V13·V18)과 적대 감사가 그 좌표로 대조하고, 장표의 표에는 값이 그대로 실린다.
+- 실측 (비상주 r51→r54): 요약 줄 길이가 [56~73자]에서 [41~68자]로 줄었고 74자 초과가 0 이 됐다.
+- 이력: 2026-09-02 신규
+
+## R-233 헤드라인이 이미 한 말을 아랫줄이 수치로 되풀이하면 뺀다 (사용자 지시 2026-09-02, 즉시 적용)
+- 분류: guide / 요약
+- 규칙: 아랫줄의 **끝맺음이 헤드라인과 같으면** 그 줄은 근거가 아니라 되풀이다. 그 수치 서술은 Part Ⅲ 장표의 몫이므로 요약에서 지운다.
+- 사용자의 말: 「이것도 사실 윗문장식으로 쓰면 되고, **아래 문장은 3. 조사결과에 있는 서술이니 빼도 돼**」
+- 실측 (비상주 꼭지 1): 헤드라인 「…입주사가 많을수록 **위탁이 늘어남**」 ↔ 둘째 줄 「입주사 1개는 직접 관리가 46.2%이나 20개 이상은 일부 위탁이 54.3%로, 입주사가 많을수록 **외부에 맡김**」. 끝맺음이 같고 가운데 수치만 다르다. → 둘째 줄을 지워 세 줄이 두 줄이 됐다.
+- R-200 과의 관계: R-200 은 「첫 줄이 아랫줄을 되풀이하지 않는다」를 **의미어 분포**로 검사한다(V14). 그 검사는 이 형태를 못 잡았다 — 어휘가 달라(위탁/직접 관리/46.2/54.3) 자카드가 0.08 이었다. **끝맺음(술어·결론부)이 같은가**를 따로 본다.
+- 이력: 2026-09-02 신규
+
+## R-234 「전체 패널이면 본문에 있다」는 전제는 직접 생성 파생표에서 깨진다 (제작팀 반송 2026-09-01, 즉시 적용)
+- 분류: guide / 부록 · 산출물스키마
+- 규칙: 부록은 「요약이 쓴 표 가운데 본문에 없는 것」을 싣는다. 종전 구현은 **배너 패널만** 훑고 전체값 패널은 「본문에도 같은 값이 있다」며 건너뛰었는데, **직접 생성한 파생표는 통계표에 없으므로 그 전제가 성립하지 않는다.**
+- 실측 (비상주): 표9001(주요 척도 문항_TOP2 Summary)은 본문에 아예 없는데 요약 꼭지 5 가 전체 패널로 싣는다. 그래서 부록에서 조용히 빠졌고, **손으로 쓴 목차(4개)와 자동 산출한 실물(3개)이 어긋났다.** 제작팀이 발견했다 — 「목차 보고서용이랑 본문 제작용이 다르다」.
+- 판정 (`appendix_specs`): ① 배너 패널 — 종전과 같다 ② 전체 패널 — 그 표가 **본문에 아예 없을 때만** 부록 ③ 파생표는 `generated_from` 원천이 **전부 본문에 있으면 뺀다**(값을 본문에서 찾을 수 있다) ④ 다만 원천이 셋 이상이면 **모아 놓은 것 자체가 발견**이라 싣는다 — 흩어진 원표로는 지표 사슬을 볼 수 없다.
+- ③이 잡은 것: 표9004(가격 제시 전·후)는 표77·표79 를 모은 것이고 둘 다 본문에 있다. ④가 잡은 것: 표9001 은 아홉 표를 모은 것이라 남는다.
+- 함께 고친 둘: ㉠ 표 자체가 본문에 없으면 배너군과 무관하게 **표 번호로만** 중복을 가른다(한 표가 배너·전체 두 패널로 실린 꼭지에서 부록이 두 장 생겼다) ㉡ 목차 파서가 꼬리 괄호를 **장수 표기(`(12장)`)일 때만** 버린다 — 아무 괄호나 버려 통계표 원제의 `(서비스료)` 가 잘렸다.
+- **부록 순서는 자동 산출(요약 꼭지 순서)이 정본이다.** 손으로 쓴 목차 코드블록의 Part Ⅳ 를 그 순서에 맞춘다 — `merge_part2.py` 는 Part Ⅱ 만 갱신하므로 자동으로 맞춰지지 않는다.
+- 이력: 2026-09-02 신규
+- **개정 (사용자 정정 2026-09-02)**: 판정 단위는 **표가 아니라 값**이다 — 「APPENDIX 는 교차분석에서 쓰이는 거고, 조사 결과에서 **숫자 자체**를 찾을 수 있으면 안 뽑아도 돼. 너는 표 단위로 생각하는 것 같아」. 그래서 ① 전체값 패널은 부록을 만들지 않는다(전체 값은 원천 문항의 본문 장표에 있다 — 표9001 도 제외) ② 배너 패널도 그 군이 **본문 절단선 안**(용도·권역·관리 운영 방식)이면 만들지 않는다(A8 TOP2 Summary 의 용도 값은 항목별 본문 장표의 배너 표에서 찾아진다) ③ 남는 것은 **절단선 밖 교차**(입주사 수·건물 연면적)뿐이다. 비상주 실측: 부록 4표 → **2표**. ④ 부록 실물도 **전체 + 걸린 배너만** 싣는다 — 원표의 보고서 열 전부를 실으면 본문 중복으로 읽힌다(17열 → 5~6열).
+
+## R-235 요약 블록의 Sub title 은 제목을 되풀이하고, 문항 표지는 장표에 내보내지 않는다 (사용자 지시 2026-09-02, 즉시 적용)
+- 분류: guide / 요약 · 블록포맷
+- 규칙: ① 요약 꼭지의 `Sub title` 칸에는 **`Slide title` 과 같은 문자열**을 적는다(「결론 및 제언」은 빈칸). ② 목차.md 의 글머리 표지(`- ` 헤드라인 · `➔ ` 소결론)는 **장표에 내보내지 않는다.**
+- 사용자의 말: 「요약 및 결론에서 결론 및 제언 말고는 아래 두 개 동일한 걸로 해 줘」 · 「그리고 -과 ➔ 빼자」
+- 왜: 종전 부제(「입주사 수별 관리 운영 방식 · 위탁 중인 업무 · 가장 중요한 위탁 서비스 · 월 지불 비용」)는 제목 아래에서 목차를 한 번 더 읽는 꼴이었다. 코퍼스도 이쪽이다 — LG 요약 블록 여섯 중 다섯이 부제 빈칸이다. 글머리 표지는 **파서가 헤드라인·소결론을 가르는 구조 표지**이지 인쇄물이 아니다. 덱은 세 줄을 같은 굵기 불릿으로 렌더하므로 표지가 그대로 나가면 글머리가 두 겹이 된다.
+- **개정 (2026-09-02)**: ① Sub title 은 **빈칸**이다 — 제목 되풀이 판을 하루 써 보고 「Slide title 이랑 똑같잖아」로 물렸다. ② `Question/Reference` 의 근거 표기(`* 근거: 표31 · P14 …`)도 **내보내지 않는다** — 근거 좌표는 정본(claims)과 검증기 소관이지 장표 문안이 아니다.
+- 지킬 것: 정본(`summary_map.json`)의 `subtitle`(꼭지가 아우르는 문항 묶음 — `guide/14 §6`)과 `claims[].text` 의 `➔` 는 **지우지 않는다.** 앞엣것은 설계 기록이고, 뒤엣것은 `verify` 가 「소결론은 근거 셀이 없는 것이 정상」을 판정하는 표지다. **시트에 쓸 때만** 대체하고 벗긴다(`build_guide.summary_subtitles` · `RE_MENT_MARKER`).
+- 이력: 2026-09-02 신규
+
+## R-236 정본이 행 순서를 적었으면 덱은 그 순서를 지킨다 — 고르기와 세우기는 다른 일이다 (사용자 지적 2026-09-02, 즉시 적용)
+- 분류: guide / 요약 · report/레이아웃
+- 규칙: 패널 지시의 `· 행 'A'|'B'|…` 는 **고를 행 목록이자 세울 순서**다. 덱이 그 행만 골라 놓고 정렬은 원본 그리드(값 내림차순)를 따르면, 옆 패널과 행을 맞추라고 지시한 자리가 제 값 순으로 다시 흩어진다.
+- 실측 (비상주 요약 2, r54 렌더): 제작가이드는 두 패널을 **일곱 행 모두 중요도 순**으로 나란히 세웠는데(시설 → 임대료 → 보안 → 미화 → 임대차 → 자산 → 법정), 덱의 오른쪽 패널만 86.4·67.2·59.1·21.2·10.6·7.6 으로 다시 정렬됐다. 그러면 이 꼭지의 핵심 발견인 **「중요도 2위인데 위탁률은 4위」(52.0 ↔ 21.2)가 나란히 서지 않아 보이지 않는다.** 패널 제목이 「왼쪽 중요도 순 배열」인데도 그랬다.
+- 원인: `fill_panel` 이 `picked = [r for r in rows if …in want]` 로 **골라내기만** 했다. 리스트 컴프리헨션은 `rows` 의 순서를 물려받으므로 `want` 의 순서는 버려진다.
+- 고침: `want` 의 인덱스로 정렬한다. 행이 넘쳐 잘릴 때도 **정본 순서의 뒤에서** 잘리므로 옆 패널과 행 수가 맞는다(둘 다 여섯 행이 남았다).
+- 함께 볼 것: R-163(정렬) 은 「무엇을 기준으로 정렬하는가」를 정하고, 이 카드는 **정본이 이미 정한 순서를 덱이 뒤집지 않는다**를 정한다. 순서를 적었다는 것 자체가 「이 순서로 읽히게 하라」는 뜻이다.
+- 이력: 2026-09-02 신규
+
+## R-237 요약은 보고서에 없는 분류어를 만들지 않는다 — 지표는 문항명으로 부른다 (사용자 지시 2026-09-02, 즉시 적용)
+- 분류: guide / 요약 · 표기
+- 규칙: 「태도」·「태도 지표」·「행동 의향」처럼 **분석자가 지표들을 묶으려고 만든 말**을 요약 문장에 쓰지 않는다. 장표 어디에도 그 말이 없으므로 독자는 어느 막대가 「태도」인지 찾을 수 없다. 지표는 **문항명 그대로** 부른다 — 「컨셉 이해도와 매력도가 높으나, 이용 의향과 추천 의향으로 갈수록 낮아짐」.
+- 사용자의 말: 「태도, 태도지표 이건 없는 말이야. 그리고 텍스트에 5점 평균이 어쩌구 넣지 말고 **문항명을 잘 정리해서** 넣던가 해야지」
+- 실측 (비상주 꼭지 5): 「컨셉 이해도와 매력도로 본 **태도**는 높으나」·「**태도 지표** 가운데 서비스 차별성이 가장 낮음」 두 줄이 걸렸다. 뒤 줄은 어긋나 읽히기까지 했다 — 차트에서는 추천 의향(64.4)이 차별성(75.8)보다 낮아, 「가운데」라는 한정어를 놓친 독자에게 문장이 틀려 보인다. **한정어로 버텨야 하는 문장은 버린다.**
+- 「5점 평균」도 같은 부류다: 지표 이름이지 발견이 아니다. 「5점 평균도 같은 방향으로 낮아지며」 같은 줄은 아무 문항도 부르지 않아 지울 수 있었다. 평균은 그래프 상단 Text 가 보여준다(R-224) — 문장이 다시 말할 일이 아니다.
+- 예외: 「TOP2」·「5점 평균」이 **패널 제목·표 머리**에 있는 것은 지표 표기이므로 그대로 둔다. 금지는 멘트 문장 안이다.
+- 이력: 2026-09-02 신규
+## R-230 배너 인사이트는 세 갈래로 찾고, 다섯 빗장으로 과장을 막는다 (사용자 지시 2026-09-01, 즉시 적용)
+- 분류: guide / 요약 · 표해석
+- 규칙: 배너에서 요약에 쓸 것을 찾을 때 **① 순위 역전 ② 큰 편차 ③ 단조** 세 갈래로 본다. 가장 값어치 있는 것은 ①이다 — 정도의 차이가 아니라 **선택이 다르다**는 뜻이라 한 줄로 쓸 수 있다.
+- 사용자의 말: 「전체적으로 2단계까지 도입을 희망하지만 용도별로 보니 종교는 1단계가 우세하잖아. 이것도 하나의 인사이트고 요약에서 한 줄 써도 돼. **표 해석을 오버하지 않고, 중요성 기준을 실무적으로 잡아서**」
+- 다섯 빗장: ㉠ `n<30` 집단은 보지 않고 `n 30~49` 는 「방향만」으로 낮춰 수치 인용을 막는다 ㉡ 전체값 5% 미만 보기는 건너뛴다(1.0→3.0 은 3배지만 2%p 다) ㉢ 편차는 **10%p 와 z 2.0 을 함께** 넘어야 한다 ㉣ **순위가 바뀌어도 그 집단의 1·2위 격차가 10%p 미만이면 역전이라 부르지 않는다** ㉤ 편차는 배너군마다 가장 센 것 하나만 올린다. **역전은 예외로 전부 올린다** — 여러 집단이 저마다 다른 보기를 1위로 꼽는다는 사실 자체가 발견이다.
+- ㉣가 핵심이다 (비상주 표86): 교육연구시설도 형식상 1단계가 1위(37.8%)지만 2위와 3.7%p 차이라 사실상 동률이다. 「우세하다」로 쓰면 과장이다. 이 빗장이 사용자가 지목한 **종교시설(54.5% · 2위와 21.2%p)만** 남겼다.
+- ㉤가 잡은 것: 같은 표의 권역이 세 갈래로 갈린다 — 서남권 1단계 48.5 · 동남권 3단계 49.6 · 동북권 3단계 6.8. 군당 하나로 줄이면 이 그림이 통째로 사라진다.
+- 도구: `engine/tools/banner_insight.py` (`--summary-map` 으로 요약이 쓰는 표를 전수 훑는다). **후보만 낸다** — 올릴지는 설계자가 정한다. 값어치는 통계가 아니라 의뢰인의 물음이 정하기 때문이다.
+- 이력: 2026-09-01 신규
+
+## R-231 낱개 수량 보기가 표를 넘치게 하면 같은 문항의 기존 구간으로 접는다 (사용자 결정 2026-09-01, 즉시 적용)
+- 분류: guide / 표해석 · 반송 · 요약
+- 규칙: 층수·개수처럼 낱개 수량이 보기가 되는 표는 행이 쉽게 15행을 넘어 한 장에 들어가지 않는다(LG 실측 상한 1줄 라벨 14행). 이때 **같은 문항이 이미 쓰고 있는 구간을 그대로 가져와** 접는다. 새 경계를 우리가 만들지 않는다 — 만들면 그 경계가 왜 거기인지 설명할 근거가 없다.
+- 사용자의 말: 「지상은 범위로 쪼개기」
+- 실측 (비상주 R-PPT-008): 표7(A1 지상 층수)이 낱개 17층 + 계 + 평균 = 19행이라 렌더에서 하단 세 행이 Qu·푸터와 겹쳤다. 같은 A1 의 표10(총 층수)이 쓰는 구간(5층 미만 · 5~7 · 7~9 · 9층 이상)으로 접어 6행이 됐고 전체 열 합이 정확히 100.0 이다.
+- 지킬 것: ㉠ **원값을 더한다**(표시값을 더하면 원표와 어긋난다) ㉡ 평균 행은 그대로 둔다 ㉢ **모든 배너 열에 같은 접기**를 적용한다 ㉣ 원표 보기를 `_recoded_from` 에 남긴다 ㉤ 통계표에 없는 파생값이므로 **DP 확인 목록**에 올린다.
+- 함정 하나: 접고 나면 두 표의 보기 라벨이 **한 글자도 다르지 않게** 된다. 문항코드가 같은 장표를 라벨 자카드로 짝짓던 덱 검수기가 엉뚱한 표로 조인했다(치명 4건). 자카드 동률이면 **등장 순서**로 짝짓도록 고쳤다(`verify_deck.join_slides`).
+- 도구: `work/recode_floors.py` (이미 접혀 있으면 스스로 건너뛴다 — 두 번 접히지 않는다).
+- 이력: 2026-09-01 신규
+
+
+## R-238 수작업 통계표는 열이 밀려 온다 — 파서가 「Base for %」 열을 0열로 당기고, 손계산 블록은 떼어 KPI 표로 옮긴다 (실측 2026-09-06, 즉시 적용)
+- 분류: engine / 통계표 입수
+- 규칙: 연구원이 통계표에 손을 얹으면 왼쪽에 작업 열이 끼고(비상주 6열) 라벨과 「전체」 사이에 계산 열이 낀다(1열). `parse_table_common.normalize_grid_columns` 가 「Base for %」 열을 0열로 당기고 「전체」 앞 계산 열을 지운다 — 정상 파일에서는 항등. 표 사이에 낀 **손계산 블록**(제목 다음 줄이 「전체」가 아님)은 이웃 표에 잡행으로 붙으므로 프로젝트 ingest 가 떼어 KPI 표(표9007)로 옮긴다.
+- 함께 지킬 것: 새 표가 중간에 끼면 뒤 번호가 밀린다 — 정본(목차·요약 근거)이 옛 번호를 쓰므로 새 표를 **맨 뒤 번호**(표91)로 보낸다. 값을 뜰 때는 열 보정 **전** 격자에서 뜬다(보정이 계산 열을 지운다).
+- 근거: 비상주 260906 수작업판 — 91표 · 표9007 · 값 대조 89/90 동일(표7 는 정본 쪽 접기)
+- 이력: 2026-09-06 신규
+
+## R-239 제작팀 딱지의 「NNp」는 그때 덱의 번호다 — 도너는 번호가 아니라 본문 순서로 붙인다 (실측 2026-09-06, 즉시 적용)
+- 분류: deck / 제작본 마감
+- 규칙: 2차 회신본에 장이 끼면 딱지 번호가 두 장씩 어긋난다(「18p」→ 20장). 도너 판(직전 마감본 r53)과 **본문 순서 조인 + Qu 대조**로 짝짓고, 「동일 포맷」 장은 그 도너 장의 표·차트·범례를 통째로 옮긴다. 「데이터 입력」 장이 곧 제작팀이 만든 형식 견본이다.
+- 근거: 비상주 2차 회신본 99장 — 본문 69장 0 diff · 딱지 36장 전부 +2 오프셋
+- 이력: 2026-09-06 신규
+
+## R-240 제작팀 멘트 도형은 플레이스홀더가 아닐 수 있다 — 슬롯 탐지는 위치·길이로 폴백하고, 덱 검수가 못 보는 멘트는 가이드 검수가 잡는다 (실측 2026-09-06, 즉시 적용)
+- 분류: engine / refill
+- 규칙: `refill_deck.find_slots` 는 플레이스홀더 idx 로 소제목·멘트를 가르는데, 제작팀은 소제목을 그룹 안 자유 도형으로, 멘트를 idx 없는 「텍스트 개체 틀」로 만든다. 그러면 ment 슬롯이 비어 keep_ment=False 를 줘도 아무것도 안 바뀐다. **표 위에서 가장 긴 텍스트 도형**을 멘트로 보는 폴백을 두었다(플레이스홀더는 top 이 None 이라 위치로 배제하지 않는다).
+- 안전망: 덱 V2 는 이 도형을 멘트로 못 봐 낡은 수치(50.2·68.2·43.0·3.32·58.3)를 놓쳤고, 정본 가이드 전체 검수(V3)가 잡았다. **통계표가 갱신되면 정본 멘트를 먼저 고치고(build.sh 가 잡는다) 덱 멘트를 정본으로 다시 쓴다** — `patch_body_ments_260906.py` 형.
+- 이력: 2026-09-06 신규
+
+## R-241 python-pptx 로 도형만 지우면 차트 파트가 남는다 — 마감 단계에서 슬라이드가 부르지 않는 관계를 끊고 gc 한다 (실측 2026-09-06, 즉시 적용)
+- 분류: deck / 패키지 위생
+- 규칙: graphicFrame 을 지워도 slide rels 의 chart 관계와 차트·임베디드 워크북 파트는 남는다. 요약 세 장에 옛 설계 차트 11개가 낡은 값을 품은 채 납품될 뻔했다(감사 발견). `finalize_deck_260906.py` 처럼 슬라이드 XML 의 r:id 집합에 없는 charts/embeddings/media 관계를 끊고 `deckbuild.gc_orphans` → `sync_content_types` → `refresh_app_xml` → `validate` 순으로 닫는다.
+- 이력: 2026-09-06 신규
+
+## R-242 산점도 기준선 — `crossesAt` 는 「이 축 위의 값」이다 (실측 2026-09-06)
+- 분류: deck / 차트
+- 규칙: IPA 기준선을 두 축 평균에 세울 때 가로축 요소의 crossesAt 에는 **가로축 값(xmid)**, 세로축 요소에는 **세로축 값(ymid)** 을 준다. 반대로 주면 값이 범위를 벗어나 기준선이 축 끝으로 밀린다(r55 렌더 실측). python-pptx `ValueAxis.crosses_at` 도 같은 뜻이다.
+- 이력: 2026-09-06 신규
+
+## R-243 열마다 표본이 다른 파생 열은 Base 를 범위로 적는다 — `banner.n_label` (실측 2026-09-06, 즉시 적용)
+- 분류: guide / 파생표
+- 규칙: 「해당 업무 위탁 중」처럼 행(업무)마다 n 이 다른 열을 한 숫자로 적으면 거짓이 된다. 파생표 배너에 `n_label`(「(116~273)」)을 두면 `build_facts.build_grid` 가 Base 행에 그대로 싣고, 저베이스 별표 판정은 최소 n 으로 한다. 칸 대조기는 앞 수(최소 n)로 Base 를 대조한다.
+- 이력: 2026-09-06 신규

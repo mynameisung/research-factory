@@ -73,7 +73,8 @@
 # 키는 사용자가 직접: setx CLOVA_STUDIO_API_KEY "nv-…"   (대화·저장소에 넣지 않는다)
 pip install openai
 python engine/tools/llm_write.py --provider clova --model HCX-007 --task conclusion --reasoning medium \
-  --agent ../.claude/agents/guide-conclusion.md --input work/summary_map.json --context work/조사개요.json \
+  --agent ../.claude/agents/guide-summary.md --input work/summary_map.json --context work/조사개요.json \
+  # (guide-conclusion 은 2026-09-01 폐지 — 결론은 총괄 guide-summary 가 쓴다, R-208)
   --out work/검수/clova_conclusion.json
 python engine/tools/verify.py work/검수/clova_conclusion.json work/tables.json --mode conclusion
 ```

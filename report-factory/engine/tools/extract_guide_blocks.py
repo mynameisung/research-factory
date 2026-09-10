@@ -55,7 +55,7 @@ REFS_DIR = Path(__file__).resolve().parents[1] / "refs"
 GUIDES = [
     # (파일명, 시트명, 라벨 열 index(1-based), 출력 파일명)
     ("예시_제작가이드_LG홈로봇_0317.xlsm", "본문_제작용", 1, "guide_blocks_LG홈로봇.json"),
-    ("예시_제작가이드_SKEE만족도_추가.xlsm", "본문", 2, "guide_blocks_SKEE.json"),
+    ("1_SKEE만족도/1-4. skee 만족도 제작가이드.xlsm", "본문", 2, "guide_blocks_SKEE.json"),
 ]
 
 BLOCK_LABELS = (

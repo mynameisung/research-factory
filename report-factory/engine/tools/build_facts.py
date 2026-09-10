@@ -178,7 +178,13 @@ def build_grid(table: dict, rank_first: dict | None = None, extra_groups: "set[s
         # 저베이스 경고는 보고서에 반드시 실려야 하므로, 뒤에서 누가 챙기기를 기대하지 않고
         # 가이드에 적는다. 별표를 달면 build_guide 가 Base/Unit 뒤에 범례도 함께 붙인다.
         n_b = b.get("n") or 0
-        base_row.append(f"({n_b}*)" if (small_base_mark and 0 < n_b < R.SMALL_BASE) else f"({n_b})")
+        if b.get("n_label"):
+            # 열 하나에 표본이 하나가 아닌 파생 열 — 「해당 업무 위탁 중」처럼 행(업무)마다 n 이
+            # 다르다. 한 숫자로 적으면 거짓이 되므로 표가 준 표기(「(117~273)」)를 그대로 싣는다
+            # (에스원 비상주 표9007, 2026-09-06). 별표 판정은 최소 n 으로 한다.
+            base_row.append(str(b["n_label"]))
+        else:
+            base_row.append(f"({n_b}*)" if (small_base_mark and 0 < n_b < R.SMALL_BASE) else f"({n_b})")
 
     mean_table = (table.get("hints") or {}).get("summary_kind") == "mean"   # Mean Summary 표는 행 kind 가 option 이어도 평균값 (V17 실측 2026-08-24: 4.08→4.1 로 깎였음)
 

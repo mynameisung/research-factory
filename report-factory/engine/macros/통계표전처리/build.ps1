@@ -153,6 +153,29 @@ try {
         try { $wb.VBProject.VBComponents.Import($b) | Out-Null }
         catch { throw ("모듈을 넣지 못했습니다: " + (Split-Path $b -Leaf) + " — " + $_.Exception.Message) }
     }
+
+    # ThisWorkbook — 더블클릭으로 직접 열렸을 때 설치를 제안한다(modInstall.bas).
+    # 사람이 앞에 있을 때만(엑셀 창이 보일 때만) 뜨도록, 그리고 추가 기능
+    # 폴더에서 정상적으로 자동 로드된 것이면 아무 일도 안 하도록 여기서 가른다.
+    # 통합 문서 자신의 코드 모듈 이름("ThisWorkbook")은 한국어 엑셀에서
+    # "현재_통합_문서" 처럼 로캘에 따라 다르게 표시된다. 이름을 하드코딩하는
+    # 대신 워크북 개체의 CodeName 으로 대조해 로캘에 상관없이 찾는다.
+    $thisWb = $null
+    for ($ci = 1; $ci -le $wb.VBProject.VBComponents.Count; $ci++) {
+        $c = $wb.VBProject.VBComponents.Item($ci)
+        if ($c.Name -eq $wb.CodeName) { $thisWb = $c; break }
+    }
+    if ($null -eq $thisWb) { throw "워크북 코드 모듈(CodeName=$($wb.CodeName))을 찾지 못했습니다." }
+    $thisWbCode = @'
+Private Sub Workbook_Open()
+    On Error Resume Next
+    If Not Application.Visible Then Exit Sub
+    If StrComp(Me.Path, Environ$("APPDATA") & "\Microsoft\AddIns", vbTextCompare) = 0 Then Exit Sub
+    modInstall.OfferInstall Me
+End Sub
+'@
+    $thisWb.CodeModule.AddFromString($thisWbCode)
+
     # 설정 팝업은 폼이라 파일로 가져올 수 없다. 여기서 직접 만들고 코드를 붙인다.
     # 배치를 고칠 곳은 이 블록, 동작을 고칠 곳은 src/frmSettings.code.txt 다.
     $frm = $wb.VBProject.VBComponents.Add(3)      # 3 = UserForm
@@ -217,9 +240,9 @@ try {
     $steps = @(
         @('1.  [가져오기] 로 통계표 파일을 고릅니다.',                    '표 시트를 작업 사본으로 떠서 열기 때문에 원본 파일은 바뀌지 않습니다.'),
         @('2.  [설정] 에서 보고서에 쓸 [보존 배너군] 을 적습니다.',       '이름을 모르면 [검토] → [배너군 목록] 을 먼저 눌러 보세요.'),
-        @('3.  [한 번에 실행] 을 누릅니다.',                              '배너 선정 → 데이터막대 → 인사이트를 잇달아 합니다.'),
+        @('3.  [한 번에 실행] 을 누릅니다.',                              '배너 선정 → 데이터막대 → 인사이트 → 빈 칸 채우기를 잇달아 합니다.'),
         @('4.  회색으로 칠해진 배너를 확인하고 [제외 배너 삭제] 를 누릅니다.', '매크로가 한 일은 Ctrl+Z 로 되돌아가지 않으니 눈으로 보고 누르십시오.'),
-        @('5.  [- 로 채우기] 로 빈 칸을 메운 뒤 [내보내기] 로 저장합니다.',   '통계표는 값이 0 인 칸을 비워서 보내므로 맨 마지막에 메웁니다.')
+        @('5.  [내보내기] 로 저장합니다.',                                 '가져온 파일이면 원본 이름 뒤에 _전처리후 를 붙여 제안합니다.')
     )
     $y = 52
     $i = 0
@@ -280,8 +303,10 @@ try {
     $wb.SaveAs($xlam, 55)          # 55 = xlOpenXMLAddIn
     $wb.Close($false)
 } finally {
-    # 사람이 따로 열어 둔 문서가 남아 있으면 엑셀을 끄지 않는다.
-    if ($xl.Workbooks.Count -eq 0) { $xl.Quit() }
+    # 이 $xl 은 이 스크립트가 New-Object 로 새로 띄운 전용 인스턴스라(사람의
+    # 엑셀에 붙은 것이 아니다) 중간에 실패해도 그냥 끈다. 켜 둔 채로 두면
+    # 다음 빌드가 「같은 이름의 통합 문서를 열 수 없습니다」로 막힌다.
+    try { $xl.Quit() } catch {}
     [void][Runtime.InteropServices.Marshal]::ReleaseComObject($xl)
     Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 }
@@ -360,12 +385,13 @@ try {
     # VBA 는 필요할 때만 컴파일한다. 모듈을 하나씩 건드려 전부 컴파일시킨다.
     $mods = $xl2.Run("'$nm'!CompileAll")
     Write-Host "  확인 : 컴파일 통과 - $mods"
-    if (($mods -split ' ').Count -lt 12) { $verifyErr += "컴파일된 모듈이 모자랍니다 ($mods)" }
+    if (($mods -split ' ').Count -lt 13) { $verifyErr += "컴파일된 모듈이 모자랍니다 ($mods)" }
     $wb2.Close($false)
 } catch {
     $verifyErr += $_.Exception.Message
 } finally {
-    if ($xl2.Workbooks.Count -eq 0) { $xl2.Quit() }
+    # $xl2 도 이 스크립트가 새로 띄운 전용 인스턴스다. 실패해도 그냥 끈다.
+    try { $xl2.Quit() } catch {}
     [void][Runtime.InteropServices.Marshal]::ReleaseComObject($xl2)
     Remove-Item $probe -Force -ErrorAction SilentlyContinue
 }
@@ -375,6 +401,18 @@ if ($verifyErr.Count -gt 0) {
     $verifyErr | ForEach-Object { Write-Host "  $_" }
     exit 1
 }
+
+# --- 4. 나눠 줄 이름으로 사본을 하나 더 둔다 -------------------------------
+# 설치되는 이름(통계표전처리.xlam)과 나눠 주는 이름을 다르게 둔다. 이름이
+# 같으면, 이미 설치되어 자동으로 불려온 옛 버전이 있는 사람은 새 파일을 열
+# 시도조차 「같은 이름의 통합 문서를 열 수 없습니다」로 막힌다(modInstall.bas
+# 머리말 참고). 1천 명에게 나눠 줄 때마다 이 문제가 되풀이되지 않도록,
+# 실제로 건네는 파일은 늘 이 이름을 쓴다.
+$dist = Join-Path $out '통계표전처리_설치.xlam'
+Copy-Item $xlam $dist -Force
+
 Write-Host ''
 Write-Host "완성 : $xlam" -ForegroundColor Cyan
-Write-Host '동료에게는 이 파일 하나와 README 의 설치 안내만 전달하면 됩니다.'
+Write-Host "배포용 : $dist" -ForegroundColor Cyan
+Write-Host '동료에게는 배포용 파일 하나와 README 의 설치 안내만 전달하면 됩니다.'
+Write-Host '(설치되는 파일 이름은 늘 통계표전처리.xlam 으로 고정된다 - 배포용 파일 이름은 무엇이든 상관없다.)'

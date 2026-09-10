@@ -453,6 +453,14 @@ def join_slides(deck_doc: dict, tables: list[dict],
         if code:
             facts_by_code[code].append(f)
 
+    #: 같은 문항코드를 쓰는 덱 슬라이드의 **등장 순번**. 라벨로 갈리지 않을 때 쓴다.
+    code_seq: dict[int, int] = {}
+    _seen: dict[str, int] = {}
+    for _s in body_slides(deck_doc):
+        _c = (_s.get("question_code") or "").strip().upper()
+        code_seq[_s["slide_no"]] = _seen.get(_c, 0)
+        _seen[_c] = _seen.get(_c, 0) + 1
+
     def pick_fact(code: str, deck_slide: dict, deck_labels: set) -> dict | None:
         """코드가 같은 팩트가 여럿이면 덱의 Base n(장분리 판별자)으로, 없으면 라벨로 가른다."""
         flist = facts_by_code.get(code) or []
@@ -467,7 +475,18 @@ def join_slides(deck_doc: dict, tables: list[dict],
             def fl(f):
                 return {str(r.get("label_clean") or r.get("label") or "").strip()
                         for r in (f.get("grid") or {}).get("rows") or []}
-            return max(flist, key=lambda f: _jaccard(deck_labels, fl(f)))
+            scored = sorted(((_jaccard(deck_labels, fl(f)), f) for f in flist),
+                            key=lambda kv: -kv[0])
+            # 자카드가 **동률**이면 라벨로는 갈리지 않는다. 구간을 접어 두 표의 보기가
+            # 똑같아지는 자리가 실제로 있다 — 비상주 A1 은 표7(지상 층수)을 표10(총 층수)과
+            # 같은 구간으로 접어 네 보기가 한 글자도 다르지 않다(R-PPT-008 해소, 2026-09-01).
+            # 그때는 **등장 순서**로 짝짓는다. 본문 슬라이드 순서와 팩트 page 순서는 같다.
+            if len(scored) > 1 and abs(scored[0][0] - scored[1][0]) < 1e-9:
+                idx = code_seq.get(deck_slide.get("slide_no"), 0)
+                ordered = sorted(flist, key=lambda f: f.get("page") or f.get("seq") or 0)
+                if idx < len(ordered):
+                    return ordered[idx]
+            return scored[0][1]
         return flist[0]
 
     joined: dict[int, dict] = {}

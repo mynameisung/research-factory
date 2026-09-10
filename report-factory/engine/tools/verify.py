@@ -1102,6 +1102,7 @@ def verify(guide: Path, tables: Path, facts: Path | None,
 # ─────────────────────────────────────────────────────────────
 
 MENT_MAX_CHARS = 60     #: guide/17 문장 정책 — PPT 멘트 상자 한 줄 실측 74자, 여유 14자
+SUMMARY_LINE_WRAP = 74  #: 요약·결론 줄의 물리 한계 (R-198 — 60자는 강제하지 않는다)
 
 
 def _has_final_mieum(text: str) -> bool:
@@ -1384,10 +1385,21 @@ def verify_ments(ments: Path, facts: Path) -> Report:
 # 요약·결론 설계 게이트 — guide-summary 의 summary_map.json 을 정본(통계표·팩트)에 대조
 # ─────────────────────────────────────────────────────────────
 
-HEADLINE_MAX = 40      #: R-130 — 수치 없는 판단문
-SUMMARY_BODY_MAX = 2   #: 헤드라인 외 근거 줄 상한 (LG 실측 1~2 · SKEE 2)
-CONCLUSION_BOX_MAX = 150
-CONCLUSION_TOTAL_MAX = 900   #: R-126
+#: 요약 1줄(L1)의 길이 상한. 코퍼스 5사례 실측 평균 51.6~74.6자 · 최장 149자.
+#: R-130(수치 없는 판단문 ≤40자)은 근거가 LG 가이드 1건뿐이고 그 문장조차 최종본에서
+#: 수치 4줄로 교체됐다 — 폐기하고 물리 한계(한 줄 74자)를 상한으로 쓴다 (R-205).
+HEADLINE_MAX = 74
+#: 헤드라인 외 줄 상한. 코퍼스 실측 — SKEE 3줄 11장·4줄 8장 / LG 4줄 7장.
+#: 4줄짜리는 마지막 줄이 **소결론(➔)** 이거나 정성층일 때 나온다. 근거 2줄 + 소결론 1줄을
+#: 허용해야 요약이 「값 나열」에서 「판단이 얹힌 장」이 된다 (사용자 지적 2026-08-31).
+SUMMARY_BODY_MAX = 3
+#: R-126 의 「박스당 150자·장표 900자」는 코퍼스 실측과 어긋난다 — SH Key point 01 은 3줄 218자,
+#: 02 는 9줄 약 650자로 2.5배 기울고 장표 합계가 900자를 넘는다. 실제 제약은 글자 수가 아니라
+#: **박스 높이**(3.59cm vs 9.02cm)이고, 4사례 공통 골격은 「번호·라벨 + 제목 1줄 + 내용 3~9줄」이다(R-166).
+#: 그래서 글자 수는 **참고치**로만 두고 경고에 근거를 병기하며, 실질 검사는 줄 수로 한다.
+CONCLUSION_BOX_MAX = 150     #: 참고치 (R-126 원안 · 실측과 어긋남)
+CONCLUSION_TOTAL_MAX = 900   #: 참고치 (R-126 원안 · 실측과 어긋남)
+CONCLUSION_LINES = (3, 9)    #: R-166 확정 — 4사례 공통 골격
 
 
 def _table_cell(t: dict, row_label: str, col_label: str):
@@ -1499,9 +1511,11 @@ def verify_summary(smap: Path, tables: Path, facts: Path | None) -> Report:
             rep.add("V14", "치명", where, "헤드라인 없음 (R-130)")
         else:
             if len(hb) > HEADLINE_MAX:
-                rep.add("V14", "경고", where, f"헤드라인 {len(hb)}자 > {HEADLINE_MAX}자 (R-130)")
-            if re.search(r"\d+\.\d|\d+%", hb):
-                rep.add("V14", "치명", where, f"헤드라인에 수치 (R-130): {hb[:60]}")
+                rep.add("V14", "경고", where, f"헤드라인 {len(hb)}자 > {HEADLINE_MAX}자 — 렌더 두 줄")
+            # 1줄에 대표 수치가 오는 것이 코퍼스 정본이다 (5/5 사례 과반: 90·83·83·70·60%).
+            # 수치가 없으면 오히려 알린다 — 판단만 있고 값이 없는 L1 은 소수파다 (R-205).
+            if not re.search(r"\d", hb):
+                rep.add("V14", "참고", where, f"헤드라인에 수치가 없습니다 — 코퍼스 정본은 L1 에 대표 수치를 둡니다: {hb[:50]}")
         # 패널
         panels = sm.get("panels") or []
         if not 1 <= len(panels) <= 6:
@@ -1545,10 +1559,21 @@ def verify_summary(smap: Path, tables: Path, facts: Path | None) -> Report:
             rep.add("V14", "치명", where, f"요약 근거 줄 {len(sm['body'])}줄 > {SUMMARY_BODY_MAX}줄 — 헤드라인 + {SUMMARY_BODY_MAX}줄까지")
         for ln in sm.get("body") or []:
             t = str(ln).strip()
-            if len(t) > MENT_MAX_CHARS:
-                rep.add("V14", "치명", where, f"근거 줄 {len(t)}자 > {MENT_MAX_CHARS}자: {t[:50]}")
+            # R-198 — 요약·결론 줄은 60자를 강제하지 않는다(가독 우선, 사용자 지시 2026-08-28).
+            # 본문 멘트와 달리 요약은 여러 표를 한 줄로 잇느라 길어지고, 성분을 깎으면 뜻이 흐려진다.
+            # 한 줄 물리 한계(맑은 고딕 12pt · 32cm 상자 실측 74자)를 넘을 때만 알린다 — 렌더 두 줄.
+            if len(t) > SUMMARY_LINE_WRAP:
+                rep.add("V14", "경고", where,
+                        f"근거 줄 {len(t)}자 > {SUMMARY_LINE_WRAP}자 — 렌더에서 두 줄이 된다: {t[:50]}")
             if t.endswith("."):
                 rep.add("V14", "경고", where, f"마침표: {t[:50]}")
+            # 코퍼스 불변식 — 요약은 인과·역접·제언을 담지 않는다 (5/5 사례)
+            if re.match(r"^\s*(따라서|그러므로|이에|그러나|하지만|또한|한편)", t):
+                rep.add("V14", "경고", where,
+                        f"요약 헤드라인에 문두 접속부사 — 인과·역접은 결론이 독점한다(코퍼스 5/5 0회): {t[:40]}")
+            if re.search(r"(필요함|필요가 있음|요구됨|해야 함|제안함|권장)", t):
+                rep.add("V14", "경고", where,
+                        f"요약에 제언 — 제언 줄 비율 코퍼스 0~3%. 결론으로 옮긴다: {t[:40]}")
             if not _has_final_mieum(t):
                 rep.add("V14", "치명", where, f"ㅁ받침 종결 아님: …{t[-8:]!r}")
         # claims — 근거 셀 좌표 대조
@@ -1558,7 +1583,25 @@ def verify_summary(smap: Path, tables: Path, facts: Path | None) -> Report:
         for c in claims:
             ev = c.get("evidence") or []
             if not ev:
-                rep.add("V14", "치명", where, f"근거 셀 없는 주장: {str(c.get('text'))[:50]}")
+                # ★ 소결론(➔)은 근거 셀이 **없는 것이 정상**이다. 앞 줄들에서 끌어낸
+                #   판단이지 표에서 옮긴 값이 아니다 — 코퍼스 L4 자리 (R-206).
+                #   여기에 셀을 요구하면 요약이 다시 「표 옮겨 적기」로 되돌아간다.
+                if str(c.get("text") or "").lstrip().startswith(("➔", "→")):
+                    continue
+                # ★ 판단문(수치 없는 줄)도 마찬가지다 (R-222 · 2026-09-01).
+                #   「가장 중요한데 만족은 가장 낮음」은 어느 셀에도 없다 — 표들 사이에서
+                #   나온 판단이기 때문이다. 여기에 좌표를 요구하면 판단문이 게이트를 못 넘고,
+                #   넘기려면 문장이 수치를 끌어안아야 해서 결국 표 옮겨 적기로 되돌아간다.
+                #   계약이 R-206 과 반대 방향을 가리키던 자리다.
+                #   대신 **그 판단을 받칠 패널이 이 꼭지에 있는가**를 확인한다.
+                _txt = str(c.get("text") or "")
+                if not numbers_in(_txt):
+                    if not (sm.get("panels") or c.get("supports")):
+                        rep.add("V14", "치명", where,
+                                f"판단문인데 받칠 패널이 이 꼭지에 없음: {_txt[:50]}")
+                    continue
+                rep.add("V14", "치명", where,
+                        f"수치를 쓴 주장에 근거 셀이 없음: {_txt[:50]}")
                 continue
             # V19 — 이 주장이 서브베이스 표에 기대는데 문장이 모수를 안 밝혔는가 (R-185)
             for e in ev:
@@ -1601,8 +1644,15 @@ def verify_summary(smap: Path, tables: Path, facts: Path | None) -> Report:
         where = f"결론 {c.get('no')}"
         body = " ".join(str(x) for x in (c.get("body") or []))
         total_chars += len(body)
+        _lines = [x for x in (c.get("body") or []) if str(x).strip()]
+        _lo, _hi = CONCLUSION_LINES
+        if _lines and not (_lo <= len(_lines) <= _hi):
+            rep.add("V14", "경고", where,
+                    f"내용 {len(_lines)}줄 — 4사례 공통 골격은 {_lo}~{_hi}줄이다 (R-166)")
         if len(body) > CONCLUSION_BOX_MAX:
-            rep.add("V14", "경고", where, f"박스 {len(body)}자 > {CONCLUSION_BOX_MAX}자 (R-126)")
+            rep.add("V14", "참고", where,
+                    f"박스 {len(body)}자 > 참고치 {CONCLUSION_BOX_MAX}자 — R-126 원안이나 "
+                    f"실측(SH 02 는 9줄 약 650자)과 어긋난다. 실제 제약은 박스 높이다(R-166)")
         src = c.get("from_summary") or []
         if not src:
             rep.add("V14", "치명", where, "근거 요약 꼭지 없음 (R-078)")
@@ -1614,7 +1664,9 @@ def verify_summary(smap: Path, tables: Path, facts: Path | None) -> Report:
             if sn not in nos:
                 rep.add("V14", "치명", where, f"되짚은 요약 {sno!r} 가 없음 (R-078)")
     if total_chars > CONCLUSION_TOTAL_MAX:
-        rep.add("V14", "경고", "결론", f"장표 합계 {total_chars}자 > {CONCLUSION_TOTAL_MAX}자 (R-126)")
+        rep.add("V14", "참고", "결론",
+                f"장표 합계 {total_chars}자 > 참고치 {CONCLUSION_TOTAL_MAX}자 — R-126 원안이나 "
+                f"실측 장표는 이 값을 넘는다(R-166). 박스 높이가 실제 제약이다")
     # 한국어 문체 예방 게이트 (K-xx) — 헤드라인·해석 줄
     texts = []
     for it in summaries:
@@ -1623,6 +1675,24 @@ def verify_summary(smap: Path, tables: Path, facts: Path | None) -> Report:
         for i, b in enumerate(it.get("body") or [], 1):
             texts.append((f"요약 {no} 해석 {i}", str(b)))
     korean_style_checks(rep, "V14", "", texts, _ments_from_facts(facts))
+
+    # ── V20 요약 패널의 그래프 심사 (SC-xxx · guide/summary_chart_rules.yaml)
+    #    「평균을 독립 그래프로 그리지 않는다」·「최상위 단독 차트를 만들지 않는다」처럼
+    #    **값이 아니라 그림의 설계**를 보는 자리다. 값 대조(V13·V18)가 통과해도 여기서 걸린다.
+    #    근거는 납품 최종본 5벌의 요약 차트 358개 실측(guide/19)이고, 규칙은 YAML 이 갖는다.
+    try:
+        import rules as _R
+        cmap_path = smap.parent / "conclusion_map.json"
+        cdoc = None
+        if cmap_path.exists():
+            with io.open(cmap_path, encoding="utf-8") as fh:
+                cdoc = json.load(fh)
+        for f in _R.audit_summary_panels(summaries, by_index, conclusion=cdoc):
+            rep.add("V20", "치명" if f.severity == "fatal" else "경고", f.where,
+                    f.message + (f" → {f.remedy}" if f.remedy else ""))
+    except Exception as e:                                # 규칙 파일이 없거나 PyYAML 부재
+        rep.add("V20", "참고", "요약 그래프 심사", f"건너뜀 — {e}")
+
     rep.stats.update({"summaries": len(summaries), "conclusions": len(concl),
                       "claims_cells": n_claims, "claims_ok": n_ok, "conclusion_chars": total_chars})
     return rep
@@ -1657,8 +1727,9 @@ def verify_conclusion(cmap: Path, tables: Path, smap: Path | None) -> Report:
         total += len(body)
         if len(body) > CONCLUSION_BOX_MAX:
             rep.add("V15", "경고", where, f"박스 {len(body)}자 > {CONCLUSION_BOX_MAX}자 (R-126)")
-        if not any("→" in str(x) for x in (c.get("body") or [])):
-            rep.add("V15", "경고", where, "`→` 제언 줄 없음 (R-126: 판단 + 수치 + → 제언)")
+        # 제언은 body 안의 `→` 줄이거나 **action 필드**다. 후자는 조립기가 굵게 뽑는다.
+        if not (c.get("action") or any("→" in str(x) for x in (c.get("body") or []))):
+            rep.add("V15", "경고", where, "제언 없음 (R-126: 판단 + → 제언)")
         src = c.get("from_summary") or []
         if not src:
             rep.add("V15", "치명", where, "근거 요약 꼭지 없음 (R-078)")

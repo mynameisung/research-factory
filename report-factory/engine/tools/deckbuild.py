@@ -1089,6 +1089,7 @@ def validate(deck: Deck) -> list[Problem]:
       CT_OVERRIDE_MISSING      연다 22/22 정상 — 과잉 아님    spec     warn
       PART_ORPHAN              연다 정상 (파일만 분다)        spec     warn
       APP_XML_STALE            연다 정상                      spec     warn
+      CHART_DATA_EXTERNAL      연다 — 다른 PC 에서 데이터 편집 불가  broken-render warn  ★2026-09-10
 
     ★신규 5종은 전부 **이전 판이 fatal 도 warn 도 없이 통과시키던** 파손이다.
     특히 SLIDE_NOT_IN_SLDIDLST('유령 슬라이드')는 파트·rels·Override 가 전부 살아 있어
@@ -1332,6 +1333,26 @@ def validate(deck: Deck) -> list[Problem]:
     for part in sorted(p for p in deck.parts if p not in live):
         problems.append(Problem("warn", "PART_ORPHAN", part, "루트에서 도달 불가", effect="spec"))
 
+    # ---- 차트 데이터가 PPT 안에 포함되어 있는가 (사용자 지시 2026-09-10: 외부 연결 금지) ----
+    # <c:externalData r:id> 의 관계가 TargetMode="External"(로컬 xlsx 경로)이면 다른 컴퓨터에서
+    # 「데이터 편집」 시 「연결된 파일을 사용할 수 없습니다」 가 뜬다. 임베디드 파트가 없어도 같다.
+    for part in sorted(p for p in deck.parts if re.match(r"ppt/charts/chart\d+\.xml$", p)):
+        try:
+            ctree = deck.xml(part)
+        except Exception:
+            continue
+        ed = ctree.find(".//{http://schemas.openxmlformats.org/drawingml/2006/chart}externalData")
+        if ed is None:
+            continue
+        rid = ed.get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id")
+        rel = next((r for r in deck.rels(part) if r.get("Id") == rid), None)
+        if rel is None:
+            continue                                   # REL_ID_DANGLING 이 따로 잡는다
+        if rel.get("TargetMode", "").lower() == "external":
+            problems.append(Problem("warn", "CHART_DATA_EXTERNAL", part,
+                                    f"차트 데이터가 외부 파일에 연결됨: {rel.get('Target', '')[:120]} — embed_chart_data.py 로 포함시킬 것",
+                                    effect="broken-render"))
+
     # ---- app.xml ----
     if APP_XML in deck.parts:
         m = re.search(rb"<Slides>(\d+)</Slides>", deck.parts[APP_XML])
@@ -1574,7 +1595,10 @@ def build_s1_skeleton(src: str | Path, out: str | Path, *,
 # 자체 검증
 # --------------------------------------------------------------------------- #
 
-_DEFAULT_SRC = Path(__file__).resolve().parents[1] / "refs" / "예시_제작본_LG홈로봇_최종.pptx"
+#: 골든셋 실물은 **코퍼스 사례 폴더가 정본**이다 — 종전에는 refs 루트에 같은 바이트의
+#: 사본을 따로 두어 15MB 가 중복됐다(2026-08-31 정리). 사본은 refs/_archive 로 옮겼다.
+_DEFAULT_SRC = (Path(__file__).resolve().parents[1] / "refs" /
+                "5_LG홈로봇" / "5-5. lg 홈로봇조사 보고서 제작본.pptx")
 
 
 def _selftest(src: Path, workdir: Path, *, com: bool = True) -> int:
