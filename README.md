@@ -4,21 +4,35 @@
 
 ## 0. 설치 — 30초
 
-지금은 Windows 만 지원한다.
+지금은 Windows 만 지원한다. 순서대로 따라 하면 된다. 처음이면 1~4 까지 20분, 이미 있으면 5 부터.
 
-처음이면 먼저 셋.
+**1. GitHub 계정을 만든다.** [github.com](https://github.com) 에서 「Sign up」. 만든 아이디를 관리자에게 보낸다.
+이 저장소는 비공개라 초대를 받아야 보인다. 초대 메일이 오면 「Accept invitation」을 누른다.
 
-1. **GitHub 계정** — [github.com](https://github.com) 에서 만들고, 아이디를 관리자에게 보낸다. 이 리포는 비공개라 초대를 받아야 보인다. 초대 메일의 「Accept invitation」을 누른다.
-2. **Git 설치** — [git-scm.com](https://git-scm.com/download/win) 에서 받아 기본값으로 설치한다. [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 와 [Python 3.11+](https://www.python.org/downloads/) 도 있어야 한다.
-3. 아래 상자를 실행할 때 로그인 창이 뜨면 GitHub 아이디로 로그인한다. 한 번만 묻는다.
+**2. Git 을 설치한다.** [git-scm.com/download/win](https://git-scm.com/download/win) 에서 「64-bit Git for Windows Setup」을 받아 실행한다.
+설치 화면은 전부 「Next」로 넘기고 「Finish」. 아무것도 바꾸지 않아도 된다.
 
-Claude Code 를 열고 아래 상자를 그대로 복사해 붙여넣는다.
+**3. Python 을 설치한다.** [python.org/downloads](https://www.python.org/downloads/) 에서 「Download Python 3.x」를 받아 실행한다.
+첫 화면 맨 아래 **「Add python.exe to PATH」에 체크**하고 「Install Now」. 이 체크를 빠뜨리면 뒤에서 막힌다.
+
+**4. Claude 앱을 설치한다.** [claude.ai/download](https://claude.ai/download) 에서 Windows 용을 받아 설치하고 회사 계정으로 로그인한다.
+왼쪽 메뉴의 **「Code」** 탭이 우리가 쓰는 화면이다.
+
+**5. 작업 폴더를 정한다.** 탐색기에서 원하는 곳(예: `문서`)에 빈 폴더를 하나 만든다. Claude 앱 「Code」 탭에서 그 폴더를 연다.
+
+**6. 아래 상자를 복사해 Claude 입력창에 붙여넣고 Enter.** Claude 가 저장소를 받고 설치 스크립트를 돌린다. 2~3분 걸린다.
+중간에 GitHub 로그인 창이 뜨면 1 에서 만든 아이디로 로그인한다. 한 번만 묻는다.
 
 ```text
 report-factory 설치: git clone https://github.com/FineHourTeam/report-factory.git 로 원하는 위치에 받고, 그 폴더에서 powershell -File setup.ps1 을 실행한 다음, 그 폴더를 Claude Code 작업 폴더로 열어 줘.
 ```
 
-직접 하려면 터미널에서:
+**7. 설치를 확인한다.** Claude 가 「설치 끝」이라 하면 작업 폴더가 `report-factory` 로 바뀌어 있다. 입력창에 `/` 를 치면
+`/제작가이드` · `/보고서작성` · `/웹테스트` 가 목록에 보인다. 보이면 끝. 안 보이면 Claude 에게 「report-factory 폴더를 작업 폴더로 열어 줘」라고 한다.
+
+**8. 첫 조사를 시작한다.** 10절 「새 조사 시작하기」로 간다. 막히면 그 화면을 그대로 Claude 에게 보여 주면 된다.
+
+터미널에 익숙하면 6 대신 이 세 줄로 해도 같다.
 
 ```bash
 git clone https://github.com/FineHourTeam/report-factory.git
