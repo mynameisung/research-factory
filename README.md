@@ -6,6 +6,12 @@
 
 지금은 Windows 만 지원한다.
 
+처음이면 먼저 셋.
+
+1. **GitHub 계정** — [github.com](https://github.com) 에서 만들고, 아이디를 관리자에게 보낸다. 이 리포는 비공개라 초대를 받아야 보인다. 초대 메일의 「Accept invitation」을 누른다.
+2. **Git 설치** — [git-scm.com](https://git-scm.com/download/win) 에서 받아 기본값으로 설치한다. [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 와 [Python 3.11+](https://www.python.org/downloads/) 도 있어야 한다.
+3. 아래 상자를 실행할 때 로그인 창이 뜨면 GitHub 아이디로 로그인한다. 한 번만 묻는다.
+
 Claude Code 를 열고 아래 상자를 그대로 복사해 붙여넣는다.
 
 ```text
