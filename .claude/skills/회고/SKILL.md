@@ -13,6 +13,30 @@ description: 이번 프로젝트에서 드러난 암묵지를 형식지로 승�
 
 ---
 
+## 판 확인 — 본 절차보다 먼저
+
+report-factory 는 GitHub 정본(FineHourTeam/report-factory)에서 갱신된다. 작업 폴더를 건드리지
+않고 원격의 `VERSION` 한 줄만 읽어(`git fetch`, pull 아님) 새 판이 있는지 본다.
+
+```bash
+python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/update_check.py"
+```
+
+- **출력이 없으면** 최신이다. 아무 말 없이 본 절차로 간다.
+- **`UPGRADE_AVAILABLE <내판> <새판>`** 이면 먼저 같은 스크립트에 `whats-new <새판>` 을 주어 바뀐 점을 읽는다.
+  `config get auto_upgrade` 가 `true` 면 묻지 않고 `/업그레이드` 를 실행한 뒤 본 절차로 간다.
+  아니면 AskUserQuestion 으로 묻는다 — 「report-factory **<새판>** 이 나왔습니다 (지금 <내판>). <바뀐 점 한 줄>. 올릴까요?」
+  1. **지금 올린다** → `/업그레이드` 실행 → 본 절차
+  2. **앞으로는 자동으로** → `config set auto_upgrade true` → `/업그레이드` → 본 절차
+  3. **지금 말고 나중에** → `snooze <새판>` 실행. 출력의 next 값대로 「다음 알림은 24시간 뒤입니다」라고 알린다(두 번째는 48시간, 세 번째부터 1주일) → 본 절차
+  4. **다시 묻지 않는다** → `config set update_check false`. 「다시 켜려면 `config set update_check true`」 → 본 절차
+- **`JUST_UPGRADED <이전판> <내판>`** 이면 `whats-new <내판>` 을 읽어 「<내판> 으로 올라왔습니다: <바뀐 점>」 한 줄만 말하고 본 절차로 간다.
+- **`CHECK_FAILED …`** 면 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 이것을 최신으로 읽지 않는다.
+
+이 블록은 세 스킬(제작가이드·보고서작성·회고)에 같은 내용으로 들어 있다. 고칠 때는 셋을 함께 고친다.
+
+---
+
 ## 관찰 소스 — 어디서 읽나
 
 | 드러나는 순간 | 어디서 읽나 | 값 |

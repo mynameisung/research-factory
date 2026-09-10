@@ -24,7 +24,7 @@
 
 Claude Code 를 열고 이걸 붙여넣으면 Claude 가 알아서 한다.
 
-> report-factory 설치: **`git clone https://github.com/mynameisung/report-factory.git`** 로 원하는 위치에 받고, 그 폴더에서 **`powershell -File setup.ps1`** (macOS/Linux 는 `./setup`) 을 실행한 다음, 그 폴더를 Claude Code 작업 폴더로 열어 줘.
+> report-factory 설치: **`git clone https://github.com/FineHourTeam/report-factory.git`** 로 원하는 위치에 받고, 그 폴더에서 **`powershell -File setup.ps1`** (macOS/Linux 는 `./setup`) 을 실행한 다음, 그 폴더를 Claude Code 작업 폴더로 열어 줘.
 
 클론한 폴더가 곧 작업 폴더다. 스킬·에이전트·엔진이 상대 경로로 서로를 찾으므로 **폴더 안 구조는 바꾸지 않는다.** 조사 자료는 `report-factory/projects/<조사명>/` 에 만들며, 이 폴더는 git 이 추적하지 않는다(고객 데이터는 리포에 올라가지 않는다).
 
@@ -43,7 +43,7 @@ Claude Code 를 열고 이걸 붙여넣으면 Claude 가 알아서 한다.
 | 팀 | 에이전트 |
 |---|---|
 | 가이드 설계 | guide-toc(목차) · guide-front(Part Ⅰ) · guide-body-ment(본문 멘트) |
-| 요약·결론 | guide-summary(설계) · guide-summary-text(문장) · guide-conclusion(결론) |
+| 요약·결론 | guide-summary(총괄·결론) · guide-summary-slide(꼭지별 문장) · guide-client-review(의뢰인 자리 심사) |
 | 심사·검증 | guide-judge(설계 심사) · guide-summary-reviewer(품질) · guide-adversary(반증 감사) |
 | PPT·회고 | deck-adversary(덱 감사) · deck-render-qa(렌더 검수) · retro-miner(회고 채굴) |
 
@@ -57,6 +57,7 @@ Claude Code 를 열고 이걸 붙여넣으면 Claude 가 알아서 한다.
    │ /개선공유  ─────▶  PR 검토·선별 병합  ───▶  main 갱신
 ```
 
+- **알림**: `/제작가이드`·`/보고서작성`·`/회고` 를 부르면 원격의 판 번호를 먼저 읽는다(작업 폴더는 건드리지 않는다). 새 판이 있으면 「올릴까요?」를 묻고, 「나중에」는 24시간 → 48시간 → 1주일씩 미룬다.
 - **받기**: `/업그레이드` 한 마디면 끝. 로컬 수정과 충돌하면 Claude 가 정리해 준다.
 - **주기**: 관리자가 「PR 올리세요」 하면 각자 `/개선공유`. 스킬이 변경분을 요약해 보여 주고, 확인 후 브랜치·커밋·PR 까지 대신 한다. 작업 폴더는 건드리지 않는다.
 - **고르기**: 관리자가 PR 중 공용으로 쓸 것만 병합한다. 취향이 갈리는 것은 프로젝트 폴더의 설정(하우스 프로파일)으로 내려보낸다.
@@ -84,4 +85,10 @@ report-factory/
 
 ## 업그레이드
 
-`/업그레이드` 라고 치면 된다. 직접 하려면 `git pull` 후 `pip install -r requirements.txt`.
+스킬을 부를 때마다 `engine/tools/update_check.py` 가 원격 `VERSION` 을 읽어 새 판이 있으면 묻는다. gstack 의 판 확인을 옮겨 온 것이고, 상태(캐시·미룸·설정)는 `~/.report-factory/` 에 둔다.
+
+- 「지금 올린다」 → `/업그레이드` 가 stash → pull → pop, 의존성 갱신, 스모크 테스트, 변경 요약까지 한다
+- 「지금 말고 나중에」 → 24시간 뒤 다시 묻는다 (두 번째 48시간, 세 번째부터 1주일)
+- 「앞으로는 자동으로」 / 「다시 묻지 않는다」 → `~/.report-factory/config.json` 의 `auto_upgrade` / `update_check`
+
+직접 하려면 `/업그레이드` 라고 치거나, `git pull` 후 `pip install -r requirements.txt`.

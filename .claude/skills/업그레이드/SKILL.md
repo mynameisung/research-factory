@@ -10,11 +10,14 @@ description: report-factory 를 최신판으로 올린다 — git pull·의존�
 ## 절차
 
 1. **현재 상태 파악** — `git status --porcelain` 과 `git log --oneline -1`.
+   `OLD=$(cat VERSION)` 으로 지금 판을 먼저 적어 둔다.
    추적 파일에 로컬 수정이 있으면 무엇이 바뀌어 있는지 한국어로 요약해 둔다(아직 묻지 않는다).
 
 2. **받기**
    - 수정이 없으면: `git pull --ff-only`
    - 수정이 있으면: `git stash` → `git pull --ff-only` → `git stash pop`
+   - 받은 뒤 `python report-factory/engine/tools/update_check.py mark --from "$OLD"` 로 표식을
+     남긴다. 다음에 스킬을 부르면 「<새판> 으로 올라왔습니다」 한 줄이 뜬다.
    - `stash pop` 충돌 시: 충돌 파일을 열어 판단한다. **로컬 수정과 원격 갱신이 같은 내용이면
      원격판을 남기고 stash 를 버린다.** 다른 내용이면 두 쪽을 다 살리는 병합을 시도하고,
      판단이 서지 않는 부분만 사용자에게 두 안을 보여 주고 고르게 한다.
