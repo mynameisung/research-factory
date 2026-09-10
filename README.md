@@ -2,16 +2,14 @@
 
 > 통계표가 나온 순간부터 납품 PPT 까지, 리서치 보고서 제작을 Claude Code 팀으로 바꾼다.
 
-통계표·설문지·조사개요를 넣으면 제작가이드(.xlsm)와 보고서 PPT 가 나온다. 연구원은 git 을 몰라도 된다.
-
 ## 0. 설치 — 30초
 
-**요구 사항:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code) · [Git](https://git-scm.com/) · Python 3.11+ · (개선 공유용) [GitHub CLI](https://cli.github.com/)
+지금은 Windows 만 지원한다.
 
-Claude Code 를 열고 아래 상자를 그대로 복사해 붙여넣으면 Claude 가 알아서 한다 (상자 오른쪽 위 복사 단추).
+Claude Code 를 열고 아래 상자를 그대로 복사해 붙여넣는다.
 
 ```text
-report-factory 설치: git clone https://github.com/FineHourTeam/report-factory.git 로 원하는 위치에 받고, 그 폴더에서 powershell -File setup.ps1 (macOS/Linux 는 ./setup) 을 실행한 다음, 그 폴더를 Claude Code 작업 폴더로 열어 줘.
+report-factory 설치: git clone https://github.com/FineHourTeam/report-factory.git 로 원하는 위치에 받고, 그 폴더에서 powershell -File setup.ps1 을 실행한 다음, 그 폴더를 Claude Code 작업 폴더로 열어 줘.
 ```
 
 직접 하려면 터미널에서:
@@ -21,11 +19,6 @@ git clone https://github.com/FineHourTeam/report-factory.git
 cd report-factory
 powershell -File setup.ps1
 ```
-
-macOS/Linux 는 마지막 줄 대신 `./setup`. 끝나면 그 폴더를 Claude Code 작업 폴더로 연다.
-
-클론한 폴더가 곧 작업 폴더다. 스킬·에이전트·엔진이 상대 경로로 서로를 찾으므로 **폴더 안 구조는 바꾸지 않는다.**
-설치되면 이 폴더에서 입력하는 지시는 조사별 `_memory/` 에 자동으로 저장된다.
 
 ## 1. 업무 흐름
 
