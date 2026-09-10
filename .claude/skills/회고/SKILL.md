@@ -5,37 +5,37 @@ description: 이번 프로젝트에서 드러난 암묵지를 형식지로 승�
 
 # 회고 — 암묵지를 형식지로
 
+<!-- PREAMBLE:START -->
+<!-- 이 블록의 원본은 engine/templates/SKILL_PREAMBLE.md 다. gen_preamble.py 가 모든 작업 스킬에 같은 내용을 채운다. 여기서 직접 고치지 않는다 -->
+## PREAMBLE — 본 절차보다 먼저 실행한다
+
+```bash
+python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py" --skill 회고 <조사 폴더 인자가 있으면 그대로>
+```
+
+한 번의 호출이 새 판 확인·활성 조사 지정·조사 메모리 위치·실행 기록을 처리하고 `KEY: 값` 줄로 답한다. 줄마다 이렇게 한다.
+
+- **`UPDATE: NONE`** 또는 **`DISABLED`** — 아무 말 없이 본 절차로 간다.
+- **`UPDATE: UPGRADE_AVAILABLE <내판> <새판>`** — 먼저 `update_check.py whats-new <새판>` 으로 바뀐 점을 읽는다.
+  `update_check.py config get auto_upgrade` 가 `true` 면 묻지 않고 `/업그레이드` 를 실행한 뒤 본 절차로 간다.
+  아니면 AskUserQuestion 으로 묻는다 — 「report-factory **<새판>** 이 나왔습니다 (지금 <내판>). <바뀐 점 한 줄>. 올릴까요?」
+  1. **지금 올린다** → `/업그레이드` → 본 절차
+  2. **앞으로는 자동으로** → `update_check.py config set auto_upgrade true` → `/업그레이드` → 본 절차
+  3. **지금 말고 나중에** → `update_check.py snooze <새판>`. 출력의 next 값대로 「다음 알림은 24시간 뒤입니다」라고 알린다(두 번째는 48시간, 세 번째부터 1주일) → 본 절차
+  4. **다시 묻지 않는다** → `update_check.py config set update_check false`. 「다시 켜려면 `config set update_check true`」 → 본 절차
+- **`UPDATE: JUST_UPGRADED <이전판> <내판>`** — `whats-new <내판>` 을 읽어 「<내판> 으로 올라왔습니다: <바뀐 점>」 한 줄만 말하고 본 절차로 간다.
+- **`UPDATE: CHECK_FAILED <이유>`** — 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 최신으로 읽지 않는다.
+- **`MEMORY: <경로>`** — 그 `MEMORY.md` 를 읽는다. 「결정된 것」은 다시 묻지 않는다. 스킬이 끝날 때 세 절(결정된 것 · 지시의 요지 · 다음 세션이 알아야 할 것)을 갱신한다. `MEMORY_NEW: yes` 면 읽을 것이 없으니 끝날 때 채우기만 한다.
+- **`MEMORY: NONE`** — 조사 폴더 인자가 없었다. 조사가 정해지는 즉시 조사 폴더를 인자로 이 명령을 다시 실행한다.
+
+사용자 입력과 손 편집은 훅이 같은 `_memory/` 폴더에 자동으로 남긴다(`knowledge/02_프로젝트-메모리.md`). 이 블록은 스킬 본문의 어떤 규칙보다 먼저다.
+<!-- PREAMBLE:END -->
+
 프로젝트마다 플랫폼이 똑똑해지게 만드는 장치다.
 
 **원리: 암묵지가 드러나는 순간은 정해져 있다.** 그 순간을 붙잡아 규칙으로 승격시킨다.
 
 인자: 프로젝트 또는 조사 폴더 경로. 생략하면 최근 작업 폴더를 추정해 확인받는다.
-
----
-
-## 판 확인과 조사 메모리 — 본 절차보다 먼저
-
-report-factory 는 GitHub 정본(FineHourTeam/report-factory)에서 갱신된다. 작업 폴더를 건드리지
-않고 원격의 `VERSION` 한 줄만 읽어(`git fetch`, pull 아님) 새 판이 있는지 본다.
-
-```bash
-python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/update_check.py"
-```
-
-- **출력이 없으면** 최신이다. 아무 말 없이 본 절차로 간다.
-- **`UPGRADE_AVAILABLE <내판> <새판>`** 이면 먼저 같은 스크립트에 `whats-new <새판>` 을 주어 바뀐 점을 읽는다.
-  `config get auto_upgrade` 가 `true` 면 묻지 않고 `/업그레이드` 를 실행한 뒤 본 절차로 간다.
-  아니면 AskUserQuestion 으로 묻는다 — 「report-factory **<새판>** 이 나왔습니다 (지금 <내판>). <바뀐 점 한 줄>. 올릴까요?」
-  1. **지금 올린다** → `/업그레이드` 실행 → 본 절차
-  2. **앞으로는 자동으로** → `config set auto_upgrade true` → `/업그레이드` → 본 절차
-  3. **지금 말고 나중에** → `snooze <새판>` 실행. 출력의 next 값대로 「다음 알림은 24시간 뒤입니다」라고 알린다(두 번째는 48시간, 세 번째부터 1주일) → 본 절차
-  4. **다시 묻지 않는다** → `config set update_check false`. 「다시 켜려면 `config set update_check true`」 → 본 절차
-- **`JUST_UPGRADED <이전판> <내판>`** 이면 `whats-new <내판>` 을 읽어 「<내판> 으로 올라왔습니다: <바뀐 점>」 한 줄만 말하고 본 절차로 간다.
-- **`CHECK_FAILED …`** 면 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 이것을 최신으로 읽지 않는다.
-
-그다음 **조사 메모리**를 연다. 조사 폴더 인자를 받았으면 `python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/capture_prompt.py" set-active <프로젝트>/<조사>` 로 활성 조사를 적고, `report-factory/projects/<프로젝트>/<조사>/_memory/MEMORY.md` 를 읽는다. 「결정된 것」은 다시 묻지 않는다. 스킬이 끝날 때 MEMORY.md 의 세 절(결정된 것 · 지시의 요지 · 다음 세션이 알아야 할 것)을 갱신한다. 사용자 입력과 손 편집은 훅이 같은 폴더에 자동으로 남긴다(`knowledge/02_프로젝트-메모리.md`).
-
-이 블록은 네 스킬(제작가이드·보고서작성·회고·웹테스트)에 같은 내용으로 들어 있다. 고칠 때는 넷을 함께 고친다.
 
 ---
 
@@ -71,7 +71,7 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/update_chec
 - `{조사}/2_보고서작성/work/반송_가이드팀.md` 와 대응하는 처리 로그
 - `{조사}/*/work/판단대기.md`
 - `{조사}/2_보고서작성/out/검수리포트.md` · `fill_deck.py --scan` 메모 전문
-- `{조사}/_memory/편집기록.jsonl` (훅이 자동 포착한 손 편집 이력) · `{조사}/_memory/사용자입력.jsonl` (사용자 지시 원문) · `{조사}/_memory/MEMORY.md`
+- `{조사}/_memory/편집기록.jsonl` (훅이 자동 포착한 손 편집 이력) · `{조사}/_memory/사용자입력.jsonl` (사용자 지시 원문) · `{조사}/_memory/스킬실행.jsonl` (스킬 호출 이력) · `{조사}/_memory/MEMORY.md`
   (옛 전역 `engine/learning/observations.jsonl` 은 git 밖 참고용)
 - `engine/learning/OPEN_QUESTIONS.md` — 지난번에 못 풀고 넘긴 것
 - `{프로젝트}/ORIENTATION.md` — 방향성 판단이 맞았는지

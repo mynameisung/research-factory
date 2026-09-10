@@ -77,8 +77,10 @@ flowchart TB
 | `/업그레이드` | 최신판 받기(stash → pull → pop) · 의존성 · 스모크 · 변경 요약. 충돌은 Claude 가 정리한다 |
 | `/개선공유` | 내가 다듬은 규칙·지식·도구를 임시 워크트리에서 PR 로 올린다. 작업 폴더는 건드리지 않는다 |
 
-네 작업 스킬은 시작할 때 두 가지를 먼저 한다. **판 확인**(원격 `VERSION` 만 읽어 새 판이면 「올릴까요?」)과
-**조사 메모리 읽기**(`projects/<조사>/_memory/MEMORY.md`).
+네 작업 스킬은 제목 바로 아래에 같은 **PREAMBLE** 블록을 갖는다(gstack 의 preamble 을 옮긴 것). 본 절차보다 먼저
+`engine/tools/preamble.py` 를 한 번 부르면 **판 확인**(원격 `VERSION` 만 읽어 새 판이면 「올릴까요?」) · **활성 조사 지정** ·
+**조사 메모리 위치**(`projects/<조사>/_memory/MEMORY.md`) · **실행 기록**이 `KEY: 값` 줄로 돌아오고, 스킬은 그 줄을 보고 움직인다.
+블록의 원본은 `engine/templates/SKILL_PREAMBLE.md` 하나이고 `gen_preamble.py` 가 네 스킬에 채운다. 스킬 파일에서 직접 고치지 않는다.
 
 ## 4. 에이전트 12명
 
@@ -104,7 +106,7 @@ embrain/                              ← 리포 루트 = Claude Code 작업 폴
     │   ├─ tools/                     파서(parse_table_* · parse_questionnaire) · 정본 빌더(build_facts) ·
     │   │                             가이드 빌더(build_guide) · 덱 주입(fill_deck · refill_deck · deckbuild · deckops) ·
     │   │                             검수(verify · verify_deck · audit_deck_values · deck_lint) · 팩 생성(make_packs) ·
-    │   │                             판 확인(update_check) · 훅(capture_prompt · capture_edit) · 통계표 사전 검사(table_lint) ·
+    │   │                             프리앰블(preamble · gen_preamble) · 판 확인(update_check) · 훅(capture_prompt · capture_edit) · 통계표 사전 검사(table_lint) ·
     │   │                             웹테스트(webtest_scenarios · webtest_walk · webtest_compare · webtest_selftest + webtest_fixture/ 모의 설문)
     │   ├─ knowledge/                 업무 지식. 00 업무개요 · 01 통계표 읽는 법 · 02 프로젝트 메모리 · 40 웹테스트(업무 C)
     │   │   ├─ guide/                 【업무 A】 10 목차 · 11 블록포맷 · 12 차트타입 결정표 · 13 멘트 · 14 요약·결론(규칙) · 14A 코퍼스 관찰 ·
@@ -117,7 +119,7 @@ embrain/                              ← 리포 루트 = Claude Code 작업 폴
     │   │   ├─ OPEN_QUESTIONS.md      아직 규칙이 못 된 것
     │   │   ├─ retro/ · eval/ · golden_loop/   회고 감사 · 골든셋 역검증 기록 (산출 JSON 은 git 밖)
     │   │   └─ (observations.jsonl)   옛 전역 편집 로그. git 밖. 지금은 조사별 _memory/ 에 쌓인다
-    │   ├─ templates/                 TEMPLATE_제작가이드.xlsm · TEMPLATE_프로젝트/ (새 조사 폴더의 뼈대)
+    │   ├─ templates/                 TEMPLATE_제작가이드.xlsm · TEMPLATE_프로젝트/ (새 조사 폴더의 뼈대) · SKILL_PREAMBLE.md (스킬 프리앰블 원본)
     │   ├─ macros/통계표전처리/        DP 통계표 전처리 엑셀 추가 기능 (.xlam 과 소스)
     │   └─ refs/                      ── git 밖. 코퍼스 원본 5벌 · 하우스 그래프 가이드 · 분석 문서 (사내 드라이브로 전달) ──
     └─ projects/                      ── git 밖. 고객 데이터. 조사 하나 = 폴더 하나 ──
@@ -206,8 +208,8 @@ macOS/Linux 는 마지막 줄 대신 `./setup`. 끝나면 그 폴더를 Claude C
    │ /개선공유 ─────────▶ PR 검토 · 공용만 병합 · VERSION 올림 ───▶  main 갱신
 ```
 
-- **판 확인**: 스킬을 부를 때마다 `update_check.py` 가 `git fetch` 로 원격 `VERSION` 한 줄만 읽는다. 작업 폴더는 건드리지
-  않는다. 새 판이면 「지금 올린다 / 항상 자동 / 나중에(24시간 → 48시간 → 1주일) / 다시 묻지 않기」를 묻는다.
+- **판 확인**: 스킬을 부를 때마다 PREAMBLE 의 `preamble.py` 가 `update_check.py` 를 거쳐 `git fetch` 로 원격 `VERSION` 한 줄만 읽는다.
+  작업 폴더는 건드리지 않는다. 새 판이면 「지금 올린다 / 항상 자동 / 나중에(24시간 → 48시간 → 1주일) / 다시 묻지 않기」를 묻는다.
   상태는 `~/.report-factory/` 에 있고, 설정은 그 안의 `config.json`(`auto_upgrade` · `update_check`)이다.
 - **받기**: `/업그레이드`. 로컬 수정과 충돌하면 Claude 가 정리한다.
 - **주기**: 관리자가 「PR 올리세요」 하면 각자 `/개선공유`. 변경분을 요약해 보여 주고 확인 후 PR 까지 대신한다.

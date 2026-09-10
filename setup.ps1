@@ -23,6 +23,7 @@ if ($env:PYTHONUTF8 -ne "1") {
 # 4. 스모크 테스트 — 검수기와 빌더가 기동하는가
 python (Join-Path $root "report-factory\engine\tools\verify.py") --help | Out-Null
 python (Join-Path $root "report-factory\engine\tools\build_guide.py") --help | Out-Null
+python (Join-Path $root "report-factory\engine\tools\gen_preamble.py") --check
 Write-Host "  엔진 기동 확인 (verify · build_guide)"
 
 # 5. 안내

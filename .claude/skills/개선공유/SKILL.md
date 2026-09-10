@@ -13,6 +13,8 @@ description: 내 로컬에서 다듬어진 규칙·지식·도구 개선분을 P
 1. **선행 확인**
    - `gh auth status` — 로그인이 없으면 `gh auth login --web` 을 안내하고 브라우저 승인까지 기다린다.
    - `git fetch origin` 으로 원격 최신을 받아 둔다.
+   - `python report-factory/engine/tools/gen_preamble.py --check` — 스킬의 PREAMBLE 이 원본(`engine/templates/SKILL_PREAMBLE.md`)과
+     어긋나면 `gen_preamble.py` 로 채운 뒤 진행한다. 프리앰블은 스킬 파일에서 직접 고친 것을 올리지 않는다.
 
 2. **변경분 수집** — `git status --porcelain` 에서 **공유 대상 경로만** 추린다:
    `report-factory/engine/` · `.claude/skills/` · `.claude/agents/` · `README.md` · `CHANGELOG.md`.
