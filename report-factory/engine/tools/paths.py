@@ -21,6 +21,11 @@
 
 옛 배치(v1: input/ · 1_제작가이드 · 2_보고서작성 · 3_웹테스트 · 00_공통)도 같은 역할 이름으로 풀어 준다.
 
+프로젝트 하나에 조사가 여럿이면 조사 폴더를 여럿 둔다 (`01_TA풀` · `02_비상주`). **트래킹 조사는 회차마다 조사 폴더 하나**이고
+이름 끝에 회차를 붙인다 (`01_고객만족도_2025` · `02_고객만족도_2026` · `03_고객만족도_2027`, 또는 `_1차`·`_2차`).
+그러면 `tracking.prev` 에 이전 회차의 경로(통계표·최종보고서·제작가이드 out …)가 함께 풀려 전차 비교에 바로 쓴다.
+설문지·통계표가 한 조사 안에 여러 벌이면(유형 A/B 등) `files_all` 에 전부 나온다.
+
 사용
     python paths.py <조사 폴더>                     역할 → 경로 JSON (layout · 폴더 · 찾은 파일)
     python paths.py <조사 폴더> --role 설문지        경로 한 줄
@@ -103,7 +108,40 @@ def _latest(paths: list[Path]) -> Path | None:
     return sorted(paths, key=lambda p: (p.name, p.stat().st_mtime))[-1]
 
 
-def resolve(survey: Path) -> dict:
+RE_SURVEY = re.compile(r"^(\d{2})_(.+?)(?:_([^_]+))?$")   # NN_조사약칭[_회차]
+MULTI_ROLES = ("설문지", "통계표", "테이블가이드", "제작본")   # 여러 벌일 수 있는 것은 전부 목록으로도 준다
+
+
+def parse_survey_name(name: str) -> tuple[int | None, str, str | None]:
+    """`02_고객만족도_2026` → (2, '고객만족도', '2026'). 회차가 없으면 (NN, 이름, None). 규약 밖이면 (None, name, None)."""
+    m = RE_SURVEY.match(name)
+    if not m:
+        return None, name, None
+    nn, base, wave = m.groups()
+    return int(nn), base, wave
+
+
+def tracking_info(survey: Path, _deep: bool = True) -> dict | None:
+    """트래킹 조사(같은 조사약칭 + 회차 꼬리표가 붙은 형제 폴더)면 회차 목록과 이전 회차의 경로를 준다."""
+    nn, base, wave = parse_survey_name(survey.name)
+    if nn is None or wave is None:
+        return None
+    waves = []
+    for sib in sorted(survey.parent.iterdir()):
+        if not sib.is_dir():
+            continue
+        snn, sbase, swave = parse_survey_name(sib.name)
+        if snn is not None and swave is not None and sbase == base:
+            waves.append((snn, sib))
+    prev = max((s for n, s in waves if n < nn), key=lambda s: parse_survey_name(s.name)[0], default=None)
+    info = {"base": base, "wave": wave, "waves": [s.name for _, s in waves], "prev": None}
+    if prev is not None and _deep:
+        p = resolve(prev, _deep=False)
+        info["prev"] = {"name": p["name"], "survey": p["survey"], "dirs": p["dirs"], "files": p["files"]}
+    return info
+
+
+def resolve(survey: Path, _deep: bool = True) -> dict:
     layout = detect_layout(survey)
     table = V2 if layout != "v1" else V1
     project = survey.parent
@@ -112,6 +150,7 @@ def resolve(survey: Path) -> dict:
         base = project if role in PROJECT_LEVEL else survey
         dirs[role] = (base / rel).as_posix()
     files: dict[str, str | None] = {}
+    files_all: dict[str, list[str]] = {}
     for role, (dir_role, pats) in FILE_ROLES.items():
         base = Path(dirs[dir_role])
         hit = None
@@ -119,10 +158,15 @@ def resolve(survey: Path) -> dict:
             cands = [p for p in base.glob(pat) if p.is_file() and not p.name.startswith("~$")]
             hit = _latest(cands)
             if hit:
+                if role in MULTI_ROLES:
+                    files_all[role] = [c.as_posix() for c in sorted(cands, key=lambda p: p.name)]
                 break
         files[role] = hit.as_posix() if hit else None
-    return {"layout": layout, "name": f"{project.name}/{survey.name}", "project": project.as_posix(), "survey": survey.as_posix(),
-            "dirs": dirs, "files": files}
+    out = {"layout": layout, "name": f"{project.name}/{survey.name}", "project": project.as_posix(), "survey": survey.as_posix(),
+           "dirs": dirs, "files": files, "files_all": files_all}
+    if _deep:
+        out["tracking"] = tracking_info(survey)
+    return out
 
 
 def cmd_new(rel: str) -> int:

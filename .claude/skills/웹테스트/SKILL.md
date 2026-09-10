@@ -27,7 +27,8 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py
 - **`UPDATE: CHECK_FAILED <이유>`** — 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 최신으로 읽지 않는다.
 - **`MEMORY: <경로>`** — 그 `MEMORY.md` 를 읽는다. 「결정된 것」은 다시 묻지 않는다. 스킬이 끝날 때 세 절(결정된 것 · 지시의 요지 · 다음 세션이 알아야 할 것)을 갱신한다. `MEMORY_NEW: yes` 면 읽을 것이 없으니 끝날 때 채우기만 한다.
 - **`MEMORY: NONE`** — 조사 폴더 인자가 없었다. 조사가 정해지는 즉시 조사 폴더를 인자로 이 명령을 다시 실행한다.
-- **`PATHS: {…}`** — 역할 → 경로 JSON. 설문지·통계표·정본 JSON·제작본·최종보고서 같은 파일과 단계 폴더를 **여기서 찾는다.** 폴더 이름을 추측하거나 `input/` 을 뒤지지 않는다. 역할 하나만 필요하면 `paths.py <조사> --role <역할>`. `LAYOUT: v1` 이면 옛 배치이고 같은 역할 이름으로 풀려 있으니 그대로 쓴다(`paths.py migrate` 는 사람이 정한다). `LAYOUT: none` 이면 `paths.py new <프로젝트>/<조사>` 로 뼈대를 만든다.
+- **`PATHS: {…}`** — 역할 → 경로 JSON. 설문지·통계표·정본 JSON·제작본·최종보고서 같은 파일과 단계 폴더를 **여기서 찾는다.** 폴더 이름을 추측하거나 `input/` 을 뒤지지 않는다. 역할 하나만 필요하면 `paths.py <조사> --role <역할>`. `LAYOUT: v1` 이면 옛 배치이고 같은 역할 이름으로 풀려 있으니 그대로 쓴다(`paths.py migrate` 는 사람이 정한다). `LAYOUT: none` 이면 `paths.py new <프로젝트>/<조사>` 로 뼈대를 만든다. `files_all` 에 설문지나 통계표가 여러 벌 있으면 어느 것을 쓸지 사용자에게 확인한다.
+- **`TRACKING: …`** 이 있으면 트래킹 조사다. `PREV_PATHS:` 의 이전 회차 통계표·최종보고서·제작가이드를 전차 비교의 정본으로 쓴다(전년 수치를 기억이나 추정으로 쓰지 않는다). 이전 회차가 `NONE` 이면 첫 회차이므로 비교 없이 간다.
 
 사용자 입력과 손 편집은 훅이 같은 `_memory/` 폴더에 자동으로 남긴다(`knowledge/02_프로젝트-메모리.md`). 이 블록은 스킬 본문의 어떤 규칙보다 먼저다.
 <!-- PREAMBLE:END -->
@@ -56,6 +57,7 @@ questionnaire.json   시나리오.json      덤프_<ID>.json        findings.jso
 ## 읽을 것 (시작할 때)
 
 - `report-factory/engine/knowledge/40_웹테스트.md` — 실사 엔진의 성질(한 페이지 한 문항 · 뒤로가기 불가), 검증할 로직 7종, 수정요청서 양식
+- `report-factory/engine/learning/knowhow/웹테스트.md` — 연구원들이 올린 노하우 카드(사이트 선택자 · 테스트 계정 · 시나리오 요령). 이번에 얻은 요령은 끝날 때 `/개선공유` 로 올린다
 - 조사 폴더의 `_memory/MEMORY.md`
 - 설문지 정본이 이미 있으면 `09_제작가이드/work/questionnaire.json` (없으면 Step 1 에서 만든다)
 

@@ -16,7 +16,9 @@
     MEMORY: <MEMORY.md 경로> | NONE
     MEMORY_NEW: yes | no          ← 이번에 처음 만들었으면 yes (읽을 것이 없다)
     LAYOUT: v2 | v1 | none        ← 조사 폴더 배치 (paths.py). v1 은 옛 이름(input/·1_제작가이드…)
-    PATHS: {"dirs": {...}, "files": {...}}   ← 역할 → 경로 (한 줄 JSON). 폴더 이름을 추측하지 말고 여기서 찾는다
+    PATHS: {"dirs": {...}, "files": {...}, "files_all": {...}}   ← 역할 → 경로 (한 줄 JSON). 폴더 이름을 추측하지 말고 여기서 찾는다
+    TRACKING: <조사약칭> 회차 <회차> (회차 폴더 N개) 이전 회차 <이름|NONE>   ← 트래킹 조사(폴더 이름에 회차 꼬리표)일 때만
+    PREV_PATHS: {"dirs": {...}, "files": {...}}   ← 이전 회차의 경로. 전차 비교(통계표·최종보고서·제작가이드)에 쓴다
     PLAYWRIGHT: yes | no          ← 웹테스트 스킬일 때만
 
 원본 블록은 `engine/templates/SKILL_PREAMBLE.md`, 스킬 파일에 채우는 것은 `gen_preamble.py`.
@@ -132,7 +134,13 @@ def main(argv: list[str]) -> int:
             import paths as ps
             info = ps.resolve(ps.resolve_survey(active))
             print(f"LAYOUT: {info['layout']}")
-            print("PATHS: " + json.dumps({"dirs": info["dirs"], "files": info["files"]}, ensure_ascii=False))
+            print("PATHS: " + json.dumps({"dirs": info["dirs"], "files": info["files"], "files_all": info.get("files_all") or {}}, ensure_ascii=False))
+            tr = info.get("tracking")
+            if tr:
+                prev = tr.get("prev") or {}
+                print(f"TRACKING: {tr['base']} 회차 {tr['wave']} (회차 폴더 {len(tr['waves'])}개) 이전 회차 {prev.get('name') or 'NONE'}")
+                if prev:
+                    print("PREV_PATHS: " + json.dumps({"dirs": prev["dirs"], "files": prev["files"]}, ensure_ascii=False))
         except Exception as e:
             print(f"LAYOUT: CHECK_FAILED {type(e).__name__}: {e}")
     if skill == "웹테스트":
