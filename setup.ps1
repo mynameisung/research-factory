@@ -24,10 +24,11 @@ if ($env:PYTHONUTF8 -ne "1") {
 python (Join-Path $root "report-factory\engine\tools\verify.py") --help | Out-Null
 python (Join-Path $root "report-factory\engine\tools\build_guide.py") --help | Out-Null
 python (Join-Path $root "report-factory\engine\tools\gen_preamble.py") --check
-Write-Host "  엔진 기동 확인 (verify · build_guide)"
+python (Join-Path $root "report-factory\engine\tools\questionnaire_selftest.py") | Select-Object -Last 1
+Write-Host "  엔진 기동 확인 (verify · build_guide · 설문지 빌더)"
 
 # 5. 안내
 Write-Host ""
 Write-Host "설치 완료. 이 폴더를 Claude Code 작업 폴더로 여세요." -ForegroundColor Green
-Write-Host "  스킬: /제작가이드  /보고서작성  /회고  /업그레이드  /개선공유"
+Write-Host "  스킬: /설문지작성  /웹테스트  /제작가이드  /보고서작성  /회고  /업그레이드  /개선공유"
 Write-Host "  조사 자료는 report-factory\projects\<조사명>\ 에 두세요 (git 이 추적하지 않습니다)."

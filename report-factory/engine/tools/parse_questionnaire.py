@@ -72,6 +72,8 @@ RE_PART_HEAD = re.compile(r"^\s*(?:PART|Part|part)?\s*([A-Z]{1,2})\.\s*(.+)$", r
 RE_OPTION = re.compile(r"^\s*(\d+)\)\s*(.*)$", re.DOTALL)
 RE_OPTION_SPLIT = re.compile(r"(?:\t+|\s{3,})(?=\d+\)\s)")
 RE_RANK_SPEC = re.compile(r"\[\s*(\d+)\s*순위\s*필수(?:\s*,\s*(\d+)\s*순위\s*선택)?\s*\]")
+# 개수 제한 복수 선택: `[최소 1개, 최대 3개 선택]` · `[최대 3개 선택]`
+RE_MULTI_LIMIT = re.compile(r"\[\s*(?:최소\s*(\d+)\s*개\s*,?\s*)?최대\s*(\d+)\s*개\s*선택\s*\]")
 RE_MARKER = re.compile(r"\[([^\[\]]{1,40})\]")
 RE_BASE = re.compile(r"\[BASE\s*:\s*(.*?)\]", re.DOTALL)
 RE_RANGE = re.compile(r"\[RANGE\s*:\s*(.*?)\]", re.DOTALL)
@@ -79,7 +81,7 @@ RE_PROG = re.compile(r"\[PROG\s*:\s*(.*?)\]", re.DOTALL)
 RE_PIPING = re.compile(r"\[#\s*(.*?)\s*#\]", re.DOTALL)
 RE_DIRECTIVE_LINE = re.compile(r"^\s*\[(?:BASE|RANGE|PROG)\s*:")
 RE_CIRCLED = re.compile(r"[①-⑳㉑-㉟]")   # ①~⑳ 등
-RE_SCALE_NUM_CELL = re.compile(r"^\s*\d+\)\s*$")
+RE_SCALE_NUM_CELL = re.compile(r"^\s*\d+\)?\s*$")   # `1)` 또는 `1`
 RE_OPEN_BLANK = re.compile(r"\(\s{2,}\)|\(\s*\)")
 YESNO_TOKENS = ({"예", "아니오"}, {"예", "아니요"}, {"네", "아니오"})
 # 기입란 `(      )` 바로 뒤에 단위가 붙으면 숫자 입력. 문항 본문 단어에는 걸리지
@@ -230,7 +232,8 @@ def find_response_markers(text: str) -> list[str]:
     out: list[str] = []
     for m in RE_MARKER.finditer(text):
         inner = norm_space(m.group(1))
-        if inner in PLAIN_MARKERS or RE_RANK_SPEC.fullmatch(f"[{inner}]"):
+        if (inner in PLAIN_MARKERS or RE_RANK_SPEC.fullmatch(f"[{inner}]")
+                or RE_MULTI_LIMIT.fullmatch(f"[{inner}]")):
             out.append(f"[{inner}]")
     return out
 
@@ -295,6 +298,13 @@ def classify_table(blk: Block) -> dict[str, Any]:
     if rows == 2 and cols >= 3 and all(
             RE_SCALE_NUM_CELL.match(blk.cell(1, c)) for c in range(cols)):
         labels = [blk.cell(0, c) for c in range(cols)]
+        info.update(kind="scale_horizontal", scale_points=cols, scale_labels=labels)
+        return info
+
+    # 가로형 척도(번호가 머리 칸에 있는 꼴): 1행이 전부 `N) 라벨`, 2행은 빈 칸
+    if rows == 2 and cols >= 3 and all(
+            RE_OPTION.match(blk.cell(0, c)) and not blk.cell(1, c) for c in range(cols)):
+        labels = [norm_space(RE_OPTION.match(blk.cell(0, c)).group(2)) for c in range(cols)]
         info.update(kind="scale_horizontal", scale_points=cols, scale_labels=labels)
         return info
 
@@ -376,7 +386,7 @@ def decide_response_type(markers: list[str], options: list[dict[str, Any]],
         if matrix_tbl is None and MARKER_ROW_REQUIRED not in plain:
             anomalies.append("행렬 마커이나 행렬 표를 찾지 못함")
         return TYPE_MATRIX, anomalies
-    if MARKER_MULTI in plain:
+    if MARKER_MULTI in plain or any(RE_MULTI_LIMIT.fullmatch(m) for m in markers):
         return TYPE_MULTI, anomalies
     if MARKER_OPEN in plain:
         numeric = bool(directives["range"]) or bool(RE_NUMBER_ANSWER.search(answer_context))
@@ -410,6 +420,22 @@ def decide_response_type(markers: list[str], options: list[dict[str, Any]],
 # ═══════════════════════════════════════════════════════════════════════════
 # 본 파서
 # ═══════════════════════════════════════════════════════════════════════════
+def _options_from_tables(tables: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """표 칸의 `N) 보기` 를 번호 순으로 모은다. 번호만 있는 칸(`1)`)은 건너뛰고, 같은 번호는 처음 것만."""
+    found: dict[int, dict[str, Any]] = {}
+    for t in tables:
+        if t.get("kind") in ("scale_horizontal", "matrix_scale", "box"):
+            continue
+        for row in t.get("cells") or []:
+            for cell in row:
+                for line in str(cell).split("\n"):
+                    for piece in split_option_line(line.strip()):
+                        opt = parse_option(piece)
+                        if opt and opt["text"] and opt["no"] not in found:
+                            found[opt["no"]] = opt
+    return [found[k] for k in sorted(found)]
+
+
 def _is_question_head(text: str, known_parts: set[str]) -> tuple[str, str] | None:
     m = RE_QCODE_HEAD.match(text)
     if not m:
@@ -554,6 +580,16 @@ def parse(path: str | Path) -> dict[str, Any]:
         for t in q["tables"]:
             answer_context += " " + " ".join(
                 " ".join(row) for row in t.get("cells", []))
+        # 보기가 표 안에만 있는 선택형 (대분류|보기 묶음 표 · 보기×연도 체크 표). 단락 보기가 없을 때만 줍는다.
+        # 유형 판정보다 먼저 해야 `[1개 선택]` + 보기 없음 → 개방형 오판을 피한다.
+        choice_marked = any(
+            m.strip("[]") in (MARKER_SINGLE, MARKER_MULTI)
+            or RE_RANK_SPEC.fullmatch(m) or RE_MULTI_LIMIT.fullmatch(m)
+            for m in q["response_markers"])
+        if not q["options"] and choice_marked:
+            q["options"] = _options_from_tables(q["tables"])
+            if q["options"]:
+                q["options_in_table"] = True
         rtype, anomalies = decide_response_type(
             q["response_markers"], q["options"], q["tables"],
             answer_context, q["directives"])

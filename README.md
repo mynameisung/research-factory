@@ -28,7 +28,7 @@ report-factory 설치: git clone https://github.com/FineHourTeam/report-factory.
 ```
 
 **7. 설치를 확인한다.** Claude 가 「설치 끝」이라 하면 작업 폴더가 `report-factory` 로 바뀌어 있다. 입력창에 `/` 를 치면
-`/제작가이드` · `/보고서작성` · `/웹테스트` 가 목록에 보인다. 보이면 끝. 안 보이면 Claude 에게 「report-factory 폴더를 작업 폴더로 열어 줘」라고 한다.
+`/설문지작성` · `/웹테스트` · `/제작가이드` · `/보고서작성` 이 목록에 보인다. 보이면 끝. 안 보이면 Claude 에게 「report-factory 폴더를 작업 폴더로 열어 줘」라고 한다.
 
 **8. 첫 조사를 시작한다.** 10절 「새 조사 시작하기」로 간다. 막히면 그 화면을 그대로 Claude 에게 보여 주면 된다.
 
@@ -45,25 +45,26 @@ powershell -File setup.ps1
 ```mermaid
 flowchart TB
     A[클라이언트 협의] --> B[To-Know-List]
-    B --> C[설문지 구성]
+    B --> C["설문지 구성 *1 — 구조화 → 설문지"]
     C --> D["온라인 설문 구성 (온라인실사팀)"]
-    D --> E["웹테스트 *1"]
+    D --> E["웹테스트 *2"]
     E --> F[설문 실사]
     F --> G[테이블 가이드 작성]
     G --> H["테이블 가공 및 전달 (DP팀)"]
-    H --> I["제작가이드 작성 *2"]
+    H --> I["제작가이드 작성 *3"]
     I --> J["PPT 디자인 제작 (제작팀)"]
-    J --> K["보고서 완료 *3 — 반복 장표 채움 · 요약·결론 보강"]
+    J --> K["보고서 완료 *4 — 반복 장표 채움 · 요약·결론 보강"]
     K --> L[납품]
     classDef skill fill:#dbe7f5,stroke:#2b5aa6,stroke-width:1.5px
-    class E,I,K skill
+    class C,E,I,K skill
 ```
 
-색칠된 세 곳을 스킬이 한다. 괄호는 그 단계를 맡는 팀이다.
+색칠된 네 곳을 스킬이 한다. 괄호는 그 단계를 맡는 팀이다.
 
-- **\*1 `/웹테스트`** — 실사 전에 웹 화면이 설문지대로 됐는지 브라우저가 대신 걸어 검수하고, 수정요청서(.xlsx)를 낸다.
-- **\*2 `/제작가이드`** — 통계표·설문지로 제작팀에 보낼 지시서(.xlsm)를 만든다. 멘트·요약·결론 문장도 여기서 쓴다.
-- **\*3 `/보고서작성`** — 제작팀 회신본에 반복 장표를 채우고 요약·결론을 보강해, 전수 검수·렌더 QA 로 보고서를 완료한다.
+- **\*1 `/설문지작성`** — 구조화 엑셀(TKL 을 받았으면 그것까지)을 엠브레인 양식 설문지(.docx)로 옮긴다. 문항 문장·보기·척도·BASE/PROG 를 하우스 규칙대로 짓고, 구조화 대비 누락과 로직 참조를 검수한다.
+- **\*2 `/웹테스트`** — 실사 전에 웹 화면이 설문지대로 됐는지 브라우저가 대신 걸어 검수하고, 수정요청서(.xlsx)를 낸다.
+- **\*3 `/제작가이드`** — 통계표·설문지로 제작팀에 보낼 지시서(.xlsm)를 만든다. 멘트·요약·결론 문장도 여기서 쓴다.
+- **\*4 `/보고서작성`** — 제작팀 회신본에 반복 장표를 채우고 요약·결론을 보강해, 전수 검수·렌더 QA 로 보고서를 완료한다.
 
 흐름 밖에서 쓰는 스킬 셋.
 
@@ -85,7 +86,7 @@ flowchart TB
                                     └───────┬──────────────────────────┬───────────────┘
                                             │ 배정 (명시적 ID 목록)          │ 수용은 기계 게이트가
                                     ┌───────▼──────────────┐   ┌───────▼──────────────┐
-                                    │ 에이전트 12명           │   │ 검수 게이트            │
+                                    │ 에이전트 13명           │   │ 검수 게이트            │
                                     │ 목차·Part Ⅰ·멘트·요약·   │   │ verify (V·D·K 검사)   │
                                     │ 결론·심사·반증·렌더 QA   │   │ audit · lint · 렌더    │
                                     └───────┬──────────────┘   └───────▲──────────────┘
@@ -110,10 +111,11 @@ flowchart TB
   `/회고` 가 조사의 흔적(사용자 지시 원문·손 편집 이력·반송 대장·검수 findings)에서 규칙 후보를 뽑고, 사람이 승인한 것만
   대장에 오른다.
 
-## 3. 스킬 6개
+## 3. 스킬 7개
 
 | 스킬 | 하는 일 |
 |---|---|
+| `/설문지작성` | 구조화 엑셀 → 펼침본(`read_structure`) → 설문명세 JSON(문장·보기·척도·BASE/PROG) → 엠브레인 양식 .docx(`build_questionnaire`) → 검수(`check_questionnaire`: 구조화 누락 · 로직 참조 · 파서 왕복) → 반증 검토(questionnaire-adversary) |
 | `/제작가이드` | 통계표·설문지·조사개요 → 목차 설계 → 본문 블록(차트타입·베이스·QA·멘트) → 요약·결론 블록 → 검증 → 제작팀 송부본(.xlsm) |
 | `/보고서작성` | 제작팀 회신본 마감(경로 A) · 예시 덱에서 직접 조립(경로 B) · 통계표 갱신 뒤 값만 재반영(경로 C) → 수치 전수 검수 → 렌더 QA → 반증 감사 |
 | `/웹테스트` | 설문지 정본 → 시나리오 행렬(기본·이탈·숨김) → Playwright 가 한 문항씩 순회·덤프 → 정본 대조(문항 누락·분기·이탈·파이핑·보기·문구) → 수정요청서(.xlsx). 로그인은 사람이 한다 |
@@ -121,15 +123,16 @@ flowchart TB
 | `/업그레이드` | 최신판 받기(stash → pull → pop) · 의존성 · 스모크 · 변경 요약. 충돌은 Claude 가 정리한다 |
 | `/개선공유` | 내가 다듬은 규칙·지식·도구를 임시 워크트리에서 PR 로 올린다. 작업 폴더는 건드리지 않는다 |
 
-네 작업 스킬은 제목 바로 아래에 같은 **PREAMBLE** 블록을 갖는다(gstack 의 preamble 을 옮긴 것). 본 절차보다 먼저
+다섯 작업 스킬(설문지작성·웹테스트·제작가이드·보고서작성·회고)은 제목 바로 아래에 같은 **PREAMBLE** 블록을 갖는다(gstack 의 preamble 을 옮긴 것). 본 절차보다 먼저
 `engine/tools/preamble.py` 를 한 번 부르면 **판 확인**(원격 `VERSION` 만 읽어 새 판이면 「올릴까요?」) · **활성 조사 지정** ·
 **조사 메모리 위치**(`projects/<조사>/_memory/MEMORY.md`) · **실행 기록**이 `KEY: 값` 줄로 돌아오고, 스킬은 그 줄을 보고 움직인다.
-블록의 원본은 `engine/templates/SKILL_PREAMBLE.md` 하나이고 `gen_preamble.py` 가 네 스킬에 채운다. 스킬 파일에서 직접 고치지 않는다.
+블록의 원본은 `engine/templates/SKILL_PREAMBLE.md` 하나이고 `gen_preamble.py` 가 다섯 스킬에 채운다. 스킬 파일에서 직접 고치지 않는다.
 
-## 4. 에이전트 12명
+## 4. 에이전트 13명
 
 | 팀 | 에이전트 |
 |---|---|
+| 설문지 | questionnaire-adversary(설문지 초안 반증 — 정본 대비 · 분기 · 문장 · 보기 · 구축 가능성) |
 | 가이드 설계 | guide-toc(목차·배너) · guide-front(Part Ⅰ·Cover) · guide-body-ment(본문 멘트) |
 | 요약·결론 | guide-summary(총괄·결론) · guide-summary-slide(꼭지별 문장) · guide-client-review(의뢰인 자리 심사) |
 | 심사·검증 | guide-judge(설계 심사) · guide-summary-reviewer(품질) · guide-adversary(반증 감사) |
@@ -142,17 +145,18 @@ embrain/                              ← 리포 루트 = Claude Code 작업 폴
 ├─ README.md · CHANGELOG.md · VERSION   판은 세 자리. 병합할 때 VERSION 과 CHANGELOG 를 함께 올린다
 ├─ setup.ps1 · setup · requirements.txt 설치 (의존성 · PYTHONUTF8 · 스모크)
 ├─ .claude/
-│   ├─ skills/                        스킬 6개 (SKILL.md 하나씩)
-│   ├─ agents/                        에이전트 12명 정의
+│   ├─ skills/                        스킬 7개 (SKILL.md 하나씩)
+│   ├─ agents/                        에이전트 13명 정의
 │   └─ settings.json                  훅 2개 — 사용자 입력 포착 · 손 편집 포착 (조사 폴더에 기록)
 └─ report-factory/
     ├─ engine/                        ── 재사용 자산. 조사와 무관. git 이 추적 ──
-    │   ├─ tools/                     파서(parse_table_* · parse_questionnaire) · 정본 빌더(build_facts) ·
+    │   ├─ tools/                     설문지(read_structure · build_questionnaire · check_questionnaire · questionnaire_selftest + questionnaire_fixture/ 모의 명세) ·
+    │   │                             파서(parse_table_* · parse_questionnaire) · 정본 빌더(build_facts) ·
     │   │                             가이드 빌더(build_guide) · 덱 주입(fill_deck · refill_deck · deckbuild · deckops) ·
     │   │                             검수(verify · verify_deck · audit_deck_values · deck_lint) · 팩 생성(make_packs) ·
     │   │                             프리앰블(preamble · gen_preamble) · 판 확인(update_check) · 훅(capture_prompt · capture_edit) · 통계표 사전 검사(table_lint) ·
     │   │                             웹테스트(webtest_scenarios · webtest_walk · webtest_compare · webtest_selftest + webtest_fixture/ 모의 설문)
-    │   ├─ knowledge/                 업무 지식. 00 업무개요 · 01 통계표 읽는 법 · 02 프로젝트 메모리 · 40 웹테스트(업무 C)
+    │   ├─ knowledge/                 업무 지식. 00 업무개요 · 01 통계표 읽는 법 · 02 프로젝트 메모리 · 40 웹테스트(업무 C) · 50 설문지 작성(구조화 → 설문지)
     │   │   ├─ guide/                 【업무 A】 10 목차 · 11 블록포맷 · 12 차트타입 결정표 · 13 멘트 · 14 요약·결론(규칙) · 14A 코퍼스 관찰 ·
     │   │   │                         14B 헤드라인 문형 사전 · 15 지시어 사전 · 15 한국어 문장지침 · 16 구조 대조 · 17 팀구조 · 18 오케스트레이션 · 19 요약 그래프
     │   │   └─ report/                【업무 B】 20 반복장표 · 21 멘트 보강 · 22 검수 체크리스트 · 23 팀구조 · 24 그래프 하우스표준 · 25 차트 카탈로그
@@ -164,7 +168,7 @@ embrain/                              ← 리포 루트 = Claude Code 작업 폴
     │   │   ├─ OPEN_QUESTIONS.md      아직 규칙이 못 된 것
     │   │   ├─ retro/ · eval/ · golden_loop/   회고 감사 · 골든셋 역검증 기록 (산출 JSON 은 git 밖)
     │   │   └─ (observations.jsonl)   옛 전역 편집 로그. git 밖. 지금은 조사별 _memory/ 에 쌓인다
-    │   ├─ templates/                 TEMPLATE_제작가이드.xlsm · TEMPLATE_프로젝트/ (새 조사 폴더의 뼈대) · SKILL_PREAMBLE.md (스킬 프리앰블 원본)
+    │   ├─ templates/                 TEMPLATE_제작가이드.xlsm · TEMPLATE_설문지.docx (로고·여백·글꼴만 있는 설문지 틀) · TEMPLATE_프로젝트/ (새 조사 폴더의 뼈대) · SKILL_PREAMBLE.md (스킬 프리앰블 원본)
     │   ├─ macros/통계표전처리/        DP 통계표 전처리 엑셀 추가 기능 (.xlam 과 소스)
     │   └─ refs/                      ── git 밖. 코퍼스 원본 5벌 · 하우스 그래프 가이드 · 분석 문서 (사내 드라이브로 전달) ──
     └─ projects/                      ── git 밖. 고객 데이터. 조사 하나 = 폴더 하나 ──
@@ -173,7 +177,7 @@ embrain/                              ← 리포 루트 = Claude Code 작업 폴
             ├─ README.md · ORIENTATION.md
             ├─ 00_협의/               ①클라이언트 협의 ②To-Know-List — RFP · 제안서 · 조사개요 · 회의록 · ToKnowList
             └─ <NN_조사명>/
-                ├─ 03_설문지/          ③설문지 구성 — 설문지 .docx(정본) · ④온라인 구성 요청·회신
+                ├─ 03_설문지/          ③설문지 구성 — 구조화 .xlsx · 설문지 .docx(정본) · work/ (구조화 펼침본 · 설문명세 · 검수) · ④온라인 구성 요청·회신
                 ├─ 05_웹테스트/        ⑤웹테스트 — work/ (시나리오 · 덤프 · 캡처 · 로그인 세션) · out/ (findings · 수정요청서 .xlsx)
                 ├─ 06_실사/            ⑥설문 실사 — 실사 현황 · 완료 통보 · 원자료
                 ├─ 07_테이블/          ⑦테이블 가이드(연구원) · ⑧DP 통계표 전달본 · 전처리본
@@ -201,7 +205,8 @@ embrain/                              ← 리포 루트 = Claude Code 작업 폴
 | 정본 | 만드는 도구 | 검사 |
 |---|---|---|
 | `tables.json` (통계표) | `parse_table_xlsx` / `parse_table_biff` + `apply_table_fixes`(라벨 정정 선언) | `table_lint` (입고 직후 라벨·중복 검사) |
-| `questionnaire.json` | `parse_questionnaire` | — |
+| 설문지 `.docx` (③) | 구조화 → `read_structure` → 설문명세 JSON → `build_questionnaire` | `check_questionnaire` (Q-검사: 구조화 누락 · 로직 참조 · 파서 왕복) · questionnaire-adversary |
+| `questionnaire.json` | `parse_questionnaire` (표 안 보기 · 번호 머리 척도까지) | — |
 | `목차.md` · `slide_facts.json` | guide-toc → `build_facts` (멘트·베이스·각주·파이핑 치환 포함) | `verify --mode toc` · `--mode ments` · `--mode summary` |
 | 제작가이드 `.xlsm` | `build_guide` (+ 송부본) | `verify` (V-검사, 치명 0·경고 0) · guide-adversary |
 | 보고서 `.pptx` | `fill_deck` / `refill_deck` / `deckbuild` (`deckops.apply_chart` — 차트 데이터는 PPT 안에) | `verify --mode deck` (D-검사) · `audit_deck_values` · `deck_lint` · deck-render-qa · deck-adversary |
@@ -265,7 +270,7 @@ python report-factory/engine/tools/paths.py new <연도>_<클라이언트>_<프�
 
 2. 입력물을 단계 폴더에 넣는다. 이름은 `<구분자>_<내용>_<일자>.<ext>` — `공통_`(00_협의) · `<조사약칭>_`(조사별, 예 `TA_`·`비상주_`).
    설문지는 `03_설문지/`, 테이블 가이드와 DP 통계표는 `07_테이블/`, 제작팀 회신본은 `11_보고서/in/`.
-3. 흐름 순서대로 스킬을 부른다. `/웹테스트 <조사> <URL>` → (실사·통계표) → `/제작가이드 <조사>` → (제작팀) → `/보고서작성 <조사>`.
+3. 흐름 순서대로 스킬을 부른다. `/설문지작성 <조사> <구조화.xlsx>` → (온라인 구축) → `/웹테스트 <조사> <URL>` → (실사·통계표) → `/제작가이드 <조사>` → (제작팀) → `/보고서작성 <조사>`.
    조사 폴더는 `projects/<프로젝트>/<조사>` 꼴이면 된다. 오리엔테이션(조사 목적·의뢰인이 알고 싶은 것·요약·결론 필요 여부)부터 시작한다.
 4. `engine/` 은 건드리지 않는다. 새로 배운 규칙은 `/회고` 로 올리고, 도구 개선은 `/개선공유` 로 보낸다.
 
