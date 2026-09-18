@@ -1,142 +1,42 @@
 #!/usr/bin/env python3
-"""학습 루프 Layer 1 — 자동 포착.
+# -*- coding: utf-8 -*-
+"""전환용 대리 파일 (0.5.0) — 이 폴더는 research-factory/ 로 옮겨졌다. 진짜는 research-factory/engine/tools/capture_edit.py.
 
-Claude Code의 PostToolUse 훅으로 붙어서, 사람이 프로젝트 산출물을 손으로 고칠 때마다
-그 사실을 **그 조사 폴더의** `_memory/편집기록.jsonl` 에 남긴다 (2026-09-10 부터 조사별 기록.
-전에는 `engine/learning/observations.jsonl` 한 파일이었는데, 연구원마다 달라지는 개인 로그라
-리포에 올리면 충돌만 났다. 옛 파일은 git 밖에 남겨 둔다). 자세한 것은 `knowledge/02_프로젝트-메모리.md`.
-
-이게 왜 값진가: AI가 만든 제작가이드를 사람이 고친 자리는 곧 **AI가 모르던 규칙**이다.
-`/회고` 가 이 로그와 `out/.baseline/` 스냅샷 diff를 함께 읽어 규칙 후보를 뽑는다.
-
-훅이므로 지켜야 할 것:
-- 절대 실패하지 않는다. 무슨 일이 있어도 exit 0.
-- 빠르다. 편집 한 번에 수십 ms를 넘기지 않는다.
-- stdout에 아무것도 쓰지 않는다 (훅 출력은 사용자 피드백으로 해석된다).
-
-설정: embrain/.claude/settings.json
-    "PostToolUse": [{"matcher": "Edit|Write",
-      "hooks": [{"type": "command",
-                 "command": "python report-factory/engine/tools/capture_edit.py"}]}]
+업그레이드 전에 열린 Claude 세션과 옛 절대경로를 쓰는 조사 스크립트가 이 경로를 부른다.
+실행하면 새 경로의 같은 도구를 돌리고, import 하면 새 모듈로 바꿔 끼운다. 가는 길에 옛 폴더에 남은 데이터를
+새 폴더로 옮긴다(migrate_folder). 만든 곳: research-factory/engine/tools/migrate_folder.py — 여기서 고치지 않는다.
 """
-
-from __future__ import annotations
-
-import hashlib
-import json
-import os
+import runpy
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
-# report-factory/engine/tools/capture_edit.py → report-factory/
-ROOT = Path(__file__).resolve().parents[2]
-LOG = ROOT / "engine" / "learning" / "observations.jsonl"
-
-# 이 경로 밑의 편집만 학습 신호로 본다. engine/ 는 우리가 만드는 것이므로 제외.
-WATCHED = ("projects",)
-
-# 중간 산출물은 사람이 고치는 대상이 아니다 — 노이즈만 늘린다.
-IGNORED_PARTS = {".baseline", "__pycache__", ".git"}
-IGNORED_SUFFIXES = {".pyc", ".log", ".tmp"}
-
-
-def _digest(text: str) -> str:
-    """전문 대신 지문만 남긴다. 로그가 비대해지면 아무도 안 읽는다."""
-    return hashlib.sha1(text.encode("utf-8", "replace")).hexdigest()[:12]
-
-
-def _project_log(rel: Path) -> Path:
-    """편집된 경로가 속한 조사 폴더의 `_memory/편집기록.jsonl`.
-
-    `projects/<프로젝트>/<조사>/...` 이면 조사 폴더, `projects/<프로젝트>/00_공통/...` 이나
-    조사 폴더가 없으면 프로젝트 폴더에 남긴다. 옛 전역 파일(LOG)은 어느 쪽도 못 정할 때만 쓴다.
-    """
-    parts = rel.parts  # ("projects", "<프로젝트>", "<조사>", ...)
-    if len(parts) >= 2:
-        base = ROOT / parts[0] / parts[1]
-        if len(parts) >= 3 and parts[2] != "00_공통" and (base / parts[2]).is_dir():
-            base = base / parts[2]
-        if base.is_dir():
-            return base / "_memory" / "편집기록.jsonl"
-    return LOG
-
-
-def _classify(rel: Path) -> str:
-    """어떤 종류의 편집인지. `/회고` 가 이걸로 관찰을 묶는다."""
-    parts = set(rel.parts)
-    if parts & {"09_제작가이드", "1_제작가이드"}:
-        return "guide"
-    if parts & {"11_보고서", "2_보고서작성", "12_납품"}:
-        return "report"
-    if parts & {"05_웹테스트", "3_웹테스트"}:
-        return "webtest"
-    if parts & {"03_설문지", "input"} and "work" in parts:   # /설문지작성 작업 폴더 (v1 은 input/work)
-        return "questionnaire"
-    if parts & {"00_협의", "00_공통", "input", "03_설문지", "06_실사", "07_테이블"}:
-        return "input"
-    if rel.name in {"ORIENTATION.md", "README.md"}:
-        return "orientation"
-    return "other"
-
-
-def main() -> int:
-    try:
-        # stdin을 바이트로 읽어 UTF-8로 직접 디코드한다.
-        # Windows에서 sys.stdin 은 cp949 로 열리기 때문에, 한글이 든 경로가 오면
-        # json.load(sys.stdin) 이 UnicodeDecodeError 로 조용히 죽는다.
-        payload = json.loads(sys.stdin.buffer.read().decode("utf-8", "replace"))
-    except Exception:
-        return 0  # 훅 입력이 예상과 달라도 조용히 넘어간다
-
-    try:
-        tool = payload.get("tool_name") or payload.get("tool") or ""
-        tool_input = payload.get("tool_input") or {}
-        raw_path = tool_input.get("file_path") or tool_input.get("path")
-        if not raw_path:
-            return 0
-
-        path = Path(raw_path)
-        try:
-            rel = path.resolve().relative_to(ROOT)
-        except ValueError:
-            return 0  # report-factory 밖의 편집은 우리 관심사가 아니다
-
-        if not rel.parts or rel.parts[0] not in WATCHED:
-            return 0
-        if IGNORED_PARTS & set(rel.parts) or path.suffix in IGNORED_SUFFIXES:
-            return 0
-
-        record: dict[str, object] = {
-            "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "tool": tool,
-            "path": rel.as_posix(),
-            "kind": _classify(rel),
-        }
-
-        # Edit 은 무엇이 무엇으로 바뀌었는지가 곧 규칙의 단서다.
-        old, new = tool_input.get("old_string"), tool_input.get("new_string")
-        if old is not None and new is not None:
-            record["change"] = "edit"
-            record["old"] = old[:400]
-            record["new"] = new[:400]
-            record["truncated"] = len(old) > 400 or len(new) > 400
-        else:
-            content = tool_input.get("content")
-            record["change"] = "write"
-            if content is not None:
-                record["bytes"] = len(content)
-                record["digest"] = _digest(content)
-
-        log = _project_log(rel)
-        log.parent.mkdir(parents=True, exist_ok=True)
-        with log.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
-    except Exception:
-        pass  # 학습 로깅이 실패해도 사용자의 작업을 막지 않는다
-
-    return 0
-
+_OLD = Path(__file__).resolve().parent
+_NEW = _OLD.parents[2] / "research-factory" / "engine" / "tools"
+_REAL = _NEW / "capture_edit.py"
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # 훅은 어떤 경우에도 exit 0 — UserPromptSubmit 훅이 2로 끝나면 사용자 입력이 막힌다
+    sys.path[:] = [str(_NEW)] + [p for p in sys.path if Path(p or ".").resolve() != _OLD]
+    sys.argv[0] = str(_REAL)
+    _blocked = False
+    try:
+        import migrate_folder
+        _res = migrate_folder.run()
+        _blocked = migrate_folder.blocked()
+    except Exception:
+        pass
+    try:
+        if not _blocked:         # 조사 데이터가 아직 옛 폴더에 있으면 기록을 건너뛴다(갈라지지 않게)
+            runpy.run_path(str(_REAL), run_name="__main__")
+    except BaseException:
+        pass
+    sys.exit(0)
+else:
+    # 옛 경로를 sys.path 에 넣고 import 하는 조사 스크립트 — 새 모듈로 바꿔 끼운다
+    import importlib.util
+    if str(_NEW) not in sys.path:
+        sys.path.insert(0, str(_NEW))
+    _spec = importlib.util.spec_from_file_location(__name__, _REAL)
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[__name__] = _mod
+    _spec.loader.exec_module(_mod)

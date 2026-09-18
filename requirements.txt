@@ -1,4 +1,4 @@
-# report-factory 파이썬 의존성 — setup / /업그레이드 가 설치한다
+# research-factory 파이썬 의존성 — setup / /업그레이드 가 설치한다
 openpyxl>=3.1
 python-pptx>=0.6.23
 python-docx>=1.1

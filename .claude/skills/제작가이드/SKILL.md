@@ -10,7 +10,7 @@ description: 통계표·설문지·조사개요로 제작팀에 보낼 제작가
 ## PREAMBLE — 본 절차보다 먼저 실행한다
 
 ```bash
-python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py" --skill 제작가이드 <조사 폴더 인자가 있으면 그대로>
+python "$(git rev-parse --show-toplevel)/research-factory/engine/tools/preamble.py" --skill 제작가이드 <조사 폴더 인자가 있으면 그대로>
 ```
 
 한 번의 호출이 새 판 확인·활성 조사 지정·조사 메모리 위치·실행 기록을 처리하고 `KEY: 값` 줄로 답한다. 줄마다 이렇게 한다.
@@ -18,12 +18,13 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py
 - **`UPDATE: NONE`** 또는 **`DISABLED`** — 아무 말 없이 본 절차로 간다.
 - **`UPDATE: UPGRADE_AVAILABLE <내판> <새판>`** — 먼저 `update_check.py whats-new <새판>` 으로 바뀐 점을 읽는다.
   `update_check.py config get auto_upgrade` 가 `true` 면 묻지 않고 `/업그레이드` 를 실행한 뒤 본 절차로 간다.
-  아니면 AskUserQuestion 으로 묻는다 — 「report-factory **<새판>** 이 나왔습니다 (지금 <내판>). <바뀐 점 한 줄>. 올릴까요?」
+  아니면 AskUserQuestion 으로 묻는다 — 「research-factory **<새판>** 이 나왔습니다 (지금 <내판>). <바뀐 점 한 줄>. 올릴까요?」
   1. **지금 올린다** → `/업그레이드` → 본 절차
   2. **앞으로는 자동으로** → `update_check.py config set auto_upgrade true` → `/업그레이드` → 본 절차
   3. **지금 말고 나중에** → `update_check.py snooze <새판>`. 출력의 next 값대로 「다음 알림은 24시간 뒤입니다」라고 알린다(두 번째는 48시간, 세 번째부터 1주일) → 본 절차
   4. **다시 묻지 않는다** → `update_check.py config set update_check false`. 「다시 켜려면 `config set update_check true`」 → 본 절차
 - **`UPDATE: JUST_UPGRADED <이전판> <내판>`** — `whats-new <내판>` 을 읽어 「<내판> 으로 올라왔습니다: <바뀐 점>」 한 줄만 말하고 본 절차로 간다.
+- **`MIGRATE: …`** (있을 때만) — 0.5.0 폴더 이름 변경(`report-factory/` → `research-factory/`)의 뒷정리 결과다. 「옮김」뿐이면 「조사 폴더를 새 폴더로 옮겼습니다(옛 경로도 그대로 쓸 수 있습니다)」 한 줄만 말하고 본 절차로 간다. 「열린 파일 때문에 못 옮김」이나 「아직 옛 폴더에 있다」면 엑셀 등 열린 파일을 닫게 한 뒤 `python "$(git rev-parse --show-toplevel)/research-factory/engine/tools/migrate_folder.py"` 를 다시 부르고, 옮겨질 때까지 본 절차로 가지 않는다. 「옛 쪽을 남김」이면 두 파일을 비교해 보여 주고 사용자가 고르게 한다. 「권한 문제」·「대리 파일에 로컬 수정」은 줄에 적힌 대로 처리한다.
 - **`UPDATE: CHECK_FAILED <이유>`** — 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 최신으로 읽지 않는다.
 - **`MEMORY: <경로>`** — 그 `MEMORY.md` 를 읽는다. 「결정된 것」은 다시 묻지 않는다. 스킬이 끝날 때 세 절(결정된 것 · 지시의 요지 · 다음 세션이 알아야 할 것)을 갱신한다. `MEMORY_NEW: yes` 면 읽을 것이 없으니 끝날 때 채우기만 한다.
 - **`MEMORY: NONE`** — 조사 폴더 인자가 없었다. 조사가 정해지는 즉시 조사 폴더를 인자로 이 명령을 다시 실행한다.
@@ -37,16 +38,16 @@ python "$(git rev-parse --show-toplevel)/report-factory/engine/tools/preamble.py
 제작팀은 완전 수작업이고 AI를 쓰지 않는다. **PPT를 모르는 사람도 알아볼 수 있게** 써야 한다.
 
 인자: 조사 폴더 경로. 예 `/제작가이드 projects/2026_에스원_건물현황실사/02_비상주`
-인자가 없으면 `report-factory/projects/` 를 훑어 후보를 제시하고 고르게 한다.
+인자가 없으면 `research-factory/projects/` 를 훑어 후보를 제시하고 고르게 한다.
 
 ---
 
 ## 시작 전에 반드시 읽는다
 
-1. `report-factory/engine/learning/packs/공통.md` — 두 팀 공통 규칙 12장 (헌법·산출물 스키마)
-2. `report-factory/engine/knowledge/guide/18_오케스트레이션-제작가이드.md` — 파트별 담당·팩·배정/수용 규약
-3. `report-factory/engine/knowledge/00_업무개요.md`
-4. `report-factory/engine/learning/knowhow/제작가이드.md` — 연구원들이 올린 노하우 카드. 이번에 얻은 요령은 끝날 때 `/개선공유` 로 올린다
+1. `research-factory/engine/learning/packs/공통.md` — 두 팀 공통 규칙 12장 (헌법·산출물 스키마)
+2. `research-factory/engine/knowledge/guide/18_오케스트레이션-제작가이드.md` — 파트별 담당·팩·배정/수용 규약
+3. `research-factory/engine/knowledge/00_업무개요.md`
+4. `research-factory/engine/learning/knowhow/제작가이드.md` — 연구원들이 올린 노하우 카드. 이번에 얻은 요령은 끝날 때 `/개선공유` 로 올린다
 
 **필요할 때 읽는 것** (시작 때 읽지 않는다 — 2026-09-10 시작 부하 감사: 규칙 대장 전문 309KB + guide 전체 278KB 를 오케스트레이터가 또 읽고 있었다):
 `guide/17`(반송·계약 다툼) · `01_통계표-읽는법`(Step 1 정합성 이상) · `guide/10·13·14·19`(담당 게이트 반려 원인을 볼 때 그 문서만) ·

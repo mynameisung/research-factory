@@ -42,7 +42,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
-PROJECTS = ROOT / "report-factory" / "projects"
+PROJECTS = ROOT / "research-factory" / "projects"
 TEMPLATE = HERE.parent / "templates" / "TEMPLATE_프로젝트"
 
 V2 = {"협의": "00_협의", "설문지_dir": "03_설문지", "웹테스트": "05_웹테스트", "실사": "06_실사", "테이블_dir": "07_테이블",
@@ -90,9 +90,10 @@ def _utf8() -> None:
 
 
 def resolve_survey(arg: str) -> Path:
-    """`2026_에스원/02_비상주` · `projects/…` · `report-factory/projects/…` · 절대 경로 어느 꼴이든 조사 폴더로."""
+    """`2026_에스원/02_비상주` · `projects/…` · `research-factory/projects/…` · 절대 경로 어느 꼴이든 조사 폴더로."""
     s = arg.strip().replace("\\", "/").rstrip("/")
-    for prefix in (str(PROJECTS).replace("\\", "/") + "/", "report-factory/projects/", "projects/"):
+    for prefix in (str(PROJECTS).replace("\\", "/") + "/", str(ROOT / "report-factory" / "projects").replace("\\", "/") + "/",
+                   "research-factory/projects/", "report-factory/projects/", "projects/"):
         if s.startswith(prefix):
             s = s[len(prefix):]
     p = Path(s)

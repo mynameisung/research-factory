@@ -1,9 +1,14 @@
 # ── 고객 데이터 — 어떤 경우에도 리포에 올리지 않는다 ──────────────
-report-factory/projects/
+research-factory/projects/
 projects/
 
 # 코퍼스 원자료 (157MB — 규칙의 근거. 사내 공유 드라이브로 별도 전달)
-report-factory/engine/refs/
+research-factory/engine/refs/
+
+# ── 0.5.0 폴더 이름 변경(report-factory/ → research-factory/) 전환 ─────────────
+# 옛 폴더에는 git 이 추적하는 대리 파일(engine/tools/*.py)과 migrate_folder 가 건 연결(projects · engine/refs)만 남는다.
+# 이관 전에 잠깐 남아 있는 조사 데이터가 올라가지 않도록 옛 폴더 전체를 무시한다.
+report-factory/
 
 # ── 개인·로컬 설정 ──────────────────────────────────────────────
 .claude/settings.local.json
@@ -11,9 +16,9 @@ report-factory/engine/refs/
 .claude/launch.json
 
 # ── 세션 인수인계 상태 (현 진행 조사에 묶인 개인 기록 — 클론마다 다르다) ──
-report-factory/HANDOVER*.md
-report-factory/INSTRUCTIONS.md
-report-factory/handover/
+research-factory/HANDOVER*.md
+research-factory/INSTRUCTIONS.md
+research-factory/handover/
 NUL
 
 # ── 이 리포와 무관한 같은 작업 폴더의 다른 프로젝트 ──────────────
@@ -33,8 +38,8 @@ __pycache__/
 .env
 
 # ── 재생성 가능한 산출·개인 로그 (리포에 올리지 않는다) ──────────────
-report-factory/engine/learning/eval/*.json
-report-factory/engine/learning/golden_loop/out/
-report-factory/engine/learning/observations.jsonl
+research-factory/engine/learning/eval/*.json
+research-factory/engine/learning/golden_loop/out/
+research-factory/engine/learning/observations.jsonl
 *.bak
 *.bak_*

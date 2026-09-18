@@ -11,10 +11,10 @@ model: opus
 - `structure.md` — 구조화 엑셀 펼침본 (정본). 참고 시트(고객 메일 · 이전 버전 · 초안)도 들어 있다
 - `설문명세_blind.json` — 설문지의 원천 (각 문항 `src` 가 구조화 행을 가리킨다). 작성자의 변환 메모(`meta.notes`)와 `review` 사유를 뺀 사본이다.
   같은 폴더의 원본 `설문명세.json` 은 찾아 읽지 않는다
-- 산출 `.docx` 경로 — 필요하면 `python report-factory/engine/tools/parse_questionnaire.py <docx> <tmp.json>` 로 읽는다
+- 산출 `.docx` 경로 — 필요하면 `python research-factory/engine/tools/parse_questionnaire.py <docx> <tmp.json>` 로 읽는다
 - 있으면 TKL · 조사 목적 한 줄
 
-먼저 `report-factory/engine/knowledge/50_설문지-작성.md` 를 읽는다. 하우스 규칙과 다른 것은 규칙 번호(3-2 등)를 들어 지적한다.
+먼저 `research-factory/engine/knowledge/50_설문지-작성.md` 를 읽는다. 하우스 규칙과 다른 것은 규칙 번호(3-2 등)를 들어 지적한다.
 기계 검수(`check_questionnaire.py`)가 이미 보는 것(번호 형식 · 참조 존재 · BASE 코드 범위 · 기타 위치 · 파서 왕복)은 다시 보지 않는다.
 
 ## 찾을 것

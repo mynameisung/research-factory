@@ -1,4 +1,4 @@
-# report-factory &nbsp;<sub><sup>powered by seo-yeon</sup></sub>
+# research-factory &nbsp;<sub><sup>powered by seo-yeon</sup></sub>
 
 > 통계표가 나온 순간부터 납품 PPT 까지, 리서치 보고서 제작을 Claude Code 팀으로 바꾼다.
 
@@ -24,21 +24,24 @@
 중간에 GitHub 로그인 창이 뜨면 1 에서 만든 아이디로 로그인한다. 한 번만 묻는다.
 
 ```text
-report-factory 설치: git clone https://github.com/FineHourTeam/report-factory.git 로 원하는 위치에 받고, 그 폴더에서 powershell -File setup.ps1 을 실행한 다음, 그 폴더를 Claude Code 작업 폴더로 열어 줘.
+research-factory 설치: git clone https://github.com/mynameisung/research-factory.git 로 원하는 위치에 받고, 그 폴더에서 powershell -ExecutionPolicy Bypass -File setup.ps1 을 실행한 다음, 그 폴더를 Claude Code 작업 폴더로 열어 줘.
 ```
 
-**7. 설치를 확인한다.** Claude 가 「설치 끝」이라 하면 작업 폴더가 `report-factory` 로 바뀌어 있다. 입력창에 `/` 를 치면
-`/설문지작성` · `/웹테스트` · `/제작가이드` · `/보고서작성` 이 목록에 보인다. 보이면 끝. 안 보이면 Claude 에게 「report-factory 폴더를 작업 폴더로 열어 줘」라고 한다.
+**7. 설치를 확인한다.** Claude 가 「설치 끝」이라 하면 작업 폴더가 `research-factory` 로 바뀌어 있다. 입력창에 `/` 를 치면
+`/설문지작성` · `/웹테스트` · `/제작가이드` · `/보고서작성` 이 목록에 보인다. 보이면 끝. 안 보이면 Claude 에게 「research-factory 폴더를 작업 폴더로 열어 줘」라고 한다.
 
 **8. 첫 조사를 시작한다.** 10절 「새 조사 시작하기」로 간다. 막히면 그 화면을 그대로 Claude 에게 보여 주면 된다.
 
 터미널에 익숙하면 6 대신 이 세 줄로 해도 같다.
 
 ```bash
-git clone https://github.com/FineHourTeam/report-factory.git
-cd report-factory
-powershell -File setup.ps1
+git clone https://github.com/mynameisung/research-factory.git
+cd research-factory
+powershell -ExecutionPolicy Bypass -File setup.ps1
 ```
+
+**이미 `report-factory` 로 설치했다면** `/업그레이드` 한 번이면 된다. 조사 폴더는 새 이름 폴더로 저절로 옮겨지고, 옛 경로도 연결로 그대로 쓸 수 있다.
+바깥 작업 폴더 이름은 바꾸지 않아도 된다. 업그레이드한 뒤 Claude 세션을 한 번 닫고 새로 연다.
 
 ## 1. 업무 흐름
 
@@ -141,20 +144,22 @@ flowchart TB
 ## 5. 정보 구조 (IA) — 무엇이 어디에 있나
 
 ```
-embrain/                              ← 리포 루트 = Claude Code 작업 폴더
+<작업 폴더>/                          ← 리포 루트 = Claude Code 작업 폴더 (새로 받으면 research-factory, 기존 설치는 받은 때 이름 그대로)
 ├─ README.md · CHANGELOG.md · VERSION   판은 세 자리. 병합할 때 VERSION 과 CHANGELOG 를 함께 올린다
 ├─ setup.ps1 · setup · requirements.txt 설치 (의존성 · PYTHONUTF8 · 스모크)
 ├─ .claude/
 │   ├─ skills/                        스킬 7개 (SKILL.md 하나씩)
 │   ├─ agents/                        에이전트 13명 정의
 │   └─ settings.json                  훅 2개 — 사용자 입력 포착 · 손 편집 포착 (조사 폴더에 기록)
-└─ report-factory/
+├─ report-factory/                   0.5.0 전 이름. 옛 경로가 계속 돌게 하는 대리 파일(engine/tools/)과 연결(projects · engine/*)만 남는다.
+│                                     새로 받은 PC 에는 대리 파일 6개뿐이다. 다음 판에서 정리한다
+└─ research-factory/
     ├─ engine/                        ── 재사용 자산. 조사와 무관. git 이 추적 ──
     │   ├─ tools/                     설문지(read_structure · build_questionnaire · check_questionnaire · questionnaire_selftest + questionnaire_fixture/ 모의 명세) ·
     │   │                             파서(parse_table_* · parse_questionnaire) · 정본 빌더(build_facts) ·
     │   │                             가이드 빌더(build_guide) · 덱 주입(fill_deck · refill_deck · deckbuild · deckops) ·
     │   │                             검수(verify · verify_deck · audit_deck_values · deck_lint) · 팩 생성(make_packs) ·
-    │   │                             프리앰블(preamble · gen_preamble) · 판 확인(update_check) · 훅(capture_prompt · capture_edit) · 통계표 사전 검사(table_lint) ·
+    │   │                             프리앰블(preamble · gen_preamble) · 판 확인(update_check) · 폴더 이관(migrate_folder) · 훅(capture_prompt · capture_edit) · 통계표 사전 검사(table_lint) ·
     │   │                             웹테스트(webtest_scenarios · webtest_walk · webtest_compare · webtest_selftest + webtest_fixture/ 모의 설문)
     │   ├─ knowledge/                 업무 지식. 00 업무개요 · 01 통계표 읽는 법 · 02 프로젝트 메모리 · 40 웹테스트(업무 C) · 50 설문지 작성(구조화 → 설문지)
     │   │   ├─ guide/                 【업무 A】 10 목차 · 11 블록포맷 · 12 차트타입 결정표 · 13 멘트 · 14 요약·결론(규칙) · 14A 코퍼스 관찰 ·
@@ -240,7 +245,7 @@ RULES.md (사람용 대장, 카드 R-nnn)
 ## 9. 업그레이드와 협업
 
 ```
-연구원 1·2·3                       관리자(리드)                 GitHub FineHourTeam/report-factory (비공개)
+연구원 1·2·3                       관리자(리드)                 GitHub mynameisung/research-factory (비공개)
    │ 스킬 호출 → 판 확인 ◀────────────────────────────────────  main 의 VERSION
    │ 「올릴까요?」 예 → /업그레이드                                   │
    │ 조사 작업 (스킬이 알아서) · _memory 에 기억 쌓임                    │
@@ -254,7 +259,7 @@ RULES.md (사람용 대장, 카드 R-nnn)
 
 - **판 확인**: 스킬을 부를 때마다 PREAMBLE 의 `preamble.py` 가 `update_check.py` 를 거쳐 `git fetch` 로 원격 `VERSION` 한 줄만 읽는다.
   작업 폴더는 건드리지 않는다. 새 판이면 「지금 올린다 / 항상 자동 / 나중에(24시간 → 48시간 → 1주일) / 다시 묻지 않기」를 묻는다.
-  상태는 `~/.report-factory/` 에 있고, 설정은 그 안의 `config.json`(`auto_upgrade` · `update_check`)이다.
+  상태는 `~/.research-factory/` 에 있고, 설정은 그 안의 `config.json`(`auto_upgrade` · `update_check`)이다.
 - **받기**: `/업그레이드`. 로컬 수정과 충돌하면 Claude 가 정리한다.
 - **주기**: 관리자가 「PR 올리세요」 하면 각자 `/개선공유`. 변경분을 요약해 보여 주고 확인 후 PR 까지 대신한다.
 - **고르기**: 관리자가 공용으로 쓸 PR 만 병합하고, 그때 `VERSION` 과 `CHANGELOG.md` 를 함께 올린다. CHANGELOG 항목이
@@ -265,7 +270,7 @@ RULES.md (사람용 대장, 카드 R-nnn)
 1. 뼈대를 만든다. 프로젝트 README·ORIENTATION 은 템플릿에서 복사되고, 조사 폴더는 5절의 단계 폴더로 생긴다.
 
 ```bash
-python report-factory/engine/tools/paths.py new <연도>_<클라이언트>_<프로젝트>/01_<조사약칭>
+python research-factory/engine/tools/paths.py new <연도>_<클라이언트>_<프로젝트>/01_<조사약칭>
 ```
 
 2. 입력물을 단계 폴더에 넣는다. 이름은 `<구분자>_<내용>_<일자>.<ext>` — `공통_`(00_협의) · `<조사약칭>_`(조사별, 예 `TA_`·`비상주_`).
@@ -276,8 +281,8 @@ python report-factory/engine/tools/paths.py new <연도>_<클라이언트>_<프�
 
 ## 11. 여기 없는 것
 
-- `report-factory/projects/` — 고객 데이터. 어떤 경우에도 리포에 올리지 않는다.
-- `report-factory/engine/refs/` — 코퍼스 원본 5벌과 하우스 그래프 가이드(157MB). 규칙의 근거이며 사내 드라이브로 전달한다.
+- `research-factory/projects/` — 고객 데이터. 어떤 경우에도 리포에 올리지 않는다.
+- `research-factory/engine/refs/` — 코퍼스 원본 5벌과 하우스 그래프 가이드(157MB). 규칙의 근거이며 사내 드라이브로 전달한다.
   그 내용에서 「언제 어떤 그림을 쓰나」만 `knowledge/report/25_차트-카탈로그.md` 에 적어 두었다.
 - API 키 — 전부 환경변수(`CLOVA_STUDIO_API_KEY` 등). 파일로 두지 않는다.
 

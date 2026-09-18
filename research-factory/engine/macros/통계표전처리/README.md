@@ -142,7 +142,7 @@ DP 가 표마다 Base 0 인 범주를 빼서 열 위치가 표마다 다르기 �
 ## 5. 다시 굽기 (고치는 사람)
 
 ```
-report-factory/engine/macros/통계표전처리/
+research-factory/engine/macros/통계표전처리/
   src/            VBA 소스 (.bas · 폼 코드 .code.txt) — 여기만 고친다
   customUI/       리본 XML
   build.ps1       소스를 모아 out/통계표전처리.xlam · out/통계표전처리_설치.xlam 으로 굽고,

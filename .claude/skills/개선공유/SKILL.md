@@ -28,7 +28,7 @@ description: 내가 쓰다가 얻은 노하우와 로컬에서 다듬어진 규�
      리포 이름은 이 값을 쓰고 문서에 적힌 주소를 하드코딩하지 않는다(리포가 옮겨지면 옛 주소는 redirect 로만 산다).
      권한이 `WRITE`·`MAINTAIN`·`ADMIN` 이 아니면 관리자에게 쓰기 권한을 요청하라고 안내하고 멈춘다.
    - `git fetch origin` 으로 원격 최신을 받아 둔다.
-   - `python report-factory/engine/tools/gen_preamble.py --check` — 스킬의 PREAMBLE 이 원본(`engine/templates/SKILL_PREAMBLE.md`)과
+   - `python research-factory/engine/tools/gen_preamble.py --check` — 스킬의 PREAMBLE 이 원본(`engine/templates/SKILL_PREAMBLE.md`)과
      어긋나면 `gen_preamble.py` 로 채운 뒤 진행한다. 프리앰블은 스킬 파일에서 직접 고친 것을 올리지 않는다.
 
 2. **노하우 채집** — 사용자가 「이 노하우 올리자」고 한 것이 있으면 그것부터. 없으면 조사 메모리에서 후보를 뽑는다.
@@ -44,7 +44,7 @@ description: 내가 쓰다가 얻은 노하우와 로컬에서 다듬어진 규�
    - 노하우도 개선분도 없으면 「올릴 것이 없습니다」로 끝낸다.
 
 3. **변경분 수집** — `git status --porcelain` 에서 **공유 대상 경로만** 추린다:
-   `report-factory/engine/` · `.claude/skills/` · `.claude/agents/` · `README.md` · `CHANGELOG.md`.
+   `research-factory/engine/` · `.claude/skills/` · `.claude/agents/` · `README.md` · `CHANGELOG.md`.
    설치 파일 `setup` · `setup.ps1` · `requirements.txt` 도 올리되 모든 연구원의 설치를 바꾸므로 PR 본문에 「설치 파일 변경 — 관리자 검토 필요」로 따로 적는다.
    그 밖의 경로가 잡히면 목록만 보여 주고 PR 에서는 뺀다(조사 데이터 `projects/` 는 어떤 경우에도 올리지 않는다).
 

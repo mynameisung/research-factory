@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/report-factory/engine/tools/capture_edit.py\""
+            "command": "python \"$CLAUDE_PROJECT_DIR/research-factory/engine/tools/capture_edit.py\""
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/report-factory/engine/tools/capture_prompt.py\""
+            "command": "python \"$CLAUDE_PROJECT_DIR/research-factory/engine/tools/capture_prompt.py\""
           }
         ]
       }
