@@ -72,6 +72,9 @@ FILE_ROLES = {   # 역할: (폴더 역할, 글롭 패턴들 — 앞의 것이 �
     "시나리오": ("웹테스트", ["work/시나리오.json"]),
     "수정요청서": ("웹테스트", ["out/수정요청서_*.xlsx"]),
 }
+FALLBACK_SKIP = {  # 넓은 글롭(`*.xlsx`)으로 찾을 때 뺄 이름 — v1 input/ 에 같이 놓이는 구조화·원자료, 07_테이블 의 테이블가이드
+    "통계표": re.compile(r"구조|원자료|raw|테이블.*가이드", re.I),
+}
 RE_INPUT_SPLIT = [  # v1 input/ 파일을 v2 로 나누는 규칙 (앞의 것이 우선)
     (re.compile(r"설문|구조화|^work$", re.I), "설문지_dir"),   # work/ = v1 에서 /설문지작성 이 쓴 input/work
     (re.compile(r"원자료|raw", re.I), "실사"),
@@ -158,6 +161,8 @@ def resolve(survey: Path, _deep: bool = True) -> dict:
         hit = None
         for pat in pats:
             cands = [p for p in base.glob(pat) if p.is_file() and not p.name.startswith("~$")]
+            if role in FALLBACK_SKIP and pat.startswith("*."):
+                cands = [p for p in cands if not FALLBACK_SKIP[role].search(p.name)]
             hit = _latest(cands)
             if hit:
                 if role in MULTI_ROLES:

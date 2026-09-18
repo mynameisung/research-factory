@@ -49,14 +49,20 @@ EXPECT_TYPE = {"single": "단일", "multi": "복수", "rank": "순위", "scale":
                "number": "숫자입력", "open": "개방형", "yesno": "예-아니오"}
 POSITIVE_FIRST = re.compile(r"^(매우\s*(만족|그렇|중요|좋)|아주)")
 NEGATED = re.compile(r"전혀|않|없|못|모르|모른|불만|싫|나쁘")
+# 척도 끝에 붙은 모름·해당 없음 — 끝점이 아니다. 라벨 전체가 그 말일 때만(`전혀 모르겠다` 는 인지 척도의 끝점이다)
+RE_DK = re.compile(r"^\s*(?:잘\s*)?(?:모름|모르겠(?:다|음)?|해당\s*없음)\s*$")
 
 
 def _reversed_scale(labs: list[str]) -> bool:
     """1점 라벨이 긍정으로 보이는가. 부정어(않다·없다·전혀 …)가 1점에 없고 끝점에 있으면 거꾸로다.
-    `매우 적다 → 매우 많다` · `매우 어렵다 → 매우 쉽다` 처럼 양끝에 부정어가 없으면 방향을 판단하지 않는다."""
+    `매우 적다 → 매우 많다` · `매우 어렵다 → 매우 쉽다` 처럼 양끝에 부정어가 없으면 방향을 판단하지 않는다.
+    labels 끝의 `잘 모르겠다`·`해당 없음` 은 빼고 본다 (원래 scale.extra 자리)."""
+    labs = [str(x) for x in labs]
+    while len(labs) > 1 and RE_DK.search(labs[-1]):
+        labs.pop()
     if not labs:
         return False
-    first, last = str(labs[0]), str(labs[-1])
+    first, last = labs[0], labs[-1]
     if NEGATED.search(first):
         return False
     return bool(POSITIVE_FIRST.match(first)) or (len(labs) > 1 and bool(NEGATED.search(last)))
@@ -415,7 +421,7 @@ def main(argv: list[str] | None = None) -> int:
         spec = load_spec(Path(a.spec))
         structure = json.loads(Path(a.structure).read_text(encoding="utf-8")) if a.structure else None
         F = check(spec, structure, Path(a.docx) if a.docx else None)
-    except (ValueError, KeyError, OSError) as e:       # SpecError · JSON 문법 오류 · 파일 없음
+    except (ValueError, KeyError, TypeError, IndexError, OSError) as e:   # SpecError · JSON 문법 · 명세 모양 · 파일 없음
         print(f"[check_questionnaire] 명세 오류: {type(e).__name__}: {e}", file=sys.stderr)
         return 2
     if a.out:

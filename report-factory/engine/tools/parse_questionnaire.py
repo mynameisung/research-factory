@@ -87,9 +87,10 @@ RE_SCALE_NUM_CELL = re.compile(r"^\s*\d+\)\s*$")
 RE_SCALE_NUM_LOOSE = re.compile(r"^\s*(\d+)\)?\s*$")   # `1` — 연속 번호일 때만 척도로 본다
 # 번호 머리 척도(`1) 매우 불만족` …)의 라벨 낱말. 없으면 가로로 늘어놓은 명목 보기로 본다.
 RE_SCALE_WORD = re.compile(r"매우|전혀|보통|그렇|만족|동의|중요|약간|대체로")
-# 표 칸 안 단락이 이어 붙어 앞 글자에 붙어 버린 보기 번호 (`1) 앱2) 웹`)
-RE_GLUED_OPT = re.compile(r"(?<=[^\s\d(~\-])(?=\d{1,2}\)\s)")
-RE_OPT_NO_INSIDE = re.compile(r"\d{1,2}\)\s")
+# 표 칸 안 단락이 이어 붙어 앞 글자에 붙어 버린 보기 번호 (`1) 앱2) 웹`).
+# 영문·숫자·`.` 뒤는 보지 않는다 — `(S24)`·`(PM2.5)`·`(NX4)` 는 보기 글자다. 끊을지는 _split_glued 가 번호 순서로 정한다.
+RE_GLUED_OPT = re.compile(r"(?<=[^\sA-Za-z\d.(~\-])(?=\d{1,2}\)\s)")
+RE_OPT_NO_INSIDE = re.compile(r"(\d{1,3})\)\s")
 RE_OPEN_BLANK = re.compile(r"\(\s{2,}\)|\(\s*\)")
 YESNO_TOKENS = ({"예", "아니오"}, {"예", "아니요"}, {"네", "아니오"})
 # 기입란 `(      )` 바로 뒤에 단위가 붙으면 숫자 입력. 문항 본문 단어에는 걸리지
@@ -301,8 +302,8 @@ def parse_option(raw: str) -> dict[str, Any] | None:
 
 # ── 표 분류 ────────────────────────────────────────────────────────────────
 def _scale_number_row(blk: Block) -> bool:
-    """2행이 척도 번호 줄인가. `N)` 은 그대로, 괄호 없는 숫자는 연속 번호(1~N · 0~10 · 역순)일 때만.
-    연도·쿼터·가격이 적힌 참고 표를 척도로 오판하지 않게 한다."""
+    """2행이 척도 번호 줄인가. `N)` 은 그대로, 괄호 없는 숫자는 0 이나 1 에서 시작하는 연속 번호(1~N · 0~10 · 역순)일 때만.
+    연도(2024 2025 2026 처럼 이어져도)·쿼터·가격이 적힌 참고 표를 척도로 오판하지 않게 한다."""
     cells = [blk.cell(1, c) for c in range(blk.n_cols)]
     if all(RE_SCALE_NUM_CELL.match(x) for x in cells):
         return True
@@ -311,7 +312,7 @@ def _scale_number_row(blk: Block) -> bool:
         return False
     nums = [int(m.group(1)) for m in ms]
     step = 1 if nums[-1] >= nums[0] else -1
-    return nums == list(range(nums[0], nums[0] + step * len(nums), step))
+    return min(nums) in (0, 1) and nums == list(range(nums[0], nums[0] + step * len(nums), step))
 
 
 def classify_table(blk: Block) -> dict[str, Any]:
@@ -451,26 +452,58 @@ def decide_response_type(markers: list[str], options: list[dict[str, Any]],
 # ═══════════════════════════════════════════════════════════════════════════
 # 본 파서
 # ═══════════════════════════════════════════════════════════════════════════
+def _open_paren(text: str) -> bool:
+    return text.count("(") > text.count(")")
+
+
+def _split_glued(line: str, last: int) -> list[str]:
+    """`1) 앱2) 웹9) 모름` 을 붙은 번호 앞에서 끊는다. 붙은 번호가 앞 보기 번호보다 크고(`9)`·`97)` 처럼
+    건너뛴 코드도) 앞 보기 글자의 괄호 밖일 때만 (줄에 앞 보기가 없으면 1 이거나 앞 칸 마지막 번호 `last` 보다 클 때).
+    `1) 갤럭시(가24) 시리즈` 는 한 보기로 둔다."""
+    out: list[str] = []
+    for seg in RE_GLUED_OPT.split(line):
+        if out:
+            tail = split_option_line(out[-1])[-1]
+            m = RE_OPTION.match(tail)
+            no = int(RE_OPTION.match(seg).group(1))
+            ok = no > int(m.group(1)) if m else (no == 1 or no > last)
+            if not ok or _open_paren(m.group(2) if m else tail):
+                out[-1] += seg
+                continue
+        out.append(seg)
+    return out
+
+
+def _glued_left(opt: dict[str, Any]) -> bool:
+    """보기 글자 안, 괄호 밖에 제 번호보다 큰 `N) ` 이 남아 있으면 못 끊은 것 (`갤럭시 S242) 갤럭시 Z`)."""
+    text = opt["text"]
+    return any(int(m.group(1)) > opt["no"] and not _open_paren(text[:m.start()])
+               for m in RE_OPT_NO_INSIDE.finditer(text))
+
+
 def _options_from_tables(tables: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
     """표 칸의 `N) 보기` 를 모은다. (보기 목록, 이상징후) 반환.
 
     · 번호만 있는 칸(`1)`)은 건너뛰고, 병합 칸이 되풀이한 같은 번호·같은 문구는 하나로.
-    · 칸 안 단락이 이어 붙은 `1) 앱2) 웹` 은 붙은 번호 앞에서 끊는다.
+    · 칸 안 단락이 이어 붙은 `1) 앱2) 웹` 은 붙은 번호가 앞 보기 번호보다 크고 괄호 밖일 때만 그 앞에서 끊는다 (_split_glued).
     · 같은 행 다른 칸의 `[PROG: …]`(대분류별 표시 조건)는 보기의 `show_if` 로 남긴다.
     · 번호가 묶음마다 다시 시작하면(같은 번호·다른 문구) 문서 순서대로 모두 두고 번호를 새로 매긴다.
     """
     found: list[dict[str, Any]] = []
     seen: set[tuple[int, str]] = set()
     anomalies: list[str] = []
+    last = 0                                    # 문서 순서로 마지막에 읽은 보기 번호
     for t in tables:
         if t.get("kind") in ("scale_horizontal", "matrix_scale", "box"):
             continue
         for row in t.get("cells") or []:
             for ci, cell in enumerate(row):
                 for line in str(cell).split("\n"):
-                    for seg in RE_GLUED_OPT.split(line.strip()):
+                    for seg in _split_glued(line.strip(), last):
                         for piece in split_option_line(seg.strip()):
                             opt = parse_option(piece)
+                            if opt:
+                                last = opt["no"]
                             if not opt or not opt["text"] or (opt["no"], opt["text"]) in seen:
                                 continue
                             seen.add((opt["no"], opt["text"]))
@@ -479,6 +512,8 @@ def _options_from_tables(tables: list[dict[str, Any]]) -> tuple[list[dict[str, A
                             if row_prog:
                                 opt["show_if"] = row_prog
                             found.append(opt)
+    # 한 보기 글자 안에 더 큰 번호가 또 있으면(`1) 앱 2) 웹`) 못 끊은 것 — `(S24)` 같은 괄호 속 숫자는 빼고 본다
+    glued = [o["raw"] for o in found if _glued_left(o)]
     nos = [o["no"] for o in found]
     if len(set(nos)) == len(nos):
         found.sort(key=lambda o: o["no"])
@@ -486,7 +521,6 @@ def _options_from_tables(tables: list[dict[str, Any]]) -> tuple[list[dict[str, A
         anomalies.append("표 보기 번호 중복 — 묶음별 재번호로 보고 문서 순서대로 번호를 새로 매김 (원번호는 raw)")
         for i, o in enumerate(found):
             o["no"] = i + 1
-    glued = [o["raw"] for o in found if RE_OPT_NO_INSIDE.search(o["text"])]
     if glued:
         anomalies.append(f"표 보기 분리 의심 — 한 보기에 번호가 또 있음: 「{glued[0][:40]}」")
     return found, anomalies

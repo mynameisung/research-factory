@@ -8,7 +8,9 @@
           PIPING_MISSING     앞 문항 답이 문장에 안 들어감
     경고  OPTION_MISSING · OPTION_EXTRA  보기 누락·추가      · TEXT_MISMATCH  문항 문장이 정본과 다름(오탈자·수정 미반영)
     참고  OPTION_ORDER       보기 순서가 다름(로테이션이면 정상)  · UNMATCHED_PAGE  정본의 어느 문항과도 안 맞는 페이지
-          OPTION_MISSING     표시 조건([PROG: …], 보기의 show_if)이 붙은 표 보기가 조건째 없음(숨김이면 정상)
+          OPTION_MISSING     표시 조건([PROG: …], 보기의 show_if)이 붙은 표 보기가 조건째 없는데 시나리오 답으로 판정 못 함(숨김이면 정상)
+    표시 조건이 붙은 표 보기는 시나리오 답으로 판정한다 — 맞는데 없으면 OPTION_MISSING 경고 · 안 맞는데 보이면 OPTION_EXTRA 경고 ·
+    안 맞고 없으면 정상(지적 없음)
 
 사용: python webtest_compare.py <questionnaire.json> <시나리오.json> <out_dir> [덤프_*.json …]
       덤프를 안 주면 <out_dir>/덤프_*.json 전부를 읽는다.
@@ -23,6 +25,8 @@ import re
 import sys
 import time
 from pathlib import Path
+
+import webtest_scenarios as wsn   # 노출·표시 조건 판정(parse_condition · cond_holds)을 시나리오 생성기와 같이 쓴다
 
 SIM_MATCH = 0.60     # 이 이상이면 같은 문항으로 본다
 SIM_EXACT = 0.97     # 이 미만이면 문장이 다르다고 본다
@@ -103,9 +107,18 @@ def norm_label(s: str) -> str:
     return norm(RE_LABEL_NO.sub("", s or "", count=1))
 
 
-def compare_options(q: dict, pg: dict) -> list[dict]:
+def _span(nos: list[int]) -> str:
+    return f"{nos[0]}~{nos[-1]}" if len(nos) > 1 and nos == list(range(nos[0], nos[-1] + 1)) else ",".join(map(str, nos))
+
+
+def _ans(a: dict) -> str:
+    return ",".join(map(str, a.get("choose") or [])) or str(a.get("text", ""))
+
+
+def compare_options(q: dict, pg: dict, answers: dict | None = None, by_code: dict | None = None) -> list[dict]:
     """정본 보기 ↔ 웹 보기를 탐욕적으로 짝짓는다. 정확히 맞는 것부터, 다음은 닮은 것, 남은 것은 누락/추가.
-    표시 조건(show_if — 표 보기 행의 `[PROG: …]`)이 붙은 보기가 조건째 통째로 없으면 숨김일 수 있어 참고로 낮춘다."""
+    표시 조건(show_if — 표 보기 행의 `[PROG: …]`)은 시나리오 답(answers)으로 판정한다 — 맞는데 없으면 누락 경고,
+    안 맞는데 보이면 경고, 안 맞고 없으면 정상. 판정 못 하면(답 없음·못 읽는 조건) 조건째 없는 묶음만 참고로 둔다."""
     opts = q.get("options") or []
     exp = [o.get("text") or "" for o in opts]
     got = [o.get("label") or "" for o in pg.get("options") or [] if o.get("kind") in ("radio", "checkbox", "select")]
@@ -114,15 +127,22 @@ def compare_options(q: dict, pg: dict) -> list[dict]:
         return out
     en = [norm(e) for e in exp]
     gn = [norm_label(g) for g in got]
+    cond_of = {i: " · ".join(o["show_if"]) if isinstance(o["show_if"], list) else str(o["show_if"])
+               for i, o in enumerate(opts) if o.get("show_if")}
+    holds = {c: wsn.show_if_holds(opts[i], answers, by_code) for i, c in cond_of.items()}   # True·False·None(판정 못 함)
+    # 이 시나리오에서 보여야 할 보기부터 짝짓는다 — 묶음마다 같은 「기타」가 있으면 조건에 맞는 쪽이 먼저 가져간다
+    order = sorted(range(len(en)), key=lambda i: holds.get(cond_of.get(i)) is False)
     pair: dict[int, int] = {}          # exp idx → got idx
     used: set[int] = set()
-    for i, e in enumerate(en):         # 1차: 같거나 앞부분이 같은 것
+    for i in order:                    # 1차: 같거나 앞부분이 같은 것
+        e = en[i]
         for k, g in enumerate(gn):
             if k in used:
                 continue
             if g == e or (e and g.startswith(e)) or (g and e.startswith(g) and len(g) >= 4):
                 pair[i] = k; used.add(k); break
-    for i, e in enumerate(en):         # 2차: 닮은 것
+    for i in order:                    # 2차: 닮은 것
+        e = en[i]
         if i in pair:
             continue
         best, bk = 0.0, None
@@ -135,20 +155,25 @@ def compare_options(q: dict, pg: dict) -> list[dict]:
         if bk is not None and best >= OPT_SIM:
             pair[i] = bk; used.add(bk)
             out.append({"kind": "TEXT_MISMATCH", "sev": "경고", "detail": f"보기 {i+1} 문구 다름 — 정본 「{exp[i]}」 / 웹 「{got[bk]}」"})
-    cond_of = {i: " · ".join(o["show_if"]) if isinstance(o["show_if"], list) else str(o["show_if"])
-               for i, o in enumerate(opts) if o.get("show_if")}
     shown_conds = {cond_of[i] for i in pair if i in cond_of}     # 같은 조건 보기가 하나라도 나왔으면 그 묶음은 보이는 중
     hidden_groups: dict[str, list[int]] = {}
     for i, e in enumerate(exp):
         if i not in pair:
-            if i in cond_of and cond_of[i] not in shown_conds:
-                hidden_groups.setdefault(cond_of[i], []).append(i + 1)
+            c = cond_of.get(i)
+            if c is not None and (holds[c] is False or (holds[c] is None and c not in shown_conds)):
+                hidden_groups.setdefault(c, []).append(i + 1)
                 continue
             out.append({"kind": "OPTION_MISSING", "sev": "경고", "detail": f"보기 {i+1} 「{e}」 가 웹에 없음"})
     for cond, nos in hidden_groups.items():
-        span = f"{nos[0]}~{nos[-1]}" if len(nos) > 1 and nos == list(range(nos[0], nos[-1] + 1)) else ",".join(map(str, nos))
-        out.append({"kind": "OPTION_MISSING", "sev": "참고",
-                    "detail": f"표시 조건 [PROG: {cond}] 이 붙은 보기 {span} ({len(nos)}개) 가 웹에 없음 — 이 시나리오에서 조건에 안 맞아 숨긴 것이면 정상"})
+        if holds[cond] is None:                # 조건에 안 맞아 숨긴 것(False)은 정상 — 지적 없음
+            out.append({"kind": "OPTION_MISSING", "sev": "참고",
+                        "detail": f"표시 조건 [PROG: {cond}] 을 이 시나리오 답으로 판정하지 못함 — 붙은 보기 {_span(nos)} ({len(nos)}개) 가 웹에 없음. 조건에 안 맞아 숨긴 것이면 정상"})
+    for cond in sorted(c for c in shown_conds if holds[c] is False):
+        nos = sorted(i + 1 for i in pair if cond_of.get(i) == cond)
+        codes = sorted({cl[0] for grp in wsn.parse_condition(cond) for cl in grp})
+        ans = " · ".join(f"{k}={_ans(answers.get(k) or {})}" for k in codes)
+        out.append({"kind": "OPTION_EXTRA", "sev": "경고",
+                    "detail": f"표시 조건 [PROG: {cond}] 에 안 맞는 답({ans})인데 붙은 보기 {_span(nos)} ({len(nos)}개) 가 웹에 나옴 — 조건상 숨겨야 함"})
     for k, g in enumerate(got):
         if k not in used:
             out.append({"kind": "OPTION_EXTRA", "sev": "경고", "detail": f"웹 보기 {k+1} 「{g}」 가 정본에 없음"})
@@ -184,7 +209,7 @@ def compare(questionnaire: dict, scen: dict, dump: dict) -> list[dict]:
             piped = bool(RE_PIPE.search(q.get("text") or ""))
             if s < (SIM_EXACT - 0.12 if piped else SIM_EXACT):   # 파이핑 문항은 치환값만큼 달라지므로 느슨하게
                 add("TEXT_MISMATCH", "경고", q["code"], f"문항 문장이 정본과 다름 (유사도 {s:.2f}) — 정본 「{(q.get('text') or '')[:80]}」 / 웹 「{page_question_text(pg)[:80]}」", pg)
-            for x in compare_options(q, pg):
+            for x in compare_options(q, pg, scen.get("answers"), qs):
                 add(x["kind"], x["sev"], q["code"], x["detail"], pg)
     # 이탈
     term = e.get("terminate_at")
@@ -235,6 +260,8 @@ def write_xlsx(findings: list[dict], path: Path) -> None:
     sev_rank = {"치명": 0, "경고": 1, "참고": 2}
     for i, x in enumerate(sorted(findings, key=lambda r: (sev_rank.get(r["sev"], 9), r["code"] or "")), 1):
         req = (ask_ref.get(x["kind"]) if x["sev"] == "참고" else None) or ask.get(x["kind"], "")
+        if x["sev"] == "경고" and x["detail"].startswith("표시 조건"):     # 조건에 안 맞는데 보인 표 보기 묶음
+            req = "표시 조건(PROG) 적용 요청"
         ws.append([i, x["scenario"], x["code"] or "", x["kind"], x["sev"], x["detail"], req, x.get("page") or ""])
     for col, w in zip("ABCDEFGH", (5, 12, 10, 20, 8, 70, 30, 8)):
         ws.column_dimensions[col].width = w

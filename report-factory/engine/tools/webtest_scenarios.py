@@ -12,6 +12,7 @@
     T*  이탈 경로     — 조사 중단(terminate) 보기를 하나씩 골라 그 자리에서 끝나는지 본다
     H*  숨김 경로     — 노출 조건(BASE)을 어기는 답을 골라 딸린 문항이 안 보이는지 본다
                         (상한 --max-branch · 원천 문항마다 하나씩 먼저 · 상한에 걸려 뺀 수는 meta.h_skipped 와 경고로 알린다)
+    표 보기의 표시 조건(show_if)이 앞 답으로 안 맞는 보기는 고르지 않는다 — B·T·H 에서 원천 답을 바꾸면 그런 보기를 고른 문항도 다시 고른다.
 
 시나리오 하나 = {id, purpose, answers{문항코드: {choose:[보기번호…], text:"…"}}, expect{visible, hidden, terminate_at, piping}}.
 답을 정하지 않은 문항은 순회기(webtest_walk.py)가 첫 보기로 답한다.
@@ -127,12 +128,22 @@ def cond_holds(groups, answers: dict, by_code: dict | None = None) -> bool | Non
     return None if unknown else False
 
 
+def show_if_holds(o: dict, answers: dict | None, by_code: dict | None = None) -> bool | None:
+    """보기의 표시 조건(show_if — 표 보기 행의 `[PROG: …]`)이 답으로 성립하나. 조건이 없으면 True, 답이 없거나 조건을 못 읽으면 None."""
+    s = o.get("show_if")
+    if not s:
+        return True
+    groups = parse_condition(" · ".join(s) if isinstance(s, list) else str(s)) if answers is not None else []
+    return cond_holds(groups, answers, by_code) if groups else None
+
+
 def option_nos(q: dict) -> list[int]:
     return [int(o.get("no") or i + 1) for i, o in enumerate(q.get("options") or [])]
 
 
-def default_answer(q: dict, avoid_terminate=True, need=None, forbid=None, prefer=None) -> dict:
-    """문항 하나의 기본 답. need/forbid 는 노출 조건이 요구하는 보기 번호 집합, prefer 는 {보기번호: 가중치}(높을수록 먼저)."""
+def default_answer(q: dict, avoid_terminate=True, need=None, forbid=None, prefer=None, answers=None, by_code=None) -> dict:
+    """문항 하나의 기본 답. need/forbid 는 노출 조건이 요구하는 보기 번호 집합, prefer 는 {보기번호: 가중치}(높을수록 먼저).
+    answers(앞 문항 답)를 주면 표시 조건(show_if)이 안 맞아 웹이 숨길 보기는 맨 뒤로 미룬다."""
     rt = q.get("response_type") or ""
     opts = q.get("options") or []
     if rt in ("숫자입력",):
@@ -152,10 +163,10 @@ def default_answer(q: dict, avoid_terminate=True, need=None, forbid=None, prefer
             continue
         if o.get("is_none") and not need and len(opts) > 1:
             continue
-        cand.append((-(prefer or {}).get(str(no), 0), i, no))
+        cand.append((show_if_holds(o, answers, by_code) is False, -(prefer or {}).get(str(no), 0), i, no))
     if not cand:
-        cand = [(0, i, int(o.get("no") or 1)) for i, o in enumerate(opts)]
-    cand = [no for _, _, no in sorted(cand)]
+        cand = [(show_if_holds(o, answers, by_code) is False, 0, i, int(o.get("no") or 1)) for i, o in enumerate(opts)]
+    cand = [no for *_, no in sorted(cand)]
     if rt == "복수":           # 두 개를 고르되 `[최소 N개, 최대 M개 선택]` 이 있으면 그 범위 안에서
         lim = q.get("multi_limit") or {}
         n = max(int(lim.get("min") or 1), min(2, int(lim.get("max") or 2)))
@@ -192,7 +203,17 @@ def build(qs: list[dict], max_branch: int) -> dict:
                 forbid.setdefault(code, set()).update(vals)
     s0: dict[str, dict] = {}
     for q in qs:
-        s0[q["code"]] = default_answer(q, forbid=forbid.get(q["code"]), prefer=votes.get(q["code"]))
+        s0[q["code"]] = default_answer(q, forbid=forbid.get(q["code"]), prefer=votes.get(q["code"]), answers=s0, by_code=by_code)
+
+    def fit(a: dict, keep: set) -> dict:
+        """원천 답을 바꾼 뒤, 표시 조건(show_if)이 안 맞아 웹이 숨길 보기를 고른 문항은 다시 고른다 (keep 문항은 그대로)."""
+        for q in qs:
+            c = q["code"]
+            byno = {int(o.get("no") or 0): o for o in q.get("options") or []}
+            if c not in keep and any(show_if_holds(byno.get(int(n)) or {}, a, by_code) is False
+                                     for n in (a.get(c) or {}).get("choose") or []):
+                a[c] = default_answer(q, forbid=forbid.get(c), prefer=votes.get(c), answers=a, by_code=by_code)
+        return a
 
     def expect_for(answers: dict, terminate_at: str | None) -> dict:
         visible, hidden = [], []
@@ -253,6 +274,7 @@ def build(qs: list[dict], max_branch: int) -> dict:
                 break
             a[code] = alt; changed.append(f"{code}={fmt(alt)}")
         else:
+            fit(a, {c for c, _, _ in first_group(q["code"])})
             exp = expect_for(a, None)
             if q["code"] in exp["visible"]:
                 n_b += 1
@@ -267,6 +289,7 @@ def build(qs: list[dict], max_branch: int) -> dict:
             if o.get("terminate"):
                 a = {k: dict(v) for k, v in s0.items()}
                 a[q["code"]] = {"choose": [int(o.get("no") or 1)]}
+                fit(a, {q["code"]})
                 scenarios.append({"id": f"T_{q['code']}_{o.get('no')}", "purpose": f"이탈 — {q['code']} 보기 {o.get('no')} 「{o.get('text')}」에서 조사 중단",
                                   "answers": a, "expect": expect_for(a, q["code"])})
 
@@ -286,6 +309,7 @@ def build(qs: list[dict], max_branch: int) -> dict:
             seen.add(key)
             a = {k: dict(v) for k, v in s0.items()}
             a[code] = alt
+            fit(a, {code})
             exp = expect_for(a, None)
             newly_hidden = [c for c in exp["hidden"] if c not in s0_exp["hidden"]]
             if newly_hidden:

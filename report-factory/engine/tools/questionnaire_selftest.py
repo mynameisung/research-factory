@@ -204,6 +204,9 @@ def main(argv: list[str]) -> int:
         for labs in (bq.SCALE_PRESETS["추천"], ["매우 그렇지 않다", "그렇지 않다", "보통이다", "그렇다", "매우 그렇다"],
                      ["매우 적다", "적다", "보통", "많다", "매우 많다"], ["매우 어렵다", "어렵다", "보통", "쉽다", "매우 쉽다"]):
             its.append({"code": f"B{len(its) + 1}", "kind": "scale", "text": "정방향", "scale": {"labels": labs}})
+        expect(cq._reversed_scale(["매우 잘 안다", "대체로 안다", "보통", "별로 모르겠다", "전혀 모르겠다"])
+               and not cq._reversed_scale(["1점", "2점", "3점", "4점", "잘 모르겠다"]),
+               "Q-08 — `전혀 모르겠다` 는 인지 척도의 끝점, 라벨 전체가 `잘 모르겠다` 인 것만 모름으로 뺌")
         got = _where(cq.check(sc, None, None), "Q-08")
         expect(got == want, f"척도 방향 — 프리셋 {len(bq.SCALE_PRESETS)}종 역순·역순 행렬은 Q-08, "
                             "`매우 그렇지 않다` 시작·부정어 없는 척도는 통과",
@@ -348,6 +351,17 @@ def main(argv: list[str]) -> int:
         tbl([["구분", "보기"], ["온라인", "1) 앱 2) 웹"], ["오프라인", "3) 매장"]])
         d.add_paragraph("A10. 동의 정도는? [1개 선택]")
         tbl([["매우 그렇다", "그렇다", "보통", "아니다", "전혀 아니다"], ["5", "4", "3", "2", "1"]])
+        d.add_paragraph("A11. 사용 중인 기종을 선택해 주십시오. [1개 선택]")
+        tbl([["구분", "보기"], ["휴대폰", ["1) 갤럭시(S24) 시리즈", "2) 갤럭시 Z 폴드"]],
+             ["가전", "3) 공기청정기(PM2.5)\t4) 가습기"], ["기타", "5) 모델(가24) 한정판"]])
+        d.add_paragraph("A12. 아래 표를 보고 가장 최근 구매 시기를 선택해 주십시오. [1개 선택]")
+        tbl([["재작년", "작년", "올해"], ["2024", "2025", "2026"]])
+        for x in ("1) 재작년", "2) 작년", "3) 올해"):
+            d.add_paragraph(x)
+        d.add_paragraph("A13. 이용 경험이 있으십니까? [1개 선택]")
+        tbl([["구분", "보기"], ["응답", ["1) 있음", "2) 없음", "9) 모름"]], ["기타", ["97) 기타", "99) 무응답"]]])
+        d.add_paragraph("A14. 사용 중인 기종을 선택해 주십시오. [1개 선택]")
+        tbl([["구분", "보기"], ["휴대폰", ["1) 갤럭시 S24", "2) 갤럭시 Z"]]])
         sp = tmp / "synth.docx"
         d.save(str(sp))
         q = {x["code"]: x for x in pq.parse(sp)["questions"]}
@@ -362,11 +376,28 @@ def main(argv: list[str]) -> int:
                "번호 머리 표(척도 낱말 없음)는 척도가 아니라 표 보기", [q["A1"]["response_type"], opts("A1")])
         expect(q["A2"]["response_type"] == "단일" and q["A2"]["scale"] is None, "연도가 적힌 참고 표는 척도가 아님",
                q["A2"]["response_type"])
+        expect(q["A12"]["response_type"] == "단일" and q["A12"]["scale"] is None,
+               "이어진 연도(2024 2025 2026)도 0·1 에서 시작하지 않으면 척도가 아님", q["A12"]["response_type"])
         expect(all(q[c]["response_type"] == "척도" for c in ("A4", "A6", "A10")),
                "연속 번호(1~5 · 5~1)·척도 낱말 번호 머리 표는 그대로 척도", [q[c]["response_type"] for c in ("A4", "A6", "A10")])
         expect(opts("A5") == ["앱", "웹", "매장", "전화"] and "분리 의심" not in anom("A5"),
                "칸 안 단락이 붙은 `1) 앱2) 웹` → 보기 넷", opts("A5"))
         expect("분리 의심" in anom("A9"), "한 칸에 `1) 앱 2) 웹` (한 칸 띄움) → 표 보기 분리 의심 경고", opts("A9"))
+        expect(opts("A11") == ["갤럭시(S24) 시리즈", "갤럭시 Z 폴드", "공기청정기(PM2.5)", "가습기", "모델(가24) 한정판"]
+               and "분리 의심" not in anom("A11"),
+               "보기 글자 속 `(S24)`·`(PM2.5)`·`(가24)` 는 끊지 않고, 붙은 `…시리즈2) 갤럭시` 는 끊음", [opts("A11"), anom("A11")])
+        expect([(o["no"], o["text"]) for o in q["A13"]["options"]] == [(1, "있음"), (2, "없음"), (9, "모름"), (97, "기타"), (99, "무응답")]
+               and "분리 의심" not in anom("A13"),
+               "붙은 번호가 건너뛴 코드(`9) 모름`·`97) 기타`)여도 끊음", [[(o["no"], o["text"]) for o in q["A13"]["options"]], anom("A13")])
+        expect("분리 의심" in anom("A14"), "숫자로 끝난 보기에 붙은 번호(`갤럭시 S242) 갤럭시 Z`)는 못 끊어도 분리 의심 경고",
+               [opts("A14"), anom("A14")])
+        g = copy.deepcopy(spec)
+        grp = _item(g, "A7")["options_table"][1]["options"]
+        grp[0], grp[1] = "브라질(S24) 산토스", "콜롬비아(PM2.5)"
+        gp = tmp / "glue.docx"
+        bq.Builder(copy.deepcopy(g)).build(gp)
+        fatal = [f for f in cq.check(g, None, gp) if f["severity"] == "치명"]
+        expect(not fatal, "표 보기에 `(S24)`·`(PM2.5)` 가 있어도 빌더 → 파서 왕복 치명 0", fatal)
         expect(opts("A3") == ["앱", "웹", "매장", "전화"] and [o["no"] for o in q["A3"]["options"]] == [1, 2, 3, 4]
                and "번호 중복" in anom("A3"), "묶음마다 1) 부터 다시 매긴 표 → 모두 두고 새 번호 + 경고", opts("A3"))
         expect([o.get("show_if") for o in q["A7"]["options"]] == [["A1=1"], ["A1=1"], ["A1=2"], None],
@@ -491,10 +522,31 @@ def main(argv: list[str]) -> int:
 
         r1 = wc.compare_options(tq, page("1) 소매업", "2) 도매업", "4) 기타"))
         r2 = wc.compare_options(tq, page("1) 소매업", "4) 기타"))
-        expect(not missing(r1, "경고") and len(missing(r1, "참고")) == 1,
-               "표시 조건째 숨은 표 보기 → 조건별 참고 한 줄 (경고 아님)", r1)
+        expect(not missing(r1, "경고") and len(missing(r1, "참고")) == 1 and "판정하지 못함" in missing(r1, "참고")[0]["detail"],
+               "답 없이(판정 못 함) 표시 조건째 숨은 표 보기 → 조건별 참고 한 줄 (경고 아님)", r1)
         expect(len(missing(r2, "경고")) == 1 and "도매업" in missing(r2, "경고")[0]["detail"],
                "같은 조건 보기 중 하나만 빠지면 → 경고", r2)
+        a1 = {"A1": {"choose": [1]}}
+        r3 = wc.compare_options(tq, page("1) 소매업", "2) 도매업", "4) 기타"), a1)
+        r4 = wc.compare_options(tq, page("3) 숙박업", "4) 기타"), a1)
+        shown = [x for x in r4 if x["kind"] == "OPTION_EXTRA" and x["sev"] == "경고" and "[PROG: A1=2]" in x["detail"]]
+        expect(not r3, "답(A1=1)에 맞는 묶음만 보이고 안 맞는 묶음은 숨김 → 지적 없음", r3)
+        expect(len(missing(r4, "경고")) == 2 and len(shown) == 1,
+               "답(A1=1)에 맞는 묶음이 없으면 누락 경고, 안 맞는 묶음(A1=2)이 보이면 경고", r4)
+        tq_dup = {"options": [{"text": "소매업", "show_if": ["A1=1"]}, {"text": "기타", "show_if": ["A1=1"]},
+                              {"text": "숙박업", "show_if": ["A1=2"]}, {"text": "기타", "show_if": ["A1=2"]}]}
+        r5 = wc.compare_options(tq_dup, page("숙박업", "기타"), {"A1": {"choose": [2]}})
+        expect(not r5, "묶음마다 같은 「기타」가 있어도 조건에 맞는 쪽과 짝지음 → 맞는 페이지는 지적 없음", r5)
+        tq_no = {"response_type": "단일", "options": [dict(o, no=i) for i, o in enumerate(tq["options"], start=1)]}
+        expect(wsn.default_answer(tq_no, answers={"A1": {"choose": [2]}}) == {"choose": [3]}
+               and wsn.default_answer(tq_no) == {"choose": [1]},
+               "기본 답이 앞 답(A1=2)으로 숨는 표 보기(show_if A1=1)를 피함")
+        mini = [{"code": "A1", "response_type": "단일", "options": [{"no": 1, "text": "판매"}, {"no": 2, "text": "서비스"}]},
+                dict(tq_no, code="A2"),
+                {"code": "A3", "response_type": "단일", "base_condition": "A1=1", "options": [{"no": 1, "text": "가"}, {"no": 2, "text": "나"}]}]
+        by_id = {x["id"]: x["answers"] for x in wsn.build(mini, 12)["scenarios"]}
+        expect(by_id["S0"]["A2"] == {"choose": [1]} and by_id.get("H1_A1", {}).get("A2") == {"choose": [3]},
+               "숨김 경로에서 원천 답(A1)을 바꾸면 딸린 표 보기 답(A2)도 보이는 보기로 다시 고름", by_id)
         six = [{"no": i, "text": t} for i, t in enumerate("가나다라마바", start=1)]
 
         def n_pick(lim):

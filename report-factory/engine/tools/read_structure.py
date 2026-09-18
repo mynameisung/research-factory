@@ -12,6 +12,7 @@
     · 빈 행 뒤 번호·파트 없이 한 칸뿐인 줄은 「본표 아래 메모」로 뺀다 (둘 이상 차면 본표가 이어진 것)
     · 머리 행이 없는 시트(메일 본문·이전 버전 초안·보기 초안 등)는 「참고 시트」로 원문 줄만 남긴다
     · 셀 배경색·글자색을 남긴다 (노랑 = 핵심 지표 · 빨강 = 삭제/보류 표시인 경우가 많다 — 뜻은 사람에게 확인)
+      열 절반 넘게 같은 테마 음영(열 바탕색)은 뺀다. RGB 색은 늘 남긴다
 문장을 해석하지 않는다. 행마다 `ref`(시트!행) 를 달아 설문 명세의 `src` 가 이것을 가리킨다.
 """
 from __future__ import annotations
@@ -20,6 +21,7 @@ import argparse
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -98,6 +100,11 @@ def _fill(cell) -> str | None:
     return "/".join(out) or None
 
 
+def _explicit(fl: str) -> bool:
+    """RGB·인덱스색(표준 색 단추 · .xls 변환본)이 섞였는가. 테마색만이면 False."""
+    return any(not re.match(r"(글자)?theme", x) for x in fl.split("/"))
+
+
 def read(path: Path) -> dict[str, Any]:
     import openpyxl
     wb = openpyxl.load_workbook(str(path), data_only=True)
@@ -174,10 +181,12 @@ def read(path: Path) -> dict[str, Any]:
         side = []                                   # 곁표 줄
         below = []                                  # 본표 아래(빈 행 뒤) 메모 — 대안 문구·코멘트
         seen_data, gap = False, False
+        cell_fills: list[tuple[dict, str, int, str | None]] = []   # (행, 열 이름, 열, 색) — 열 기본 음영은 뒤에서 뺀다
         anchor_roles = {c for c, rl in roles.items() if rl in ("seq", "code", "part") and c <= main_end}
         body_roles = {c for c, rl in roles.items() if rl not in ("seq", "code", "part", "note") and c <= main_end}
         for r in range(header_row + 1, max_r + 1):
             rec: dict[str, Any] = {"ref": f"{ws.title}!{r}", "fields": {}, "extra": {}, "fills": {}}
+            row_fills: list[tuple[dict, str, int, str | None]] = []
             own = False                             # 병합 채움이 아닌 자기 값이 있는가
             side_vals = [str(val(r, c)).strip() for c in range(main_end + 1, max_c + 1) if val(r, c) is not None]
             if side_vals:
@@ -215,9 +224,7 @@ def read(path: Path) -> dict[str, Any]:
                 if (r, c) not in merged or merged[(r, c)] == (r, c):
                     if role not in ("part", "section") and name is not None:
                         own = True
-                fl = _fill(ws.cell(r, c))
-                if fl:
-                    rec["fills"][name or f"col{c}"] = fl
+                row_fills.append((rec, name or f"col{c}", c, _fill(ws.cell(r, c))))
                 if role:
                     rec["fields"][role] = f"{rec['fields'][role]} | {text}" if role in rec["fields"] else text
                 elif name:
@@ -227,6 +234,16 @@ def read(path: Path) -> dict[str, Any]:
             if not own and not rec["fields"].get("question"):
                 continue
             sh["rows"].append(rec)
+            cell_fills += row_fills
+        # 열마다 절반 넘게 같은 테마 음영(열 전체 바탕색)은 표시가 아니다 — 그와 다른 색 · RGB 색만 남긴다
+        by_col: dict[int, Counter] = {}
+        for _, _, c, fl in cell_fills:
+            by_col.setdefault(c, Counter())[fl] += 1
+        base_fill = {c: cnt.most_common(1)[0][0] for c, cnt in by_col.items()
+                     if cnt.most_common(1)[0][1] * 2 > sum(cnt.values())}
+        for rec, key, c, fl in cell_fills:
+            if fl and (fl != base_fill.get(c) or _explicit(fl)):
+                rec["fills"][key] = fl
         if side:
             sh["side_lines"] = side
         if below:

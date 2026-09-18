@@ -21,6 +21,7 @@
     mark --from <이전판>             업그레이드 직후 표식. 다음 check 가 JUST_UPGRADED 를 낸다
     config get <키> | set <키> <값>  update_check(true/false) · auto_upgrade(true/false)
     whats-new <판>                   원격 CHANGELOG 에서 그 판의 요약 줄을 뽑아 출력
+    -h · --help                      사용법. 판·키·값 자리에 `-` 로 시작하는 인자가 오면 상태를 건드리지 않고 사용법(exit 2)
 
 상태는 리포 밖 `~/.report-factory/` 에 둔다 — 업그레이드로 코드가 통째로 갈려도 살아남는다.
     last-update-check   캐시. 「최신」이면 60분, 「새 판 있음」이면 12시간 동안 원격을 다시 안 본다
@@ -289,6 +290,17 @@ def main(argv: list[str]) -> int:
     _utf8_stdout()
     args = list(argv)
     cmd = args[0] if args else "check"
+    if cmd in ("-h", "--help"):
+        usage()
+        return 0
+    # 판·키·값 자리의 `-…` 는 값이 아니다 (`snooze --help` 가 판 `--help` 를 미뤄 두던 문제)
+    rest = args[1:]
+    if cmd == "check":
+        rest = [a for a in rest if a != "--force"]
+    elif cmd == "mark" and rest[:1] == ["--from"]:
+        rest = rest[1:]
+    if any(a.startswith("-") for a in rest):
+        return usage()
     try:
         if cmd == "check":
             return cmd_check(force="--force" in args)

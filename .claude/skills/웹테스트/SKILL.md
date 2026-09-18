@@ -138,7 +138,9 @@ python "$T/webtest_compare.py" "<조사>/05_웹테스트/work/questionnaire.json
 |---|---|---|
 | 치명 | QUESTION_MISSING · QUESTION_UNEXPECTED · TERMINATE_MISMATCH · PIPING_MISSING | 문항이 안 나옴 · 안 나와야 할 문항이 나옴 · 이탈이 안 됨 · 파이핑이 안 됨 |
 | 경고 | OPTION_MISSING · OPTION_EXTRA · TEXT_MISMATCH | 보기 누락 · 보기 추가 · 문구 다름(오탈자·수정 미반영) |
-| 참고 | OPTION_ORDER · UNMATCHED_PAGE | 보기 순서 다름(로테이션이면 정상) · 정본에 없는 페이지(안내 페이지·연습 문항이면 정상) |
+| 참고 | OPTION_ORDER · UNMATCHED_PAGE · OPTION_MISSING | 보기 순서 다름(로테이션이면 정상) · 정본에 없는 페이지(안내 페이지·연습 문항이면 정상) · 표시 조건이 붙은 표 보기 묶음이 없는데 조건을 시나리오 답으로 판정 못 함(숨긴 것이면 정상) |
+
+표시 조건이 붙은 표 보기(보기 행의 `[PROG: SQ1=1]`)는 시나리오 답으로 판정한다. 조건이 맞는데 없으면 OPTION_MISSING 경고, 안 맞는데 보이면 OPTION_EXTRA 경고(「표시 조건 … 조건상 숨겨야 함」 — 요청 「표시 조건(PROG) 적용 요청」), 안 맞아 숨었으면 지적하지 않는다. OPTION_MISSING 이 참고로 남는 것은 판정할 답이 없을 때(답을 적지 않은 사람 시나리오)나 조건을 못 읽을 때뿐이다 — 캡처로 사람이 본다.
 
 사람이 판정할 것을 골라 준다. 로테이션 지시가 있는 문항의 OPTION_ORDER, 안내 페이지의 UNMATCHED_PAGE, 설문지 쪽이 낡은 TEXT_MISMATCH 는 사용자가 「정상」이라 하면 `findings.json` 에서 지우고 다시 `webtest_compare.py` 를 돌리지 않는다 — 수정요청서 `.xlsx` 에서 그 행을 지운다(수정요청서는 사람의 문서다).
 
