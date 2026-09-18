@@ -6,7 +6,8 @@
 
 업무 흐름 ③ 설문지 구성. 구조화 엑셀을 사람이(또는 Claude 가) 읽고 문항 문장·보기·로직을 정한 결과가
 `설문명세.json` 이고, 이 도구는 그것을 **서식만** 입힌다. 문장을 짓거나 보기를 보태지 않는다.
-명세 형식은 `knowledge/50_설문지-작성.md` 3절. 양식의 틀(로고·여백·글꼴)은 `templates/TEMPLATE_설문지.docx`.
+명세 형식은 `knowledge/50_설문지-작성.md` 4절. 양식의 틀(로고·여백·글꼴)은 `templates/TEMPLATE_설문지.docx`.
+저장 뒤 문서 위생(R-137, `doc_hygiene`)을 건다 — 작성자·최종 수정자를 조직명으로, lastPrinted 제거.
 
 하우스 서식 (로직 구성 예시 · 2025~2026 납품 설문지에서 뽑음)
     · 맑은 고딕 9pt, A4, 파트 머리는 검정 바탕 흰 굵은 글씨 1셀 표 (`SQ. Screening Question` · `PART A. …`)
@@ -15,11 +16,16 @@
     · `[BASE: …]` 는 문항 **위**, `[PROG: …]` · `[RANGE: …]` 는 보기 **아래**, 파이핑 `[#A2 응답값#]` — 모두 파란 글씨
     · 척도는 2행 표(1행 라벨 회색 바탕, 2행 `1)`~`5)`), 행렬은 `구분` 머리 + `1. 항목` 행 + `①`~`⑤` 칸
 산출물은 `parse_questionnaire.py` 가 그대로 읽는다 — `check_questionnaire.py --docx` 가 왕복을 검사한다.
+    · 파서는 문항 사이 지시문을 이웃 문항에 붙여 읽는다. `kind: info` 의 `base` 는 **다음 문항**의 BASE 가 되고
+      (그 문항에 BASE 가 따로 있어도 info 쪽이 이긴다), info 의 PROG 는 앞 문항(파트 첫머리면 다음 문항)에 붙는다.
+      `prog_before` 는 그 문항에 `base` 가 있을 때만 그 문항에 붙고, 없으면 **앞 문항** PROG 로 읽힌다.
+      노출 조건은 문항마다 `base` 로 단다 — /웹테스트 가 파싱 결과의 BASE 로 시나리오를 짠다.
 
 문장 안 인라인 표기
     [#…#] · [#…]  [BASE: …]  [PROG: …]  [RANGE: …]  → 파란 글씨
     [쿼터]  → 조사 중단                          → 빨간 글씨 (화살표는 Wingdings 심볼)
     **굵게**  __밑줄__  ==노란 형광 (사람이 채울 자리)==  줄바꿈은 \\n
+    기입란 `___년 ___개월` 처럼 밑줄 3개 이상 이어진 것은 밑줄 표기로 읽지 않는다.
 """
 from __future__ import annotations
 
@@ -38,7 +44,7 @@ SIZE_PT = 9
 BLUE, RED, WHITE = "0000FF", "FF0000", "FFFFFF"
 FILL_PART, FILL_HEAD, FILL_QUOTA, FILL_SUM = "000000", "D9D9D9", "595959", "F2F2F2"
 TABLE_W = 10471                     # twips — 예시 설문지의 표 폭
-CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪"
+CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮"     # 맑은 고딕 글리프가 ⑮ 까지 (KS X 1001) — 행렬 열 상한
 
 # 척도 라벨 사전 — 1점이 부정, 끝점이 긍정 (하우스 규칙: 오름차순)
 SCALE_PRESETS: dict[str, list[str]] = {
@@ -59,8 +65,9 @@ SCALE_PRESETS: dict[str, list[str]] = {
     "인지": ["전혀 모른다", "잘 모른다", "보통이다", "어느 정도 안다", "매우 잘 안다"],
 }
 
+# 밑줄 표기는 앞뒤가 밑줄·공백이 아닌 `__…__` 만 — 기입란 `___년 ___개월` 을 표기로 삼키지 않는다
 RE_INLINE = re.compile(
-    r"(\[#[^\]]*\]|\[(?:BASE|PROG|RANGE)\s*:.*?\]|\[쿼터\]|\*\*.+?\*\*|__.+?__|==.+?==|→\s*조사\s*중단|\n)",
+    r"(\[#[^\]]*\]|\[(?:BASE|PROG|RANGE)\s*:.*?\]|\[쿼터\]|\*\*.+?\*\*|(?<!_)__(?![_\s]).+?(?<![_\s])__(?!_)|==.+?==|→\s*조사\s*중단|\n)",
     re.DOTALL,
 )
 
@@ -116,9 +123,10 @@ def rich(par, text: str, bold=False, color=None, underline=False, size=SIZE_PT, 
     """인라인 표기를 해석해 런으로 붙인다."""
     if text is None:
         return
-    for tok in RE_INLINE.split(str(text)):
+    for i, tok in enumerate(RE_INLINE.split(str(text))):
         if not tok:
             continue
+        mark = i % 2 == 1        # split 은 [평문, 표기, 평문, …] — 평문의 `________`(기입 줄)은 표기로 풀지 않는다
         if tok == "\n":
             par.add_run().add_break()
             continue
@@ -128,11 +136,11 @@ def rich(par, text: str, bold=False, color=None, underline=False, size=SIZE_PT, 
         elif tok == "[쿼터]":
             r = par.add_run(tok)
             _font(r, bold=bold, color=RED, size=size)
-        elif tok.startswith("**") and tok.endswith("**"):
+        elif mark and tok.startswith("**") and tok.endswith("**"):
             rich(par, tok[2:-2], bold=True, color=color, underline=underline, size=size, highlight=highlight)
-        elif tok.startswith("__") and tok.endswith("__"):
+        elif mark and tok.startswith("__") and tok.endswith("__"):
             rich(par, tok[2:-2], bold=bold, color=color, underline=True, size=size, highlight=highlight)
-        elif tok.startswith("==") and tok.endswith("=="):
+        elif mark and tok.startswith("==") and tok.endswith("=="):
             rich(par, tok[2:-2], bold=bold, color=color, underline=underline, size=size, highlight=True)
         elif re.fullmatch(r"→\s*조사\s*중단", tok):
             _arrow(par)
@@ -249,7 +257,7 @@ class Builder:
 
     def directive(self, kind: str, body: str):
         body = str(body).strip()
-        if body.startswith("["):
+        if re.match(r"\[(BASE|PROG|RANGE)\s*:", body):     # 이미 감싼 것만 그대로 — `[#SQ1 응답값#] …` 은 감싼다
             text = body
         else:
             text = f"[{kind}: {body}]"
@@ -275,12 +283,12 @@ class Builder:
         greeting = meta.get("greeting")
         if cov.get("target"):
             self.para("■ **조사 대상자**", before=6)
-            for ln in cov["target"]:
+            for ln in _as_list(cov["target"]):          # 문자열 하나로 줘도 한 줄
                 self.para(f"- {ln}")
         for key, label in (("method", "조사 방법"), ("area", "조사 지역"), ("sample", "샘플 수")):
             if cov.get(key):
                 self.para(f"■ **{label}** : {cov[key]}", before=4)
-        for ln in cov.get("extra") or []:
+        for ln in _as_list(cov.get("extra")):
             self.para(ln, before=4)
         qt = cov.get("quota_table")
         if qt:
@@ -460,6 +468,8 @@ class Builder:
         labels = scale_labels(it) if it.get("scale") else list(it["columns"])
         extra = _as_list((it.get("scale") or {}).get("extra"))
         allc = labels + extra
+        if len(allc) > len(CIRCLED):
+            raise SpecError(f"{it.get('code')}: 행렬 열이 {len(allc)}개 — {len(CIRCLED)}개(①~⑮)까지만 그린다. 문항을 나눈다")
         rows = it["rows"]
         first = 3600
         rest = (TABLE_W - first) // len(allc)
@@ -538,18 +548,31 @@ class Builder:
         self.para("1) 예\t\t2) 아니오", left=567)
         company = cl.get("company", "(주)마크로밀엠브레인")
         keep = cl.get("retention", "조사완료 후 3개월간")
+        # 수집 항목은 한 값 — 고지(3.)·입력 칸·PROG 가 같은 목록을 쓴다 (하우스 원문은 고지 없이 이름까지 받았다)
+        fields = [str(x) for x in _as_list(cl.get("items"))] or ["휴대전화번호"]
+        what = ", ".join(fields)
+        # 법적 고지 문안 — 박스 전체를 노란 형광으로 두고 확인 목록에 올린다 (개인정보 담당 확인 뒤 납품)
         self.box(
-            "**[개인정보 수집 및 이용 동의]**\n"
+            "==**[개인정보 수집 및 이용 동의]**\n"
             "조사 사례인 모바일 상품권 발송을 위해 아래와 같이 귀하의 개인정보를 수집합니다.\n"
             "제공하신 개인정보는 목적 외에는 사용하지 않으며, 이용 기간 후 즉시 파기할 예정입니다.\n"
             f"**1. 제공받는 자 :** {company}\n"
             "**2. 이용 목적 :** 모바일 기프티콘 발송\n"
-            "**3. 개인정보 항목 :** 휴대전화번호\n"
+            f"**3. 개인정보 항목 :** {what}\n"
             f"**4. 보유 및 이용기간 :** {keep}\n"
+            "※ 귀하는 개인정보 수집·이용 동의를 거부할 권리가 있습니다.\n"
             "※ 기프티콘 수령을 원하셨으나 개인정보 수집 관련 동의 여부에 \"비동의\"를 체크하신 경우 기프티콘 수령을 받으실 수 없습니다.\n"
-            "※ 미기재 또는 잘못된 정보일 경우 기프티콘 발송에서 자동 제외될 수 있으며, 이럴 경우 재발송은 하지 않습니다.\n"
-            "**[PROG: 1) 동의하신 경우에만 이름/연락처 입력하도록 구현]**"
+            "※ 미기재 또는 잘못된 정보일 경우 기프티콘 발송에서 자동 제외될 수 있으며, 이럴 경우 재발송은 하지 않습니다.=="
         )
+        # 동의 항목 (하우스 원본의 「동의 여부 · 입력 칸」 줄). 표로 둬야 파서가 ED 보기(예·아니오)에 섞지 않는다
+        t = self.table(1 + len(fields), 2, [2200, TABLE_W - 2200])
+        cell_text(t.cell(0, 0), "동의 여부", bold=True, fill=FILL_HEAD, center=True)
+        cell_text(t.cell(0, 1), "1) 동의\t\t2) 비동의")
+        for r, f in enumerate(fields, start=1):
+            cell_text(t.cell(r, 0), f, bold=True, fill=FILL_HEAD, center=True)
+            cell_text(t.cell(r, 1), "(           ) – (           ) – (           )" if re.search(r"전화|연락처", f) else "")
+        self.directive("PROG", f"ED=1 응답자에게만 동의 여부 제시, 동의 여부 1) 동의하신 경우에만 {what} 입력하도록 구현")
+        self.review.append(f"ED: 개인정보 수집·이용 동의 박스 — 고지 문안·수집 항목({what}) 확인 (노란 형광)")
 
     # ── 전체 ───────────────────────────────────────────────────────────────
     def build(self, out: Path):
@@ -560,6 +583,15 @@ class Builder:
             self.closing()
         out.parent.mkdir(parents=True, exist_ok=True)
         self.doc.save(str(out))
+        # 문서 위생 (R-137): 고객 송부본이다 — 작성자·최종 수정자를 조직명으로, lastPrinted 제거, 보이지 않는 문자 제거.
+        # deckops.save 와 같은 꼴. 실패해도 저장은 살린다.
+        try:
+            import doc_hygiene
+            tmp = out.with_suffix(out.suffix + ".hyg")
+            doc_hygiene.clean_file(out, tmp, "엠브레인")
+            tmp.replace(out)
+        except Exception as e:                       # noqa: BLE001
+            print(f"[build_questionnaire] 문서 위생 건너뜀: {e}", file=sys.stderr)
         return self.review
 
 
@@ -627,7 +659,7 @@ def default_marker(it: dict[str, Any]) -> str:
         mx, mn = it.get("max"), it.get("min")
         if mx:
             return f"[최소 {mn or 1}개, 최대 {mx}개 선택]"
-        return "[모두 선택]"
+        return "[모두 선택]"            # min 만 있으면 PROG 로 남긴다 (auto_prog) — 파서는 `[최소 N개 …]` 단독 표기를 못 읽는다
     if kind == "rank":
         rk = it.get("rank") or {}
         req, opt = int(rk.get("required", 1)), rk.get("optional")
@@ -649,6 +681,9 @@ def auto_prog(it: dict[str, Any]) -> list[str]:
         for o in norm_options(it.get("options") or []):
             if o.get("exclusive") and "중복" not in given and "복수 선택 불가" not in given:
                 out.append(f"{o['no']}) 복수 선택 불가")
+        mn = str(it.get("min") or "").strip()        # max 없이 min 만 → 표기 대신 PROG (check 도 이 함수를 부른다)
+        if mn.isdigit() and int(mn) > 1 and not it.get("max") and "최소" not in given and "MIN" not in given.upper():
+            out.append(f"최소 {int(mn)}개 이상 선택")
     rot = it.get("rotation")
     if rot and "otation" not in given and "로테이션" not in given:
         opts = norm_options(it.get("options") or [])
@@ -682,8 +717,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         spec = load_spec(Path(a.spec))
         review = Builder(spec).build(Path(a.out))
-    except (SpecError, KeyError) as e:
-        print(f"[build_questionnaire] 명세 오류: {e}", file=sys.stderr)
+    except (SpecError, KeyError, IndexError, TypeError, ValueError) as e:
+        # 명세 모양이 틀리면 트레이스백 대신 한 줄로 (KeyError 는 빠진 필드 이름)
+        why = e if isinstance(e, SpecError) else f"{type(e).__name__}: {e}"
+        print(f"[build_questionnaire] 명세 오류: {why}", file=sys.stderr)
         return 2
     n = sum(1 for pt in spec["parts"] for it in pt.get("items", []) if it.get("code"))
     print(f"설문지 생성: 파트 {len(spec['parts'])}개 · 문항 {n}개 → {a.out}")

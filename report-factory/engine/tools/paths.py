@@ -9,7 +9,7 @@
     ├─ README.md · ORIENTATION.md
     ├─ 00_협의/            1 클라이언트 협의 · 2 To-Know-List (RFP · 제안서 · 조사개요 · 회의록 · ToKnowList)
     └─ <NN_조사명>/
-        ├─ 03_설문지/       3 설문지 구성 (설문지 .docx 판별) · 4 온라인 구성 요청/회신
+        ├─ 03_설문지/       3 설문지 구성 — 구조화 .xlsx · 설문지 .docx (정본) · work/ (구조화 펼침본 · 설문명세 · 검수) · 4 온라인 구성 요청/회신
         ├─ 05_웹테스트/     5 웹테스트 — work/ (시나리오 · 덤프 · 캡처 · 세션) · out/ (findings · 수정요청서)
         ├─ 06_실사/         6 설문 실사 — 실사 현황 · 완료 통보 · 원자료
         ├─ 07_테이블/       7 테이블 가이드 작성 · 8 DP 통계표 전달본 · 전처리본
@@ -28,7 +28,7 @@
 
 사용
     python paths.py <조사 폴더>                     역할 → 경로 JSON (layout · 폴더 · 찾은 파일)
-    python paths.py <조사 폴더> --role 설문지        경로 한 줄
+    python paths.py <조사 폴더> --role 설문지        경로 한 줄 (폴더 역할도 된다: --role 설문지_dir)
     python paths.py new <프로젝트>/<조사>            v2 뼈대 생성 (프로젝트 README·ORIENTATION 은 템플릿에서, 없을 때만)
     python paths.py migrate <조사 폴더> [--apply]    v1 → v2 이름 바꾸기. --apply 없으면 계획만 보인다
 """
@@ -73,7 +73,7 @@ FILE_ROLES = {   # 역할: (폴더 역할, 글롭 패턴들 — 앞의 것이 �
     "수정요청서": ("웹테스트", ["out/수정요청서_*.xlsx"]),
 }
 RE_INPUT_SPLIT = [  # v1 input/ 파일을 v2 로 나누는 규칙 (앞의 것이 우선)
-    (re.compile(r"설문", re.I), "설문지_dir"),
+    (re.compile(r"설문|구조화|^work$", re.I), "설문지_dir"),   # work/ = v1 에서 /설문지작성 이 쓴 input/work
     (re.compile(r"원자료|raw", re.I), "실사"),
     (re.compile(r"통계표|테이블|table|전처리", re.I), "테이블_dir"),
 ]

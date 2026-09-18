@@ -403,6 +403,7 @@ def build_ment_facts(table: dict, resort: bool = False) -> dict:
 RESPONSE_MARKER = re.compile(
     r"\s*\[(?:\d+개\s*선택|모두\s*선택|직접\s*입력|\d+행\s*필수\s*입력"
     r"|행별\s*\d+개\s*선택|항목별\s*\d+개\s*선택"
+    r"|최소\s*\d+\s*개\s*,?\s*최대\s*\d+\s*개\s*선택|최대\s*\d+\s*개\s*선택"
     r"|\d+순위[^\]]*|1순위[^\]]*)\]\s*")
 
 #: 접미 중 순위·요약표를 가리키는 조각. 나머지는 매트릭스 항목으로 본다.

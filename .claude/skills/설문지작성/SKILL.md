@@ -43,13 +43,13 @@ TKL(받은 경우만) → **구조화 엑셀** → **설문지** 의 두 번째 
 ```
 
 인자: 조사 폴더와 구조화 파일. 예 `/설문지작성 projects/2026_○○_만족도/01_본조사 구조화.xlsx`
-구조화 파일만 받고 조사 폴더가 없으면 `paths.py new <연도_클라이언트_프로젝트>/01_<조사약칭>` 으로 뼈대를 만들고 파일을 `03_설문지/` 에 넣는다.
+구조화 파일만 받고 조사 폴더가 없으면 `paths.py new <연도_클라이언트_프로젝트>/01_<조사약칭>` 으로 뼈대를 만든다. 파일은 Step 0 에서 설문지 폴더로 복사해 둔다.
 
 ---
 
 ## 이 업무의 헌법 3
 
-1. **구조화가 정본이다.** 구조화에 있는 문항은 전부 설문지에 간다. 빼면 `meta.skipped_src` 에 사유와 함께 적는다.
+1. **구조화가 정본이다.** 구조화에 있는 문항은 전부 설문지에 간다. 빼면 `meta.skipped_src` 에 그 행 `ref` 만 넣고(`"구성안!55"`) 사유는 `meta.notes` 에 적는다.
    구조화에 없는 문항을 넣으면(`src` 없음) 이유를 변환 메모에 적는다. 조용히 더하거나 빼지 않는다.
 2. **도구는 서식만, 문장은 Claude 가, 결정은 사람이.** 문장·보기·로직은 `knowledge/50_설문지-작성.md` 의 하우스 규칙으로 짓는다.
    구조화에 없는 보기를 새로 지었거나, 범위·조건을 추론했으면 그 문항에 `review` 를 달아 **노란 번호**로 드러낸다.
@@ -74,10 +74,15 @@ TKL(받은 경우만) → **구조화 엑셀** → **설문지** 의 두 번째 
 
 ```bash
 ROOT="$(git rev-parse --show-toplevel)"; T="$ROOT/report-factory/engine/tools"
-W="<조사>/03_설문지/work"; mkdir -p "$W"
+SQ="$(python "$T/paths.py" "<조사>" --role 설문지_dir)"; W="$SQ/work"; mkdir -p "$W/검수"
 ```
 
+설문지 폴더(`$SQ`)는 paths 가 정한다 — v2 면 `03_설문지/`, 옛 배치(v1)면 `input/`. `03_설문지/` 를 손으로 만들지 않는다
+(v1 조사에 생기면 paths 가 v2 로 읽어 `/제작가이드` · `/보고서작성` 이 파일을 잃고, `paths.py migrate` 로도 되돌리지 못한다).
 경로는 `C:/Users/…` 꼴이나 리포 기준 상대 경로로 넘긴다. Git Bash 의 `/c/Users/…` 는 파이썬(python-docx)이 못 연다.
+
+구조화 파일 — 인자가 없으면 PATHS `files.구조화` 를 쓴다(`files_all.구조화` 에 여러 벌이면 어느 것인지 묻는다).
+조사 폴더 밖(다운로드 폴더 등)에서 받았으면 `$SQ/<조사약칭>_구조화_<YYMMDD>.xlsx` 로 복사하고 그 사본을 읽는다. 이름에 `구조화` 가 있어야 paths 가 찾는다.
 
 AskUserQuestion 한 번으로 **구조화에 없는 것만** 묻는다(이미 `MEMORY.md` 「결정된 것」에 있으면 묻지 않는다).
 - 표지 형태 — 기본(조사 대상자·방법·샘플 수·쿼터) / 인사말 박스 포함(공공·기관 조사, 응답자가 표지를 봄 → 담당자·연락처 필요)
@@ -119,29 +124,41 @@ python "$T/read_structure.py" "<구조화.xlsx>" "$W"
 ## Step 3 — 서식 입히기와 기계 검수
 
 ```bash
-python "$T/build_questionnaire.py" "$W/설문명세.json" "<조사>/03_설문지/<조사약칭>_설문지_<YYMMDD>.docx"
+python "$T/build_questionnaire.py" "$W/설문명세.json" "$SQ/<조사약칭>_설문지_<YYMMDD>.docx"
 python "$T/check_questionnaire.py" "$W/설문명세.json" --structure "$W/structure.json" \
-       --docx "<조사>/03_설문지/<조사약칭>_설문지_<YYMMDD>.docx" --out "$W/검수.json" --md "$W/검수.md"
+       --docx "$SQ/<조사약칭>_설문지_<YYMMDD>.docx" --out "$W/검수/check_questionnaire.json" --md "$W/검수/check_questionnaire.md"
 ```
 
 - **치명**(Q-01 번호 · Q-03 참조 · Q-04 BASE 코드 범위 · Q-05 필수 요소 · Q-14 파서 왕복)은 명세를 고쳐 0 으로 만든다.
-- **경고**는 하나씩 판단한다. Q-11(구조화 누락)은 반영하거나 `skipped_src` 로 사유를 남긴다. Q-10(로테이션)은 결정해 명시한다.
+- **경고**는 하나씩 판단한다. Q-11(구조화 누락)은 반영하거나 `skipped_src` 에 그 행 `ref` 만 넣는다(사유는 `meta.notes`). Q-10(로테이션)은 결정해 명시한다.
   고치지 않기로 한 경고는 `meta.notes` 에 이유를 적는다.
 - 파일 이름은 README 규칙 `<구분자>_<내용>_<일자>`. 같은 날 다시 만들면 `_v2`.
 
 ## Step 4 — 반증 검토
 
-`questionnaire-adversary` 에이전트를 띄운다(백그라운드 아님 — 결과를 받아 고친다). 주는 것: `structure.md` 경로 · `설문명세.json` 경로 ·
-산출 .docx 경로 · TKL 경로(있으면) · 조사 목적 한 줄. **내가 왜 그렇게 썼는지는 주지 않는다.**
-돌아온 findings 중 맞는 것은 명세에 반영하고 Step 3 을 다시 돈다. 판단이 갈리는 것은 사람에게 넘길 목록에 넣는다.
+`questionnaire-adversary` 에이전트를 띄운다(백그라운드 아님 — 결과를 받아 고친다). **내가 왜 그렇게 썼는지는 주지 않는다.**
+명세는 변환 메모(`meta.notes`)와 문항별 `review` 사유를 뺀 사본으로 준다:
+
+```bash
+python -c "import json,sys,pathlib as P; s=json.loads(P.Path(sys.argv[1]).read_text(encoding='utf-8')); s['meta'].pop('notes',None); [i.pop('review',None) for p in s['parts'] for i in p.get('items',[])]; P.Path(sys.argv[2]).write_text(json.dumps(s,ensure_ascii=False,indent=1),encoding='utf-8')" "$W/설문명세.json" "$W/설문명세_blind.json"
+```
+
+주는 것: `structure.md` 경로 · `설문명세_blind.json` 경로 · 산출 .docx 경로 · TKL 경로(있으면) · 조사 목적 한 줄.
+돌아온 JSON(`findings` · `verified` · `not_checked`)은 `$W/검수/questionnaire-adversary_<YYMMDD>.json` 으로 저장한다(`/회고` 가 `work/검수/` 에서 읽는다).
+`findings` 중 맞는 것은 명세에 반영하고 Step 3 을 다시 돈다. 판단이 갈리는 것은 사람에게 넘길 목록에 넣는다.
 
 ## Step 5 — 보고
 
-1. 산출 .docx 를 PDF 로 렌더해(가능하면 Word COM, 아니면 LibreOffice) 첫 두 쪽을 눈으로 확인한 뒤 SendUserFile 로 .docx 를 보낸다.
+1. 산출 .docx 를 PDF 로 렌더해 첫 두 쪽을 눈으로 확인한다(PDF 를 Read 로 `pages: "1-2"`). Word 가 있으면 Word COM:
+   ```bash
+   DOCX="$SQ/<조사약칭>_설문지_<YYMMDD>.docx" PDF="$W/<조사약칭>_설문지_<YYMMDD>.pdf" powershell -NoProfile -Command '$w = New-Object -ComObject Word.Application; try { $d = $w.Documents.Open((Resolve-Path $env:DOCX).Path, $false, $true); $d.SaveAs2([IO.Path]::GetFullPath($env:PDF), 17); $d.Close($false) } finally { $w.Quit() }'
+   ```
+   Word 가 없으면 `soffice --headless --convert-to pdf --outdir "$W" "<docx>"`. 둘 다 없으면 렌더를 건너뛰었다고 요약에 적는다.
+   확인한 뒤 SendUserFile 로 .docx 를 보낸다. SendUserFile 이 없는 세션(터미널 CLI)이면 .docx 경로를 채팅에 적는다.
 2. 채팅에 요약한다 — 파트·문항 수 · 검수 결과(치명 0 · 경고 n) · **확인 필요(노란 번호) 목록** · 변환 메모 · 참고 시트 요청 중 미반영 ·
    사람이 정할 것(연락처·사례품·쿼터 수치 등 비워 둔 것).
 3. `_memory/MEMORY.md` 갱신 — 결정된 것(표지 형태 · 호칭 · 사례품 · 척도 방향 · 번호 체계) · 다음 세션이 알아야 할 것(남은 확인 사항).
-4. 다음 단계 안내 — 연구원 검토 → 고객 송부 → 확정본을 `03_설문지/` 에 두면 온라인실사팀 구축 → `/웹테스트`.
+4. 다음 단계 안내 — 연구원 검토 → 고객 송부 → 확정본을 설문지 폴더(`$SQ`)에 두면 온라인실사팀 구축 → `/웹테스트`.
 
 ## 수정 요청이 오면
 

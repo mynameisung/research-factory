@@ -16,8 +16,17 @@ description: 내가 쓰다가 얻은 노하우와 로컬에서 다듬어진 규�
 
 ## 절차
 
-1. **선행 확인**
-   - `gh auth status` — 로그인이 없으면 `gh auth login --web` 을 안내하고 브라우저 승인까지 기다린다.
+1. **선행 확인** — 하나라도 통과하지 못하면 여기서 멈춘다. **gh 가 준비되지 않은 채로 push 하지 않는다.**
+   push 는 Git 의 로그인(Git Credential Manager)으로 되지만 PR 은 gh 로만 만들어지므로, 그대로 가면 PR 없는 브랜치만 원격에 남는다
+   (2026-09-17 `개선/syjeong-260917` — gh 가 없는 PC 에서 push 만 되고 PR 이 없었다).
+   - `gh --version` — 명령이 없으면 GitHub CLI 가 설치되지 않은 것이다. README 0절 설치 순서에는 gh 가 없으므로 연구원 PC 는 대개 여기서 걸린다.
+     사용자 승인을 받아 `winget install --id GitHub.cli -e` 로 설치하고, 새 셸에서 `gh --version` 을 다시 확인한다
+     (지금 셸의 PATH 에 안 잡히면 `C:\Program Files\GitHub CLI\gh.exe` 를 직접 부른다). winget 이 없으면 https://cli.github.com 에서 받게 안내한다.
+   - `gh auth status` — 로그인이 없으면 `gh auth login --web --git-protocol https` 를 안내하고 브라우저 승인까지 기다린다.
+   - `gh api user -q .login` — 브랜치 이름과 카드의 「올린 사람」에 쓸 계정명이다. git 의 user.name 으로 대신하지 않는다.
+   - `gh repo view --json nameWithOwner,viewerPermission -q '.nameWithOwner + " " + .viewerPermission'` — 올릴 저장소(이하 `<리포>`)와 내 권한.
+     리포 이름은 이 값을 쓰고 문서에 적힌 주소를 하드코딩하지 않는다(리포가 옮겨지면 옛 주소는 redirect 로만 산다).
+     권한이 `WRITE`·`MAINTAIN`·`ADMIN` 이 아니면 관리자에게 쓰기 권한을 요청하라고 안내하고 멈춘다.
    - `git fetch origin` 으로 원격 최신을 받아 둔다.
    - `python report-factory/engine/tools/gen_preamble.py --check` — 스킬의 PREAMBLE 이 원본(`engine/templates/SKILL_PREAMBLE.md`)과
      어긋나면 `gen_preamble.py` 로 채운 뒤 진행한다. 프리앰블은 스킬 파일에서 직접 고친 것을 올리지 않는다.
@@ -25,6 +34,7 @@ description: 내가 쓰다가 얻은 노하우와 로컬에서 다듬어진 규�
 2. **노하우 채집** — 사용자가 「이 노하우 올리자」고 한 것이 있으면 그것부터. 없으면 조사 메모리에서 후보를 뽑는다.
    - 활성 조사(`projects/.active`)의 `_memory/MEMORY.md`(결정된 것 · 다음 세션이 알아야 할 것) · `사용자입력.jsonl`(최근) · `스킬실행.jsonl`(어느 스킬을 썼나)을 읽는다.
    - 스킬별로 **구체적으로** 묻는다. 「노하우 있나요?」는 아무것도 못 건진다.
+     - 설문지작성: 「구조화 양식에서 처음 보는 변형이 있었나요? 고객이 되돌려 고친 문형·보기는? 실사팀이 되물은 로직 표기는? 검수기가 잘못 잡은 것은?」
      - 웹테스트: 「사이트 선택자를 고쳤나요? 테스트 계정은 어떻게 얻었나요? 손으로 보탠 시나리오가 있나요?」
      - 제작가이드: 「목차·배너에서 손으로 바꾼 것은? 검증기가 잘못 잡은 것은? 제작팀이 되물은 것은?」
      - 보고서작성: 「제작본에서 반복된 실수는? 차트를 고칠 때 막힌 것은? 렌더에서 자주 깨진 장표는?」
@@ -35,6 +45,7 @@ description: 내가 쓰다가 얻은 노하우와 로컬에서 다듬어진 규�
 
 3. **변경분 수집** — `git status --porcelain` 에서 **공유 대상 경로만** 추린다:
    `report-factory/engine/` · `.claude/skills/` · `.claude/agents/` · `README.md` · `CHANGELOG.md`.
+   설치 파일 `setup` · `setup.ps1` · `requirements.txt` 도 올리되 모든 연구원의 설치를 바꾸므로 PR 본문에 「설치 파일 변경 — 관리자 검토 필요」로 따로 적는다.
    그 밖의 경로가 잡히면 목록만 보여 주고 PR 에서는 뺀다(조사 데이터 `projects/` 는 어떤 경우에도 올리지 않는다).
 
 4. **안전 게이트** — diff 전체를 훑어 다음이 보이면 **중단하고 보고**한다:
@@ -53,13 +64,23 @@ description: 내가 쓰다가 얻은 노하우와 로컬에서 다듬어진 규�
    git -C <워크트리> checkout -b 개선/<gh 계정명>-<YYMMDD>
    git -C <워크트리> add -A → commit (요약을 커밋 메시지로)
    git -C <워크트리> push -u origin <브랜치>
-   gh pr create --base main --title "<한 줄 요지>" --body "<무엇을·왜 + 검증 여부>"
+   (PR 본문을 <스크래치>/pr_body.md 로 쓴다)
+   gh pr create -R <리포> --base main --head <브랜치> --title "<한 줄 요지>" --body-file <스크래치>/pr_body.md
+   gh pr view <브랜치> -R <리포> --json url -q .url        ← PR 이 실제로 생겼는지 확인
    git worktree remove <워크트리> --force
    ```
+   - `-R` 과 `--head` 는 빼지 않는다. 셸의 현재 폴더는 작업 폴더(main)라서, 빼면 gh 가 head 를 `main` 으로 잡아
+     main→main PR 이 되고 GitHub 가 거부한다(`--dry-run` 으로 재현: `head: …:main`).
+   - 본문은 `--body` 대신 `--body-file` 로 넘긴다. PowerShell 5.1 은 외부 명령에 넘기는 인자 안의 큰따옴표를 지운다
+     (`"인용"` → `인용`, 실측). 제목에도 큰따옴표를 쓰지 않는다.
+   - `gh pr create` 가 실패하면 브랜치는 이미 올라가 있다. 오류를 그대로 보여 주고, 원인을 고친 뒤 `gh pr create` 만 다시 부른다(push 를 반복하지 않는다).
+     gh 를 끝내 쓸 수 없으면 `https://github.com/<리포>/compare/main...<브랜치>?expand=1` 을 알려 주어
+     브라우저에서 「Create pull request」를 누르게 한다. 워크트리는 PR 이 확인된 뒤에 지운다.
+
    같은 날 두 번째 실행이면 브랜치명에 `-2` 를 붙인다. 노하우만 있으면 제목 앞에 `[노하우]`, 개선분이 섞이면 `[노하우+개선]`.
    PR 본문에는 카드 제목 목록과 「관리자 판정 요청: 채택 / 승격 / 보류」 한 줄을 넣는다.
 
-7. **보고** — PR URL 을 알려 주고, 「관리자가 병합하면 `/업그레이드` 로 받게 된다」고
+7. **보고** — `gh pr view` 로 확인한 PR URL 을 알려 주고(URL 을 확인하지 못했으면 「PR 을 올렸다」고 보고하지 않는다), 「관리자가 병합하면 `/업그레이드` 로 받게 된다」고
    안내한다. 로컬 수정은 그대로 남아 있으므로 지금 하던 작업은 계속해도 된다고 덧붙인다.
 
 ## 관리자가 PR 을 받으면 (관리자 세션에서)

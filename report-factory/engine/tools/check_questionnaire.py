@@ -9,20 +9,24 @@
     Q-01 치명  문항번호 형식·중복·파트 접두 불일치
     Q-02 경고  파트 안 번호 순서 역행
     Q-03 치명  BASE·파이핑이 없는 문항 / 뒤에 나오는 문항을 가리킴   (PROG 는 없는 문항만)
-    Q-04 치명  BASE 의 보기 번호가 그 문항 보기 수를 넘음           (`A3=1~3`, `B2≠4`, `SQ5=2,3`)
-    Q-05 치명  응답유형별 필수 요소 누락 (선택형 보기 2개 미만 · 척도 라벨 · 행렬 행 · 순위 수 > 보기 수)
-    Q-06 경고  기타 보기가 끝이 아님(없음·모름 앞은 허용) · 기타 기입란 없음
+    Q-04 치명  BASE 의 보기 번호가 그 문항에 없는 응답 코드          (`A3=1~3`, `B2≠4`, `SQ5=2,3`)
+               BASE 는 `|` 앞의 조건만 본다 (`SQ1=1 | B2B 담당자` 의 B2B 는 문항이 아니다)
+    Q-05 치명  응답유형별 필수 요소 누락 (선택형 보기 2개 미만 · 척도 라벨 · 행렬 행 · 순위 수 > 보기 수 ·
+               입력형 기입 줄이 `1)` 로 시작 — 파서가 보기로 읽는다)
+    Q-06 경고  기타 보기가 끝이 아님(없음·모름 앞은 허용). 기입란 `(   )` 은 build 가 붙인다
     Q-07 경고  복수 문항의 없음/모름/경험 없음 보기에 배타(exclusive) 표시 없음
     Q-08 경고  척도 방향 — 1점 라벨이 긍정으로 보임 (하우스 규칙: 1=부정 → 5=긍정)
     Q-09 경고  숫자 입력인데 RANGE 없음
     Q-10 경고  보기 5개 이상 명목형인데 로테이션 결정이 없음 (rotation: true/false 를 명시)
     Q-11 경고  구조화 행이 어떤 문항의 src 에도 없음 (구조화 누락)          --structure
+               빼는 행은 meta.skipped_src 에 ref 만(`구성안!55`), 사유는 meta.notes. 시트 통째(이전 버전)는 `시트!*`
     Q-12 정보  구조화에 없는 문항 (src 없음) · 확인 필요(review) 문항 목록
     Q-13 경고  SQ 파트에 조사 중단 장치가 없음 (보기 terminate 또는 PROG 조사 종료)
-    Q-14 치명  파서 왕복 — docx 를 parse_questionnaire 로 읽은 문항번호·응답유형·보기 수가 명세와 다름   --docx
+    Q-14 치명  파서 왕복 — docx 를 parse_questionnaire 로 읽은 문항번호·응답유형·보기 수·BASE 가 명세와 다름   --docx
+         경고  PROG 가 파서에서 그 문항에 붙지 않음 (문항 위 PROG 가 앞 문항으로 넘어가는 등)
     Q-15 경고  파서 경고
     Q-16 경고  PROG·BASE·RANGE 안에 대괄호가 겹침 (파서가 첫 `]` 에서 자름)
-판정: 치명 0 이면 통과(exit 0). 치명이 있으면 exit 1.
+판정: 치명 0 이면 통과(exit 0). 치명이 있으면 exit 1. 명세·구조화 JSON 을 못 읽으면 exit 2.
 """
 from __future__ import annotations
 
@@ -35,7 +39,8 @@ from typing import Any
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from build_questionnaire import RE_NONE, _as_list, load_spec, norm_options, scale_labels  # noqa: E402
+from build_questionnaire import (RE_NONE, SpecError, _as_list, auto_prog, load_spec,  # noqa: E402
+                                 norm_options, scale_labels)
 
 RE_CODE = re.compile(r"^(SQ|DQ|[A-Z]{1,2})(\d+)((?:-\d+)*)$")
 RE_REF = re.compile(r"(?<![A-Za-z#])((?:SQ|DQ|[A-Z]{1,2})\d+(?:-\d+)*)(?![\d])")
@@ -43,6 +48,18 @@ RE_COND = re.compile(r"((?:SQ|DQ|[A-Z]{1,2})\d+(?:-\d+)*)\s*(=|≠|!=)\s*([\d~,\
 EXPECT_TYPE = {"single": "단일", "multi": "복수", "rank": "순위", "scale": "척도", "matrix": "행렬",
                "number": "숫자입력", "open": "개방형", "yesno": "예-아니오"}
 POSITIVE_FIRST = re.compile(r"^(매우\s*(만족|그렇|중요|좋)|아주)")
+NEGATED = re.compile(r"전혀|않|없|못|모르|모른|불만|싫|나쁘")
+
+
+def _reversed_scale(labs: list[str]) -> bool:
+    """1점 라벨이 긍정으로 보이는가. 부정어(않다·없다·전혀 …)가 1점에 없고 끝점에 있으면 거꾸로다.
+    `매우 적다 → 매우 많다` · `매우 어렵다 → 매우 쉽다` 처럼 양끝에 부정어가 없으면 방향을 판단하지 않는다."""
+    if not labs:
+        return False
+    first, last = str(labs[0]), str(labs[-1])
+    if NEGATED.search(first):
+        return False
+    return bool(POSITIVE_FIRST.match(first)) or (len(labs) > 1 and bool(NEGATED.search(last)))
 
 
 def _key(code: str) -> tuple:
@@ -82,6 +99,64 @@ def n_answers(it: dict[str, Any]) -> int | None:
     return None
 
 
+def valid_codes(it: dict[str, Any]) -> set[int] | None:
+    """BASE 가 쓸 수 있는 응답 코드. 명시 번호(`no`)·묶음 표 이어 매김을 build 와 똑같이 센다."""
+    kind = it.get("kind", "single")
+    if kind in ("single", "multi", "rank") and it.get("options_table"):
+        codes, n = set(), 0
+        for g in it["options_table"]:
+            for raw, o in zip(g["options"], norm_options(g["options"])):
+                n = o["no"] if isinstance(raw, dict) and "no" in raw else n + 1
+                codes.add(n)
+        return codes
+    if kind in ("single", "multi", "rank", "list"):
+        return {o["no"] for o in norm_options(it.get("options") or [])} or None
+    if kind == "yesno":
+        return {o["no"] for o in norm_options(it.get("options") or ["예", "아니오"])}
+    if kind == "scale":
+        return set(range(1, n_answers(it) + 1))
+    return None
+
+
+def _span(codes: set[int]) -> str:
+    """{1,2,3,9} → `1~3, 9`"""
+    out: list[str] = []
+    for x in sorted(codes):
+        if out and out[-1][1] == x - 1:
+            out[-1][1] = x
+        else:
+            out.append([x, x])
+    return ", ".join(f"{a}~{b}" if b > a else f"{a}" for a, b in out)
+
+
+def _base_cond(it: dict[str, Any]) -> str:
+    """BASE 의 조건 부분. `|` 뒤는 사람말 설명이라 B2B · K5 · Q1 같은 낱말이 문항번호처럼 보인다."""
+    return str(it.get("base") or "").split("|", 1)[0]
+
+
+def _dir_body(x: Any) -> str:
+    """지시문 본문 비교용 — `[PROG: …]` 껍데기를 벗기고 공백을 하나로."""
+    body = re.sub(r"^\s*\[(?:BASE|PROG|RANGE)\s*:", "", str(x)).strip().rstrip("]")
+    return re.sub(r"\s+", " ", body).strip()
+
+
+def _bracketed(x: Any) -> bool:
+    body = _dir_body(x)
+    return "[" in body or "]" in body
+
+
+def _skipped(ref: str, entries: list[str]) -> bool:
+    """skipped_src 항목이 이 ref 를 가리키는가. `구성안!5 — 사유` 처럼 뒤에 글이 붙어도 앞의 ref 로 본다.
+    `구성안!*` 는 시트 통째 (이전 버전 시트)."""
+    sheet = ref.rsplit("!", 1)[0]
+    for s in entries:
+        if s.startswith(f"{sheet}!*"):
+            return True
+        if s.startswith(ref) and (len(s) == len(ref) or not s[len(ref)].isdigit()):
+            return True
+    return False
+
+
 def check(spec: dict[str, Any], structure: dict[str, Any] | None, docx_path: Path | None) -> list[dict[str, Any]]:
     F: list[dict[str, Any]] = []
 
@@ -118,9 +193,7 @@ def check(spec: dict[str, Any], structure: dict[str, Any] | None, docx_path: Pat
     # Q-03 / Q-04
     for part, it in items:
         code = it["code"]
-        refs_strict = []
-        for field in ("base",):
-            refs_strict += [(field, r) for r in RE_REF.findall(str(it.get(field) or ""))]
+        refs_strict = [("base", r) for r in RE_REF.findall(_base_cond(it))]
         for pip in re.findall(r"\[#([^\]]*)\]", str(it.get("text", "")) + str(it.get("note", ""))):
             refs_strict += [("파이핑", r) for r in RE_REF.findall(pip)]
         for field, r in refs_strict:
@@ -132,16 +205,19 @@ def check(spec: dict[str, Any], structure: dict[str, Any] | None, docx_path: Pat
             for r in RE_REF.findall(str(pg)):
                 if r not in by_code and not r.startswith(("SQ0",)):
                     add("Q-03", "경고", code, f"PROG 가 없는 문항 {r} 를 가리킴: {pg}")
-        for q, op, expr in RE_COND.findall(str(it.get("base") or "")):
+        for q, op, expr in RE_COND.findall(_base_cond(it)):
             tgt = by_code.get(q)
             if not tgt:
                 continue
-            n = n_answers(tgt)
-            if n is None:
+            try:
+                valid = valid_codes(tgt)
+            except SpecError:
+                continue                            # 척도 preset 오류 — Q-05 가 그 문항에서 알린다
+            if not valid:
                 continue
-            bad = [x for x in _nums(expr) if x < 1 or x > n]
+            bad = [x for x in _nums(expr) if x not in valid]
             if bad:
-                add("Q-04", "치명", code, f"BASE `{q}{op}{expr.strip()}` — {q} 의 응답 코드는 1~{n} 인데 {bad} 를 씀")
+                add("Q-04", "치명", code, f"BASE `{q}{op}{expr.strip()}` — {q} 의 응답 코드는 {_span(valid)} 인데 {bad} 를 씀")
 
     # Q-05 ~ Q-10
     for part, it in items:
@@ -157,7 +233,7 @@ def check(spec: dict[str, Any], structure: dict[str, Any] | None, docx_path: Pat
                 labs = scale_labels(it)
             except Exception as e:
                 add("Q-05", "치명", code, str(e)); labs = []
-            if labs and POSITIVE_FIRST.match(labs[0]):
+            if _reversed_scale(labs):
                 add("Q-08", "경고", code, f"1점 라벨이 긍정으로 보임: `{labs[0]}` — 1=부정 → 5=긍정이 하우스 규칙")
         if kind == "matrix":
             if not it.get("rows"):
@@ -167,7 +243,7 @@ def check(spec: dict[str, Any], structure: dict[str, Any] | None, docx_path: Pat
             if it.get("scale"):
                 try:
                     labs = scale_labels(it)
-                    if POSITIVE_FIRST.match(labs[0]):
+                    if _reversed_scale(labs):
                         add("Q-08", "경고", code, f"1점 라벨이 긍정으로 보임: `{labs[0]}`")
                 except Exception as e:
                     add("Q-05", "치명", code, str(e))
@@ -185,8 +261,6 @@ def check(spec: dict[str, Any], structure: dict[str, Any] | None, docx_path: Pat
                 tail = opts[i + 1:]
                 if any(not (o.get("exclusive") or RE_NONE.search(o["text"])) for o in tail):
                     add("Q-06", "경고", code, f"기타 보기 {opts[i]['no']}) 가 끝이 아님")
-                if "(" not in opts[i]["text"]:
-                    add("Q-06", "경고", code, "기타 보기에 기입란 `(      )` 없음")
             if kind == "multi":
                 for o in opts:
                     if RE_NONE.search(o["text"]) and not o.get("exclusive") and not o.get("other"):
@@ -195,7 +269,7 @@ def check(spec: dict[str, Any], structure: dict[str, Any] | None, docx_path: Pat
             if nominal and len(opts) >= 5 and "rotation" not in it:
                 add("Q-10", "경고", code, f"보기 {len(opts)}개 명목형 — rotation 을 true/false 로 명시 (구간·척도형이면 ordinal: true)")
         if kind in ("open", "number") and any(re.match(r"^\s*\d+\)", str(ln)) for ln in _as_list(it.get("lines"))):
-            add("Q-05", "경고", code, "입력형 기입 줄이 `1) …` 로 시작 — 파서가 보기로 읽는다. `a. …` 나 fields 로 쓴다")
+            add("Q-05", "치명", code, "입력형 기입 줄이 `1) …` 로 시작 — 파서가 보기로 읽는다. `a. …` 나 fields 로 쓴다")
         if kind == "number" and not it.get("range") and not it.get("columns"):
             add("Q-09", "경고", code, "숫자 입력인데 RANGE 없음")
         if kind == "number" and it.get("columns") and not it.get("range"):
@@ -238,7 +312,7 @@ def check(spec: dict[str, Any], structure: dict[str, Any] | None, docx_path: Pat
             for it in pt.get("items", []):
                 if not it.get("code"):
                     cited.update(_as_list(it.get("src")))
-        skipped = set(_as_list(spec.get("meta", {}).get("skipped_src")))
+        skipped = [str(s).strip() for s in _as_list(spec.get("meta", {}).get("skipped_src"))]
         for sh in structure["sheets"]:
             if sh["kind"] != "structure":
                 continue
@@ -248,12 +322,12 @@ def check(spec: dict[str, Any], structure: dict[str, Any] | None, docx_path: Pat
                     continue
                 if rec.get("banner") and not f.get("question"):
                     continue
-                if rec["ref"] in cited or rec["ref"] in skipped:
+                if rec["ref"] in cited or _skipped(rec["ref"], skipped):
                     continue
                 label = f.get("code") or f.get("attribute") or f.get("section") or ""
                 q = (f.get("question") or "")[:40].replace("\n", " ")
-                add("Q-11", "경고", rec["ref"], f"구조화 행이 설문에 반영되지 않음: {label} {q}".strip()
-                    + " — 반영하거나 meta.skipped_src 에 사유와 함께 넣는다")
+                add("Q-11", "경고", rec["ref"], "구조화 행이 설문에 반영되지 않음: " + " ".join(x for x in (label, q) if x)
+                    + " — 반영하거나 meta.skipped_src 에 ref 만 넣는다(사유는 meta.notes · 이전 버전 시트는 `시트!*`)")
 
     # Q-14 / Q-15
     if docx_path:
@@ -280,11 +354,26 @@ def check(spec: dict[str, Any], structure: dict[str, Any] | None, docx_path: Pat
                 pass
             elif exp and q["response_type"] != exp and not (exp == "단일" and q["response_type"] == "예-아니오"):
                 add("Q-14", "치명", code, f"응답유형 왕복 불일치: 명세 {exp} ↔ 파서 {q['response_type']}")
-            n = n_answers(it)
-            if n is not None and it.get("kind") in ("single", "multi", "rank", "yesno") and q["n_options"] != n:
+            n = n_answers(it) if it.get("kind") in ("single", "multi", "rank", "yesno") else None
+            if n is not None and q["n_options"] != n:
                 add("Q-14", "치명", code, f"보기 수 왕복 불일치: 명세 {n} ↔ 파서 {q['n_options']}")
-            if it.get("base") and not q.get("base_condition"):
+            # BASE — 양방향. 안내 박스(info) 위 BASE 는 파서가 다음 문항에 붙인다 (/웹테스트 시나리오가 이걸 읽는다)
+            pb = q.get("base_condition")
+            if it.get("base") and not pb:
                 add("Q-14", "치명", code, "BASE 가 파서에서 문항에 붙지 않음")
+            elif pb and not it.get("base"):
+                add("Q-14", "치명", code, f"명세에는 BASE 가 없는데 파서가 `{pb}` 를 붙임 — 앞 안내 박스·본문 줄의 BASE 가 넘어온 것")
+            elif pb and not _bracketed(it["base"]) and _dir_body(pb) != _dir_body(it["base"]):
+                add("Q-14", "치명", code, f"BASE 왕복 불일치: 명세 `{it['base']}` ↔ 파서 `{pb}` — 앞 안내 박스의 BASE 가 먼저 붙었는지 확인")
+            # PROG — 명세의 PROG 가 그 문항에 붙는가 (문항 위 prog_before 는 BASE 가 없으면 앞 문항으로 간다)
+            have = {_dir_body(x) for x in (q.get("directives") or {}).get("prog", [])}
+            for pg in auto_prog(it) + _as_list(it.get("prog")) + _as_list(it.get("prog_before")):
+                if _bracketed(pg) or _dir_body(pg) in have:
+                    continue                        # 대괄호가 겹친 PROG 는 Q-16 이 알린다
+                other = [c for c, oq in got.items() if c != code
+                         and _dir_body(pg) in {_dir_body(x) for x in (oq.get("directives") or {}).get("prog", [])}]
+                add("Q-14", "경고", code, f"PROG `{pg}` 가 파서에서 이 문항에 붙지 않음"
+                    + (f" — {other[0]} 에 붙음" if other else ""))
         list_codes = {c for c, it in by_code.items() if it.get("kind") == "list"}
         for w in doc["meta"]["warnings"]:
             code = w.split(":", 1)[0]
@@ -322,9 +411,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out")
     ap.add_argument("--md")
     a = ap.parse_args(argv)
-    spec = load_spec(Path(a.spec))
-    structure = json.loads(Path(a.structure).read_text(encoding="utf-8")) if a.structure else None
-    F = check(spec, structure, Path(a.docx) if a.docx else None)
+    try:
+        spec = load_spec(Path(a.spec))
+        structure = json.loads(Path(a.structure).read_text(encoding="utf-8")) if a.structure else None
+        F = check(spec, structure, Path(a.docx) if a.docx else None)
+    except (ValueError, KeyError, OSError) as e:       # SpecError · JSON 문법 오류 · 파일 없음
+        print(f"[check_questionnaire] 명세 오류: {type(e).__name__}: {e}", file=sys.stderr)
+        return 2
     if a.out:
         Path(a.out).write_text(json.dumps(F, ensure_ascii=False, indent=1), encoding="utf-8")
     md = to_md(F, spec)

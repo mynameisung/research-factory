@@ -71,6 +71,8 @@ def _classify(rel: Path) -> str:
         return "report"
     if parts & {"05_웹테스트", "3_웹테스트"}:
         return "webtest"
+    if parts & {"03_설문지", "input"} and "work" in parts:   # /설문지작성 작업 폴더 (v1 은 input/work)
+        return "questionnaire"
     if parts & {"00_협의", "00_공통", "input", "03_설문지", "06_실사", "07_테이블"}:
         return "input"
     if rel.name in {"ORIENTATION.md", "README.md"}:

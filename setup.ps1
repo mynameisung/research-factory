@@ -24,7 +24,13 @@ if ($env:PYTHONUTF8 -ne "1") {
 python (Join-Path $root "report-factory\engine\tools\verify.py") --help | Out-Null
 python (Join-Path $root "report-factory\engine\tools\build_guide.py") --help | Out-Null
 python (Join-Path $root "report-factory\engine\tools\gen_preamble.py") --check
-python (Join-Path $root "report-factory\engine\tools\questionnaire_selftest.py") | Select-Object -Last 1
+$qst = Join-Path $root "report-factory\engine\tools\questionnaire_selftest.py"
+python $qst | Out-Null   # 파이프로 받으면 cp949 콘솔에서 한글이 깨진다 — 결과는 종료 코드로 본다
+if ($LASTEXITCODE -ne 0) {
+    python $qst   # 파이프 없이 다시 돌려 무엇이 실패했는지 보인다
+    Write-Host "  설문지 빌더 자체 시험 실패. 위 결과를 관리자에게 보내세요" -ForegroundColor Red
+    exit 1
+}
 Write-Host "  엔진 기동 확인 (verify · build_guide · 설문지 빌더)"
 
 # 5. 안내

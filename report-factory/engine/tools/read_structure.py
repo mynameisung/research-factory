@@ -7,9 +7,11 @@
 구조화 파일은 조사마다 열 구성이 다르다(대분류/중분류/소분류/문번/문항/보기/응답 로직 …, NO/PART/주제/Details/구성/BASE …,
 파트/질문/문번/문항/보기/응답대상/비고 …). 이 도구는
     · 시트마다 머리 행을 찾고(알려진 머리말이 3개 이상인 첫 행) 열 역할을 붙인다
-    · 병합 셀 값을 병합 범위 전체로 채운다 (파트·중분류가 세로 병합인 경우)
+    · 병합 셀 값을 병합 범위 전체로 채운다 (파트·중분류가 세로 병합인 경우 · 머리말이 가로 병합인 경우)
+    · 같은 머리말 열(`보기 | 보기 | 보기`)은 같은 역할로 보고 값을 ` | ` 로 잇는다
+    · 빈 행 뒤 번호·파트 없이 한 칸뿐인 줄은 「본표 아래 메모」로 뺀다 (둘 이상 차면 본표가 이어진 것)
     · 머리 행이 없는 시트(메일 본문·이전 버전 초안·보기 초안 등)는 「참고 시트」로 원문 줄만 남긴다
-    · 셀 배경색을 남긴다 (노랑 = 핵심 지표 · 빨강 = 삭제/보류 표시인 경우가 많다 — 뜻은 사람에게 확인)
+    · 셀 배경색·글자색을 남긴다 (노랑 = 핵심 지표 · 빨강 = 삭제/보류 표시인 경우가 많다 — 뜻은 사람에게 확인)
 문장을 해석하지 않는다. 행마다 `ref`(시트!행) 를 달아 설문 명세의 `src` 가 이것을 가리킨다.
 """
 from __future__ import annotations
@@ -56,17 +58,44 @@ def _role(header: str) -> str | None:
     return None
 
 
-def _fill(cell) -> str | None:
+def _color(col) -> str | None:
+    """openpyxl 색 → `FFFF00` · 테마색은 `theme5+0.4` (색표 위 격자) · 인덱스색(.xls 변환본)은 RGB 로."""
     try:
-        f = cell.fill
-        if f is None or f.fill_type in (None, "none"):
+        if col is None:
             return None
-        rgb = f.fgColor.rgb
-        if isinstance(rgb, str) and rgb not in ("00000000", "FFFFFFFF"):
+        if col.type == "theme":
+            tint = round(col.tint or 0, 1)
+            return f"theme{col.theme}" + (f"{tint:+.1f}" if tint else "")
+        if col.type == "indexed":
+            from openpyxl.styles.colors import COLOR_INDEX
+            rgb = COLOR_INDEX[col.indexed] if col.indexed < len(COLOR_INDEX) else None   # 64·65 = 시스템 기본
+        else:
+            rgb = col.rgb
+        if isinstance(rgb, str) and rgb != "00000000":
             return rgb[-6:]
     except Exception:
         return None
     return None
+
+
+def _fill(cell) -> str | None:
+    """배경색 + 글자색(`글자FF0000`). 흰 배경은 빼고, 글자는 검정·회색(테마 기본 글자색 포함)을 뺀다."""
+    out = []
+    try:
+        f = cell.fill
+        if f is not None and f.fill_type not in (None, "none"):
+            bg = _color(f.fgColor)
+            if bg not in (None, "FFFFFF", "theme0"):
+                out.append(bg)
+    except Exception:
+        pass
+    try:
+        fg = _color(cell.font.color) if cell.font is not None else None
+        if fg and not re.fullmatch(r"theme[01](?:[+-][\d.]+)?|([0-9A-Fa-f]{2})\1\1", fg):
+            out.append(f"글자{fg}")
+    except Exception:
+        pass
+    return "/".join(out) or None
 
 
 def read(path: Path) -> dict[str, Any]:
@@ -113,12 +142,30 @@ def read(path: Path) -> dict[str, Any]:
             sheets.append(sh)
             continue
 
-        headers = {c: re.sub(r"\s+", " ", str(ws.cell(header_row, c).value)).strip() for c in range(1, max_c + 1)
-                   if ws.cell(header_row, c).value is not None}
+        # 머리말 — 가로 병합 머리(`중분류` B:C · `보기` C:E)의 나머지 칸도 같은 머리말이다.
+        # 같은 머리말이 여러 열이면 `보기#2` 로 이름을 가르고 역할도 같이 준다 (값은 ` | ` 로 잇는다).
+        headers: dict[int, str] = {}
+        base_name: dict[int, str] = {}
+        count: dict[str, int] = {}
+        for c in range(1, max_c + 1):
+            v = val(header_row, c)
+            if v is None:
+                continue
+            h = re.sub(r"\s+", " ", str(v)).strip()
+            count[h] = count.get(h, 0) + 1
+            headers[c] = h if count[h] == 1 else f"{h}#{count[h]}"
+            base_name[c] = h
+        role_by_name = {base_name[c]: rl for c, rl in roles.items() if c in base_name}
+        for c in headers:
+            if c not in roles and base_name[c] in role_by_name:
+                roles[c] = role_by_name[base_name[c]]
         # 본표 = 첫 역할 열부터 머리말이 끊기기 전까지. 빈 머리 열 뒤의 열은 곁표(보기 목록 등)로 뺀다.
+        # 단 문항 열(없으면 주제 열)까지는 빈 머리 칸이 있어도 본표다.
         first = min(roles)
+        qcol = min((c for c, rl in roles.items() if rl == "question"), default=None) \
+            or min(c for c, rl in roles.items() if rl == "section")
         main_end = first
-        while main_end + 1 <= max_c and (main_end + 1) in headers:
+        while main_end + 1 <= max_c and ((main_end + 1) in headers or main_end + 1 <= qcol):
             main_end += 1
         side_cols = [c for c in headers if c > main_end]
         sh["columns"] = {headers[c]: roles.get(c) for c in headers if c <= main_end}
@@ -127,7 +174,8 @@ def read(path: Path) -> dict[str, Any]:
         side = []                                   # 곁표 줄
         below = []                                  # 본표 아래(빈 행 뒤) 메모 — 대안 문구·코멘트
         seen_data, gap = False, False
-        anchor_roles = {c for c, rl in roles.items() if rl in ("seq", "code", "part")}
+        anchor_roles = {c for c, rl in roles.items() if rl in ("seq", "code", "part") and c <= main_end}
+        body_roles = {c for c, rl in roles.items() if rl not in ("seq", "code", "part", "note") and c <= main_end}
         for r in range(header_row + 1, max_r + 1):
             rec: dict[str, Any] = {"ref": f"{ws.title}!{r}", "fields": {}, "extra": {}, "fills": {}}
             own = False                             # 병합 채움이 아닌 자기 값이 있는가
@@ -138,9 +186,15 @@ def read(path: Path) -> dict[str, Any]:
             if not main_vals:
                 gap = gap or seen_data
                 continue
-            if gap and not any(ws.cell(r, c).value is not None for c in anchor_roles):
-                below.append({"ref": rec["ref"], "text": " | ".join(main_vals)})
-                continue
+            if gap:
+                # 빈 행 뒤라도 번호·파트(병합 채움 포함)가 있거나 역할 칸이 둘 이상 차면 본표가 이어진 것이다.
+                # 역할 칸 하나(대안 문구 한 줄)뿐인 줄만 본표 아래 메모로 뺀다.
+                if (any(val(r, c) is not None for c in anchor_roles)
+                        or sum(val(r, c) is not None for c in body_roles) >= 2):
+                    gap = False
+                else:
+                    below.append({"ref": rec["ref"], "text": " | ".join(main_vals)})
+                    continue
             seen_data = True
             for c in range(1, main_end + 1):
                 v = val(r, c)
@@ -165,7 +219,7 @@ def read(path: Path) -> dict[str, Any]:
                 if fl:
                     rec["fills"][name or f"col{c}"] = fl
                 if role:
-                    rec["fields"][role] = text
+                    rec["fields"][role] = f"{rec['fields'][role]} | {text}" if role in rec["fields"] else text
                 elif name:
                     rec["extra"][name] = text
                 else:
@@ -207,7 +261,7 @@ def to_markdown(doc: dict[str, Any]) -> str:
                 out += [f"- {x['ref']}: {x['text']}".replace("\n", " ⏎ ") for x in sh["side_lines"]]
             if sh.get("below_lines"):
                 out.append("")
-                out.append("본표 아래 메모 (빈 행 뒤, 번호·파트 없음). 대안 문구·코멘트다 — 쓰면 그 문항 src 에, 안 쓰면 skipped_src 에:")
+                out.append("본표 아래 메모 (빈 행 뒤, 번호·파트 없이 한 칸뿐). 대안 문구·코멘트다 — 쓰면 그 문항 src 에, 안 쓰면 skipped_src 에:")
                 out += [f"- {x['ref']}: {x['text']}".replace("\n", " ⏎ ") for x in sh["below_lines"]]
         else:
             out.append(f"## 시트 `{sh['name']}` — 참고 시트 (머리 행 없음)")

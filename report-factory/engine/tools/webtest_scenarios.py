@@ -11,6 +11,7 @@
     B*  분기 경로     — S0 에서 숨은 문항(서로 배타인 분기의 다른 쪽)을 한 번은 밟는다
     T*  이탈 경로     — 조사 중단(terminate) 보기를 하나씩 골라 그 자리에서 끝나는지 본다
     H*  숨김 경로     — 노출 조건(BASE)을 어기는 답을 골라 딸린 문항이 안 보이는지 본다
+                        (상한 --max-branch · 원천 문항마다 하나씩 먼저 · 상한에 걸려 뺀 수는 meta.h_skipped 와 경고로 알린다)
 
 시나리오 하나 = {id, purpose, answers{문항코드: {choose:[보기번호…], text:"…"}}, expect{visible, hidden, terminate_at, piping}}.
 답을 정하지 않은 문항은 순회기(webtest_walk.py)가 첫 보기로 답한다.
@@ -155,8 +156,10 @@ def default_answer(q: dict, avoid_terminate=True, need=None, forbid=None, prefer
     if not cand:
         cand = [(0, i, int(o.get("no") or 1)) for i, o in enumerate(opts)]
     cand = [no for _, _, no in sorted(cand)]
-    if rt == "복수":
-        return {"choose": sorted(cand[:2])}
+    if rt == "복수":           # 두 개를 고르되 `[최소 N개, 최대 M개 선택]` 이 있으면 그 범위 안에서
+        lim = q.get("multi_limit") or {}
+        n = max(int(lim.get("min") or 1), min(2, int(lim.get("max") or 2)))
+        return {"choose": sorted(cand[:n])}
     if rt == "순위":
         return {"choose": cand[:3]}
     return {"choose": cand[:1]}
@@ -268,13 +271,12 @@ def build(qs: list[dict], max_branch: int) -> dict:
                                   "answers": a, "expect": expect_for(a, q["code"])})
 
     # ── H* 숨김 경로: S0 에서 보이는 문항의 노출 조건을 하나씩 깨뜨린다 (상한)
-    seen = set(); n_h = 0
+    #    후보를 다 모은 뒤 원천 문항마다 하나씩 먼저 고르고, 남는 자리를 나머지로 채운다. 상한에 걸려 뺀 수는 meta.h_skipped
+    seen = set(); cands = []
     for q in qs:
         if q["code"] not in s0_exp["visible"]:
             continue
         for code, op, vals in first_group(q["code"]):
-            if n_h >= max_branch:
-                continue
             alt = answer_for_clause(code, op, vals, satisfy=False)
             if alt is None or alt == s0.get(code):
                 continue
@@ -286,15 +288,27 @@ def build(qs: list[dict], max_branch: int) -> dict:
             a[code] = alt
             exp = expect_for(a, None)
             newly_hidden = [c for c in exp["hidden"] if c not in s0_exp["hidden"]]
-            if not newly_hidden:
-                continue
-            n_h += 1
-            scenarios.append({"id": f"H{n_h}_{code}", "purpose": f"숨김 — {code}={fmt(alt)} 로 답해 조건 「{code}{op if op != 'count>=' else '≥'}{'/'.join(sorted(vals))}」 을 깨뜨린다. {'·'.join(newly_hidden)} 문항이 노출되지 않아야 한다",
-                              "answers": a, "expect": exp})
+            if newly_hidden:
+                cands.append((code, op, vals, alt, a, exp, newly_hidden))
+    pick: list[int] = []; picked_src: set[str] = set()
+    for i, c in enumerate(cands):
+        if len(pick) < max_branch and c[0] not in picked_src:
+            pick.append(i); picked_src.add(c[0])
+    for i in range(len(cands)):
+        if len(pick) >= max_branch:
+            break
+        if i not in pick:
+            pick.append(i)
+    for n_h, i in enumerate(sorted(pick), 1):
+        code, op, vals, alt, a, exp, newly_hidden = cands[i]
+        scenarios.append({"id": f"H{n_h}_{code}", "purpose": f"숨김 — {code}={fmt(alt)} 로 답해 조건 「{code}{op if op != 'count>=' else '≥'}{'/'.join(sorted(vals))}」 을 깨뜨린다. {'·'.join(newly_hidden)} 문항이 노출되지 않아야 한다",
+                          "answers": a, "expect": exp})
 
     never = [q["code"] for q in qs if q["code"] not in covered and q["code"] not in unparsed]
     return {"meta": {"n_questions": len(qs), "n_scenarios": len(scenarios), "unparsed_conditions": unparsed, "never_visited": never,
-                     "note": "답을 정하지 않은 문항은 순회기가 첫 보기로 답한다. unparsed_conditions 는 사람이 시나리오를 보태야 한다. never_visited 는 어느 시나리오도 밟지 못한 문항이다"},
+                     "h_candidates": len(cands), "h_skipped": len(cands) - len(pick),
+                     "note": "답을 정하지 않은 문항은 순회기가 첫 보기로 답한다. unparsed_conditions 는 사람이 시나리오를 보태야 한다. never_visited 는 어느 시나리오도 밟지 못한 문항이다. "
+                             "h_skipped 는 숨김 경로 상한(--max-branch)에 걸려 만들지 않은 수다"},
             "scenarios": scenarios}
 
 
@@ -322,6 +336,8 @@ def matrix_md(qs: list[dict], doc: dict) -> str:
         lines += ["", "⚠ 노출 조건을 기계가 못 읽은 문항 (사람이 시나리오를 보탠다): " + " · ".join(doc["meta"]["unparsed_conditions"])]
     if doc["meta"].get("never_visited"):
         lines += ["", "⚠ 어느 시나리오도 밟지 못한 문항 (사람이 시나리오를 보탠다): " + " · ".join(doc["meta"]["never_visited"])]
+    if doc["meta"].get("h_skipped"):
+        lines += ["", f"⚠ 숨김 경로 후보 {doc['meta']['h_candidates']}개 중 {doc['meta']['h_skipped']}개를 상한(--max-branch)으로 뺐다 — 모두 보려면 --max-branch {doc['meta']['h_candidates']}"]
     return "\n".join(lines) + "\n"
 
 
@@ -341,6 +357,9 @@ def main(argv=None) -> int:
         print("⚠ 못 읽은 노출 조건:", ", ".join(doc["meta"]["unparsed_conditions"]))
     if doc["meta"].get("never_visited"):
         print("⚠ 어느 시나리오도 밟지 못한 문항:", ", ".join(doc["meta"]["never_visited"]))
+    if doc["meta"].get("h_skipped"):
+        print(f"⚠ 숨김 경로 후보 {doc['meta']['h_candidates']}개 중 {doc['meta']['h_skipped']}개를 상한 --max-branch {a.max_branch} 로 뺐다"
+              f" — 모두 만들려면 --max-branch {doc['meta']['h_candidates']}")
     return 0
 
 

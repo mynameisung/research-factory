@@ -8,7 +8,9 @@
     · 응답유형                  단일/복수/순위/척도/숫자입력/개방형/예-아니오/행렬
     · 척도 점수 · 척도 라벨     5점/7점, 가로형 표 및 행렬 표 모두
     · 순위 사양                 `[3순위 필수]`, `[1순위 필수, 3순위 선택]`
+    · 복수 개수 제한            `[최소 1개, 최대 3개 선택]` → multi_limit {min, max}
     · 보기 목록                 번호 · 텍스트 · 기타/오픈/파이핑/조사중단 여부
+                                (표 안 보기는 같은 행의 `[PROG: …]` 를 show_if 로)
     · 프로그래머 지시           `[BASE: …]` `[RANGE: …]` `[PROG: …]` `[# … 파이핑 #]`
 
 ⚠ 원문의 화살표는 Wingdings 심볼(`<w:sym w:font="Wingdings" w:char="F0E0"/>`)이다.
@@ -81,7 +83,13 @@ RE_PROG = re.compile(r"\[PROG\s*:\s*(.*?)\]", re.DOTALL)
 RE_PIPING = re.compile(r"\[#\s*(.*?)\s*#\]", re.DOTALL)
 RE_DIRECTIVE_LINE = re.compile(r"^\s*\[(?:BASE|RANGE|PROG)\s*:")
 RE_CIRCLED = re.compile(r"[①-⑳㉑-㉟]")   # ①~⑳ 등
-RE_SCALE_NUM_CELL = re.compile(r"^\s*\d+\)?\s*$")   # `1)` 또는 `1`
+RE_SCALE_NUM_CELL = re.compile(r"^\s*\d+\)\s*$")
+RE_SCALE_NUM_LOOSE = re.compile(r"^\s*(\d+)\)?\s*$")   # `1` — 연속 번호일 때만 척도로 본다
+# 번호 머리 척도(`1) 매우 불만족` …)의 라벨 낱말. 없으면 가로로 늘어놓은 명목 보기로 본다.
+RE_SCALE_WORD = re.compile(r"매우|전혀|보통|그렇|만족|동의|중요|약간|대체로")
+# 표 칸 안 단락이 이어 붙어 앞 글자에 붙어 버린 보기 번호 (`1) 앱2) 웹`)
+RE_GLUED_OPT = re.compile(r"(?<=[^\s\d(~\-])(?=\d{1,2}\)\s)")
+RE_OPT_NO_INSIDE = re.compile(r"\d{1,2}\)\s")
 RE_OPEN_BLANK = re.compile(r"\(\s{2,}\)|\(\s*\)")
 YESNO_TOKENS = ({"예", "아니오"}, {"예", "아니요"}, {"네", "아니오"})
 # 기입란 `(      )` 바로 뒤에 단위가 붙으면 숫자 입력. 문항 본문 단어에는 걸리지
@@ -253,6 +261,14 @@ def parse_rank_spec(markers: list[str]) -> dict[str, Any] | None:
     return None
 
 
+def parse_multi_limit(markers: list[str]) -> dict[str, Any] | None:
+    for mk in markers:
+        m = RE_MULTI_LIMIT.fullmatch(mk)
+        if m:
+            return {"spec": mk, "min": int(m.group(1) or 1), "max": int(m.group(2))}
+    return None
+
+
 def split_option_line(text: str) -> list[str]:
     """`1) 예\\t\\t2) 아니오` 처럼 한 줄에 여러 보기가 붙은 경우를 쪼갠다."""
     parts = [p for p in RE_OPTION_SPLIT.split(text) if p.strip()]
@@ -284,6 +300,20 @@ def parse_option(raw: str) -> dict[str, Any] | None:
 
 
 # ── 표 분류 ────────────────────────────────────────────────────────────────
+def _scale_number_row(blk: Block) -> bool:
+    """2행이 척도 번호 줄인가. `N)` 은 그대로, 괄호 없는 숫자는 연속 번호(1~N · 0~10 · 역순)일 때만.
+    연도·쿼터·가격이 적힌 참고 표를 척도로 오판하지 않게 한다."""
+    cells = [blk.cell(1, c) for c in range(blk.n_cols)]
+    if all(RE_SCALE_NUM_CELL.match(x) for x in cells):
+        return True
+    ms = [RE_SCALE_NUM_LOOSE.match(x) for x in cells]
+    if not all(ms):
+        return False
+    nums = [int(m.group(1)) for m in ms]
+    step = 1 if nums[-1] >= nums[0] else -1
+    return nums == list(range(nums[0], nums[0] + step * len(nums), step))
+
+
 def classify_table(blk: Block) -> dict[str, Any]:
     """설문지 안의 표를 용도별로 분류하고 척도 정보를 뽑는다."""
     rows, cols = blk.n_rows, blk.n_cols
@@ -294,19 +324,20 @@ def classify_table(blk: Block) -> dict[str, Any]:
     if rows == 0 or cols == 0:
         return info
 
-    # 가로형 척도: 2행 × N열, 2행이 전부 `N)`
-    if rows == 2 and cols >= 3 and all(
-            RE_SCALE_NUM_CELL.match(blk.cell(1, c)) for c in range(cols)):
+    # 가로형 척도: 2행 × N열, 2행이 전부 `N)` 또는 연속 번호
+    if rows == 2 and cols >= 3 and _scale_number_row(blk):
         labels = [blk.cell(0, c) for c in range(cols)]
         info.update(kind="scale_horizontal", scale_points=cols, scale_labels=labels)
         return info
 
-    # 가로형 척도(번호가 머리 칸에 있는 꼴): 1행이 전부 `N) 라벨`, 2행은 빈 칸
+    # 가로형 척도(번호가 머리 칸에 있는 꼴): 1행이 전부 `N) 라벨`, 2행은 빈 칸.
+    # 라벨에 척도 낱말(매우·전혀·보통·만족 …)이 없으면 가로로 늘어놓은 명목 보기다 — 'other' 로 두어 표 보기로 읽힌다.
     if rows == 2 and cols >= 3 and all(
             RE_OPTION.match(blk.cell(0, c)) and not blk.cell(1, c) for c in range(cols)):
         labels = [norm_space(RE_OPTION.match(blk.cell(0, c)).group(2)) for c in range(cols)]
-        info.update(kind="scale_horizontal", scale_points=cols, scale_labels=labels)
-        return info
+        if any(RE_SCALE_WORD.search(lab) for lab in labels):
+            info.update(kind="scale_horizontal", scale_points=cols, scale_labels=labels)
+            return info
 
     # 행렬: 1행 헤더 + 항목 행. 본문 셀이 ①~⑤ 면 척도 행렬.
     body_has_circled = any(
@@ -420,20 +451,45 @@ def decide_response_type(markers: list[str], options: list[dict[str, Any]],
 # ═══════════════════════════════════════════════════════════════════════════
 # 본 파서
 # ═══════════════════════════════════════════════════════════════════════════
-def _options_from_tables(tables: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """표 칸의 `N) 보기` 를 번호 순으로 모은다. 번호만 있는 칸(`1)`)은 건너뛰고, 같은 번호는 처음 것만."""
-    found: dict[int, dict[str, Any]] = {}
+def _options_from_tables(tables: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
+    """표 칸의 `N) 보기` 를 모은다. (보기 목록, 이상징후) 반환.
+
+    · 번호만 있는 칸(`1)`)은 건너뛰고, 병합 칸이 되풀이한 같은 번호·같은 문구는 하나로.
+    · 칸 안 단락이 이어 붙은 `1) 앱2) 웹` 은 붙은 번호 앞에서 끊는다.
+    · 같은 행 다른 칸의 `[PROG: …]`(대분류별 표시 조건)는 보기의 `show_if` 로 남긴다.
+    · 번호가 묶음마다 다시 시작하면(같은 번호·다른 문구) 문서 순서대로 모두 두고 번호를 새로 매긴다.
+    """
+    found: list[dict[str, Any]] = []
+    seen: set[tuple[int, str]] = set()
+    anomalies: list[str] = []
     for t in tables:
         if t.get("kind") in ("scale_horizontal", "matrix_scale", "box"):
             continue
         for row in t.get("cells") or []:
-            for cell in row:
+            for ci, cell in enumerate(row):
                 for line in str(cell).split("\n"):
-                    for piece in split_option_line(line.strip()):
-                        opt = parse_option(piece)
-                        if opt and opt["text"] and opt["no"] not in found:
-                            found[opt["no"]] = opt
-    return [found[k] for k in sorted(found)]
+                    for seg in RE_GLUED_OPT.split(line.strip()):
+                        for piece in split_option_line(seg.strip()):
+                            opt = parse_option(piece)
+                            if not opt or not opt["text"] or (opt["no"], opt["text"]) in seen:
+                                continue
+                            seen.add((opt["no"], opt["text"]))
+                            row_prog = extract_directives(
+                                " ".join(c for j, c in enumerate(row) if j != ci))["prog"]
+                            if row_prog:
+                                opt["show_if"] = row_prog
+                            found.append(opt)
+    nos = [o["no"] for o in found]
+    if len(set(nos)) == len(nos):
+        found.sort(key=lambda o: o["no"])
+    else:
+        anomalies.append("표 보기 번호 중복 — 묶음별 재번호로 보고 문서 순서대로 번호를 새로 매김 (원번호는 raw)")
+        for i, o in enumerate(found):
+            o["no"] = i + 1
+    glued = [o["raw"] for o in found if RE_OPT_NO_INSIDE.search(o["text"])]
+    if glued:
+        anomalies.append(f"표 보기 분리 의심 — 한 보기에 번호가 또 있음: 「{glued[0][:40]}」")
+    return found, anomalies
 
 
 def _is_question_head(text: str, known_parts: set[str]) -> tuple[str, str] | None:
@@ -522,6 +578,7 @@ def parse(path: str | Path) -> dict[str, Any]:
                     "response_markers": markers,
                     "response_type": TYPE_UNKNOWN,
                     "rank": parse_rank_spec(markers),
+                    "multi_limit": parse_multi_limit(markers),
                     "scale": None,
                     "options": [],
                     "matrix": None,
@@ -587,14 +644,17 @@ def parse(path: str | Path) -> dict[str, Any]:
             or RE_RANK_SPEC.fullmatch(m) or RE_MULTI_LIMIT.fullmatch(m)
             for m in q["response_markers"])
         if not q["options"] and choice_marked:
-            q["options"] = _options_from_tables(q["tables"])
+            q["options"], tbl_anomalies = _options_from_tables(q["tables"])
             if q["options"]:
                 q["options_in_table"] = True
+                q["anomalies"].extend(tbl_anomalies)
         rtype, anomalies = decide_response_type(
             q["response_markers"], q["options"], q["tables"],
             answer_context, q["directives"])
         q["response_type"] = rtype
         q["anomalies"].extend(anomalies)
+        if rtype == TYPE_MULTI and q["multi_limit"] and "순서대로" in q["text"]:
+            q["anomalies"].append("'순서대로' + 개수 제한 복수 선택 — 순위 문항일 수 있음 (응답 순서를 받는지 확인)")
 
         scale_tbl = next((t for t in q["tables"]
                           if t["kind"] in ("scale_horizontal", "matrix_scale")), None)

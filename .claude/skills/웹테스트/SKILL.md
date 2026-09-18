@@ -68,10 +68,13 @@ questionnaire.json   시나리오.json      덤프_<ID>.json        findings.jso
 ```bash
 ROOT="$(git rev-parse --show-toplevel)"; T="$ROOT/report-factory/engine/tools"
 python -c "import playwright" 2>/dev/null || (python -m pip install -q playwright && python -m playwright install chromium)
-mkdir -p "<조사>/05_웹테스트/work" "<조사>/05_웹테스트/out"
+WT="$(python "$T/paths.py" "<조사>" --role 웹테스트)"; mkdir -p "$WT/work" "$WT/out"
 ```
 
-Playwright 와 Chromium 은 설치에 몇 분 걸린다. 처음이면 사용자에게 한 줄 알린다. 설문지 `.docx` 는 `03_설문지/` 에 둔다(경로는 PREAMBLE 의 `PATHS:` 로 확인).
+웹테스트 폴더(`$WT`)는 paths 가 정한다 — v2 면 `05_웹테스트/`, 옛 배치(v1)면 `3_웹테스트/`. 아래 `<조사>/05_웹테스트/` 는 모두 `$WT` 로 읽는다.
+단계 폴더를 손으로 만들지 않는다(v1 조사에 `05_웹테스트/` · `03_설문지/` 가 생기면 paths 가 v2 로 읽어 다른 스킬이 파일을 잃는다).
+
+Playwright 와 Chromium 은 설치에 몇 분 걸린다. 처음이면 사용자에게 한 줄 알린다. 설문지 `.docx` 는 설문지 폴더(v2 `03_설문지/` · v1 `input/`)에 둔다(경로는 PREAMBLE 의 `PATHS:` 로 확인). 아래 `<조사>/03_설문지/<설문지>.docx` 는 PATHS `files.설문지` 다.
 
 ## Step 1 — 설문지 정본
 
