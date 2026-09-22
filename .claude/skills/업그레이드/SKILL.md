@@ -34,9 +34,14 @@ description: research-factory 를 최신판으로 올린다 — git pull·의존
 3. **의존성·검증** — `pip install -q -r requirements.txt` 후
    `PYTHONUTF8=1 python research-factory/engine/tools/verify.py --help` 로 기동 확인.
 
-4. **보고** — 당겨온 커밋들(`git log --oneline <이전>..HEAD`)과 CHANGELOG 최신 항목을 읽어
+4. **보고** — `NEW=$(cat VERSION)` 을 읽고, 당겨온 커밋들(`git log --oneline <이전>..HEAD`)과 CHANGELOG 최신 항목을 읽어
    **무엇이 달라졌는지 연구원 언어로** 요약한다. 규칙이 바뀌었으면 규칙 번호와 한 줄 요지,
    도구가 바뀌었으면 체감 변화만. 커밋 해시 나열은 하지 않는다.
+   이어서 `python research-factory/engine/tools/release_notes.py url "$NEW" --from "$OLD"` 로 링크를 받아
+   보고 끝에 **「업데이트 내역: [research-factory <NEW>](<RELEASE_NOTES: 링크>)」** 를 마크다운 링크로 붙인다.
+   누르면 달라진 점 · 새로 써볼 수 있는 것 · 기능 설명이 나온다고 한 줄 덧붙인다.
+   `RELEASE_NOTES_SKIPPED:` 가 있으면(여러 판을 한 번에 올린 경우) 「건너뛴 판의 내역」으로 그 링크들도 붙인다.
+   링크가 `NONE` 이면 `release_notes.py show "$NEW"` 본문의 「새로 써볼 수 있는 것」 절을 대신 보여 준다.
    `OLD` 가 0.5.0 보다 낮았으면 끝에 「Claude 세션을 한 번 닫고 새로 열어 주세요. 훅과 스킬이 새 폴더 경로로 붙습니다」를 덧붙인다.
 
 ## 주의

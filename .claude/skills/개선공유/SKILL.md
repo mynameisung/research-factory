@@ -89,6 +89,9 @@ description: 내가 쓰다가 얻은 노하우와 로컬에서 다듬어진 규�
 - **승격** — 규칙 수준이면 `/회고` 절차로 RULES.md 카드를 만들고(요지 줄 포함) 노하우 카드 상태를 `승격 → R-nnn` 으로. 도구로 박을 것(선택자 프로필·검증기 검사)이면 코드에 반영하고 `승격 → <도구>`.
 - **보류** — 상태를 `보류(사유)` 로 바꿔 병합한다. 카드는 지우지 않는다. 같은 요령이 다시 올라오면 그때 다시 본다.
 - 병합할 때 `VERSION` 과 `CHANGELOG.md` 를 함께 올린다. CHANGELOG 한 줄이 연구원 화면의 「바뀐 점」이다.
+- 같은 커밋에 **업데이트 내역 `releases/<새판>.md`** 도 쓴다 — `python research-factory/engine/tools/release_notes.py new <새판>` 으로 틀을 만들고
+  「달라진 점 · 새로 써볼 수 있는 것 · 기능 설명 · 주의할 점」을 연구원 언어로 채운 뒤 `release_notes.py check` 가 통과해야 한다(setup 스모크도 같은 검사를 한다).
+  push 한 뒤 `release_notes.py publish` 로 GitHub Release(태그 `v<새판>`)에 올린다. 이 페이지가 연구원이 업그레이드를 끝냈을 때 누르는 「업데이트 내역」 링크다.
 
 ## 주의
 

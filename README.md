@@ -123,7 +123,7 @@ flowchart TB
 | `/보고서작성` | 제작팀 회신본 마감(경로 A) · 예시 덱에서 직접 조립(경로 B) · 통계표 갱신 뒤 값만 재반영(경로 C) → 수치 전수 검수 → 렌더 QA → 반증 감사 |
 | `/웹테스트` | 설문지 정본 → 시나리오 행렬(기본·이탈·숨김) → Playwright 가 한 문항씩 순회·덤프 → 정본 대조(문항 누락·분기·이탈·파이핑·보기·문구) → 수정요청서(.xlsx). 로그인은 사람이 한다 |
 | `/회고` | 조사가 남긴 증거에서 규칙 후보를 채굴하고, 승인분만 `RULES.md`·`rules.yaml`·knowledge 에 등재 |
-| `/업그레이드` | 최신판 받기(stash → pull → pop) · 의존성 · 스모크 · 변경 요약. 충돌은 Claude 가 정리한다 |
+| `/업그레이드` | 최신판 받기(stash → pull → pop) · 의존성 · 스모크 · 변경 요약 · 업데이트 내역 링크. 충돌은 Claude 가 정리한다 |
 | `/개선공유` | 내가 다듬은 규칙·지식·도구를 임시 워크트리에서 PR 로 올린다. 작업 폴더는 건드리지 않는다 |
 
 다섯 작업 스킬(설문지작성·웹테스트·제작가이드·보고서작성·회고)은 제목 바로 아래에 같은 **PREAMBLE** 블록을 갖는다(gstack 의 preamble 을 옮긴 것). 본 절차보다 먼저
@@ -146,6 +146,7 @@ flowchart TB
 ```
 <작업 폴더>/                          ← 리포 루트 = Claude Code 작업 폴더 (새로 받으면 research-factory, 기존 설치는 받은 때 이름 그대로)
 ├─ README.md · CHANGELOG.md · VERSION   판은 세 자리. 병합할 때 VERSION 과 CHANGELOG 를 함께 올린다
+├─ releases/<판>.md                    판마다 「업데이트 내역」 한 장(달라진 점 · 새로 써볼 수 있는 것 · 기능 설명). GitHub Release 로 올라간다
 ├─ setup.ps1 · setup · requirements.txt 설치 (의존성 · PYTHONUTF8 · 스모크)
 ├─ .claude/
 │   ├─ skills/                        스킬 7개 (SKILL.md 하나씩)
@@ -264,6 +265,9 @@ RULES.md (사람용 대장, 카드 R-nnn)
 - **주기**: 관리자가 「PR 올리세요」 하면 각자 `/개선공유`. 변경분을 요약해 보여 주고 확인 후 PR 까지 대신한다.
 - **고르기**: 관리자가 공용으로 쓸 PR 만 병합하고, 그때 `VERSION` 과 `CHANGELOG.md` 를 함께 올린다. CHANGELOG 항목이
   곧 연구원 화면에 뜨는 「바뀐 점」 문구다.
+- **업데이트 내역**: 판마다 `releases/<판>.md` 한 장(`release_notes.py new <판>` → 채움 → `check` → push 뒤 `publish`)이
+  GitHub Release 로 올라간다. 「올릴까요?」 물음과 `/업그레이드` 완료 보고에 그 링크가 붙고, 누르면 달라진 점 · 새로 써볼 수 있는 것 ·
+  기능 설명을 읽는다. 지금 판의 내역은 `release_notes.py show`, 아직 안 받은 판은 `show <판> --remote`.
 
 ## 10. 새 조사 시작하기
 

@@ -27,6 +27,8 @@ python (Join-Path $root "research-factory\engine\tools\migrate_folder.py")
 python (Join-Path $root "research-factory\engine\tools\verify.py") --help | Out-Null
 python (Join-Path $root "research-factory\engine\tools\build_guide.py") --help | Out-Null
 python (Join-Path $root "research-factory\engine\tools\gen_preamble.py") --check
+python (Join-Path $root "research-factory\engine\tools\release_notes.py") check   # 이 판의 업데이트 내역(releases\<판>.md)이 있는가
+if ($LASTEXITCODE -ne 0) { Write-Host "  업데이트 내역이 없습니다. 관리자에게 알려 주세요" -ForegroundColor Red; exit 1 }
 $qst = Join-Path $root "research-factory\engine\tools\questionnaire_selftest.py"
 python $qst | Out-Null   # 파이프로 받으면 cp949 콘솔에서 한글이 깨진다 — 결과는 종료 코드로 본다
 if ($LASTEXITCODE -ne 0) {

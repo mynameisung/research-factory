@@ -12,6 +12,9 @@
     SKILL: 제작가이드
     VERSION: 0.3.1
     UPDATE: NONE | UPGRADE_AVAILABLE <내판> <새판> | JUST_UPGRADED <이전판> <내판> | CHECK_FAILED <이유> | DISABLED
+    RELEASE_NOTES: <GitHub Release 링크>   ← 새 판이 있거나 방금 올렸을 때만 (release_notes.py url). 「업데이트 내역」으로 보여 준다
+    RELEASE_NOTES_FILE: releases/<판>.md | NONE
+    RELEASE_NOTES_SKIPPED: <판>=<링크> …   ← 여러 판을 건너뛰었을 때 중간 판의 링크. RELEASE_NOTES_ALL: 은 전체 목록 페이지
     MIGRATE: <폴더 이관 요약>     ← 0.5.0 폴더 이름 변경 뒷정리에서 옮긴 것·남은 것이 있을 때만
     ACTIVE: <프로젝트>/<조사> | NONE
     MEMORY: <MEMORY.md 경로> | NONE
@@ -56,6 +59,23 @@ def _update_line() -> str:
         return lines[0] if lines else "NONE"
     except Exception as e:  # 프리앰블은 절대 실패하지 않는다
         return f"CHECK_FAILED {type(e).__name__}: {e}"
+
+
+def _release_notes_lines(update: str) -> list[str]:
+    """새 판이 있거나 방금 올렸을 때만, 그 판의 업데이트 내역 링크(RELEASE_NOTES: …) 줄을 돌려준다."""
+    parts = update.split()
+    if len(parts) != 3 or parts[0] not in ("UPGRADE_AVAILABLE", "JUST_UPGRADED"):
+        return []
+    # UPGRADE_AVAILABLE <내판> <새판> · JUST_UPGRADED <이전판> <내판> — 둘 다 「이전 → 대상」 순서다
+    since, target = parts[1], parts[2]
+    try:
+        import release_notes as rn
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rn.cmd_url(target, since)
+        return [ln for ln in buf.getvalue().splitlines() if ln.strip()]
+    except Exception:
+        return []
 
 
 def _migrate() -> str:
@@ -135,7 +155,10 @@ def main(argv: list[str]) -> int:
             arg = a
     print(f"SKILL: {skill}")
     print(f"VERSION: {_version()}")
-    print(f"UPDATE: {_update_line()}")
+    update = _update_line()
+    print(f"UPDATE: {update}")
+    for ln in _release_notes_lines(update):
+        print(ln)
     mig = _migrate()
     if mig:
         print(f"MIGRATE: {mig}")
