@@ -203,6 +203,14 @@ def cmd_new(version: str) -> int:
 # publish — GitHub Release
 # ─────────────────────────────────────────────────────────────
 
+def state_notes_dir() -> Path:
+    """publish 가 만드는 본문 파일 자리 — 리포 밖(~/.research-factory/release-bodies/)."""
+    import update_check as uc
+    d = uc.state_dir() / "release-bodies"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def cmd_publish(version: str, target: str | None) -> int:
     problems = check_note(version)
     if problems:
@@ -211,6 +219,14 @@ def cmd_publish(version: str, target: str | None) -> int:
     p = _note_path(version)
     tag = f"v{version}"
     title = f"research-factory {version}"
+    # Release 페이지는 제목을 따로 보여 주므로 본문의 첫 `# ` 제목은 뗀다(두 번 보인다). 날짜는 작은 줄로 남긴다
+    lines = p.read_text(encoding="utf-8").splitlines()
+    first = next((i for i, ln in enumerate(lines) if ln.strip()), None)
+    if first is not None and lines[first].startswith("# "):
+        m = re.search(r"(\d{4}-\d{2}-\d{2})", lines[first])
+        lines[first] = f"_{m.group(1)}_" if m else ""
+    body_file = state_notes_dir() / f"{version}.body.md"
+    body_file.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
     try:
         exists = subprocess.run(["gh", "release", "view", tag, "--json", "tagName"], capture_output=True,
                                 text=True, cwd=str(_root()), encoding="utf-8", errors="replace").returncode == 0
@@ -218,9 +234,9 @@ def cmd_publish(version: str, target: str | None) -> int:
         print("gh 명령을 찾을 수 없음 — GitHub CLI 를 설치하고 `gh auth login` 뒤 다시")
         return 1
     if exists:
-        args = ["gh", "release", "edit", tag, "--title", title, "--notes-file", str(p)]
+        args = ["gh", "release", "edit", tag, "--title", title, "--notes-file", str(body_file)]
     else:
-        args = ["gh", "release", "create", tag, "--title", title, "--notes-file", str(p), "--latest"]
+        args = ["gh", "release", "create", tag, "--title", title, "--notes-file", str(body_file), "--latest"]
         if target:
             # GitHub 은 짧은 해시를 target 으로 받지 않는다 — 브랜치 이름이 아니면 전체 해시로 푼다
             rv = _git("rev-parse", "--verify", f"{target}^{{commit}}")
