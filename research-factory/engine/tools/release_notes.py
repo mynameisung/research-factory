@@ -222,7 +222,9 @@ def cmd_publish(version: str, target: str | None) -> int:
     else:
         args = ["gh", "release", "create", tag, "--title", title, "--notes-file", str(p), "--latest"]
         if target:
-            args += ["--target", target]
+            # GitHub 은 짧은 해시를 target 으로 받지 않는다 — 브랜치 이름이 아니면 전체 해시로 푼다
+            rv = _git("rev-parse", "--verify", f"{target}^{{commit}}")
+            args += ["--target", rv.stdout.strip() if rv.returncode == 0 else target]
     r = subprocess.run(args, capture_output=True, text=True, cwd=str(_root()), encoding="utf-8", errors="replace")
     if r.returncode != 0:
         print("gh 실패: " + (r.stderr or r.stdout).strip())
