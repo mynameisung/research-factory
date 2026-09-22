@@ -146,7 +146,7 @@ flowchart TB
 ```
 <작업 폴더>/                          ← 리포 루트 = Claude Code 작업 폴더 (새로 받으면 research-factory, 기존 설치는 받은 때 이름 그대로)
 ├─ README.md · CHANGELOG.md · VERSION   판은 세 자리. 병합할 때 VERSION 과 CHANGELOG 를 함께 올린다
-├─ releases/<판>.md                    판마다 「업데이트 내역」 한 장(달라진 점 · 새로 써볼 수 있는 것 · 기능 설명). GitHub Release 로 올라간다
+├─ releases/<판>.md                    판마다 「업데이트 내역」 한 장(무엇을 했나 · 무엇이 가능해졌나 · 한번 써보세요). GitHub Release 로 올라간다
 ├─ setup.ps1 · setup · requirements.txt 설치 (의존성 · PYTHONUTF8 · 스모크)
 ├─ .claude/
 │   ├─ skills/                        스킬 7개 (SKILL.md 하나씩)
@@ -266,8 +266,8 @@ RULES.md (사람용 대장, 카드 R-nnn)
 - **고르기**: 관리자가 공용으로 쓸 PR 만 병합하고, 그때 `VERSION` 과 `CHANGELOG.md` 를 함께 올린다. CHANGELOG 항목이
   곧 연구원 화면에 뜨는 「바뀐 점」 문구다.
 - **업데이트 내역**: 판마다 `releases/<판>.md` 한 장(`release_notes.py new <판>` → 채움 → `check` → push 뒤 `publish`)이
-  GitHub Release 로 올라간다. 「올릴까요?」 물음과 `/업그레이드` 완료 보고에 그 링크가 붙고, 누르면 달라진 점 · 새로 써볼 수 있는 것 ·
-  기능 설명을 읽는다. 지금 판의 내역은 `release_notes.py show`, 아직 안 받은 판은 `show <판> --remote`.
+  GitHub Release 로 올라간다. 「올릴까요?」 물음과 `/업그레이드` 완료 보고에 그 링크가 붙고, 누르면 무엇을 했나 · 무엇이 가능해졌나 ·
+  한번 써보세요를 읽는다. 지금 판의 내역은 `release_notes.py show`, 아직 안 받은 판은 `show <판> --remote`.
 
 ## 10. 새 조사 시작하기
 

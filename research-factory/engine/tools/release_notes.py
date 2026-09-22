@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """release_notes.py — 판마다 「업데이트 내역」 한 장. 링크를 만들고, 빠진 노트를 잡고, GitHub Release 로 올린다.
 
-CHANGELOG.md 는 한 줄짜리 「바뀐 점」이다. 연구원이 업그레이드를 끝냈을 때 링크를 눌러 **무엇이 달라졌고 · 무엇을 새로
-써볼 수 있고 · 그 기능이 무엇인지** 를 읽는 자리는 `releases/<판>.md` 한 장이고, 같은 내용이 GitHub Release 페이지에 올라간다.
+CHANGELOG.md 는 한 줄짜리 「바뀐 점」이다. 연구원이 업그레이드를 끝냈을 때 링크를 눌러 **무엇을 했고 · 무엇이 가능해졌고 ·
+어떻게 써 보는지** 를 비전공자 눈높이로 읽는 자리는 `releases/<판>.md` 한 장이고, 같은 내용이 GitHub Release 페이지에 올라간다.
 
     <리포 루트>/releases/
         _TEMPLATE.md      새 노트의 틀 (절 이름이 고정이다 — check 가 본다)
@@ -35,7 +35,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-REQUIRED_SECTIONS = ("달라진 점", "새로 써볼 수 있는 것", "기능 설명")
+REQUIRED_SECTIONS = ("무엇을 했나", "무엇이 가능해졌나", "한번 써보세요")   # 「추가된 스킬 N」·「주의할 점」은 선택
 RELEASES_DIRNAME = "releases"
 TEMPLATE_NAME = "_TEMPLATE.md"
 
@@ -167,8 +167,8 @@ def check_note(version: str) -> list[str]:
     for sec in REQUIRED_SECTIONS:
         if sec not in heads:
             problems.append(f"절 「## {sec}」 이 없음")
-    if "<!-- " in text and "-->" in text and re.search(r"<!--\s*(여기에|예:)", text):
-        problems.append("틀의 안내 주석이 남아 있음 (채운 뒤 지운다)")
+    if "<!--" in text:
+        problems.append("틀의 안내 주석(<!-- … -->)이 남아 있음 (채운 뒤 지운다)")
     return problems
 
 

@@ -16,7 +16,7 @@ python "$(git rev-parse --show-toplevel)/research-factory/engine/tools/preamble.
   2. **앞으로는 자동으로** → `update_check.py config set auto_upgrade true` → `/업그레이드` → 본 절차
   3. **지금 말고 나중에** → `update_check.py snooze <새판>`. 출력의 next 값대로 「다음 알림은 24시간 뒤입니다」라고 알린다(두 번째는 48시간, 세 번째부터 1주일) → 본 절차
   4. **다시 묻지 않는다** → `update_check.py config set update_check false`. 「다시 켜려면 `config set update_check true`」 → 본 절차
-- **`UPDATE: JUST_UPGRADED <이전판> <내판>`** — `whats-new <내판>` 을 읽어 「<내판> 으로 올라왔습니다: <바뀐 점>. 업데이트 내역: <`RELEASE_NOTES:` 링크>」 두 줄만 말하고 본 절차로 간다. 링크는 마크다운 링크로 붙여 누를 수 있게 한다(달라진 점 · 새로 써볼 수 있는 것 · 기능 설명이 그 페이지에 있다). `RELEASE_NOTES_SKIPPED:` 가 있으면 건너뛴 판의 링크도 함께.
+- **`UPDATE: JUST_UPGRADED <이전판> <내판>`** — `whats-new <내판>` 을 읽어 「<내판> 으로 올라왔습니다: <바뀐 점>. 업데이트 내역: <`RELEASE_NOTES:` 링크>」 두 줄만 말하고 본 절차로 간다. 링크는 마크다운 링크로 붙여 누를 수 있게 한다(「무엇을 했나 · 무엇이 가능해졌나 · 한번 써보세요」가 그 페이지에 있다). `RELEASE_NOTES_SKIPPED:` 가 있으면 건너뛴 판의 링크도 함께.
 - **`MIGRATE: …`** (있을 때만) — 0.5.0 폴더 이름 변경(`report-factory/` → `research-factory/`)의 뒷정리 결과다. 「옮김」뿐이면 「조사 폴더를 새 폴더로 옮겼습니다(옛 경로도 그대로 쓸 수 있습니다)」 한 줄만 말하고 본 절차로 간다. 「열린 파일 때문에 못 옮김」이나 「아직 옛 폴더에 있다」면 엑셀 등 열린 파일을 닫게 한 뒤 `python "$(git rev-parse --show-toplevel)/research-factory/engine/tools/migrate_folder.py"` 를 다시 부르고, 옮겨질 때까지 본 절차로 가지 않는다. 「옛 쪽을 남김」이면 두 파일을 비교해 보여 주고 사용자가 고르게 한다. 「권한 문제」·「대리 파일에 로컬 수정」은 줄에 적힌 대로 처리한다.
 - **`UPDATE: CHECK_FAILED <이유>`** — 「판을 확인하지 못했습니다(<이유>). 그대로 진행합니다」 한 줄만 말하고 본 절차로 간다. 최신으로 읽지 않는다.
 - **`MEMORY: <경로>`** — 그 `MEMORY.md` 를 읽는다. 「결정된 것」은 다시 묻지 않는다. 스킬이 끝날 때 세 절(결정된 것 · 지시의 요지 · 다음 세션이 알아야 할 것)을 갱신한다. `MEMORY_NEW: yes` 면 읽을 것이 없으니 끝날 때 채우기만 한다.
